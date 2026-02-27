@@ -1,36 +1,43 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# CivicSentinel 🛡️
 
-## Getting Started
+**CivicSentinel** is an AI-powered civic accountability platform built for the **AI for Bharat Hackathon** (Hack2Skill, sponsored by AWS).
 
-First, run the development server:
+## 🚀 The Vision
+Indian citizens often face "complaint fatigue" where local issues (potholes, waste, water) are reported but ignored or poorly repaired. CivicSentinel uses AWS Serverless architecture and Amazon Bedrock to:
+- **Process Multimodal Input:** Voice notes in regional languages and photos.
+- **Auto-Identify Jurisdiction:** Route complaints to the correct municipal department.
+- **Enforce SLA:** A visible 48-hour "Doomsday Clock" for officials.
+- **Escalate Automatically:** If the SLA is breached, it generates RTI requests and social media threads.
+- **Vision Auditor:** Uses AI to compare "Before" and "After" photos to prevent deceptive repairs.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## 🛠️ Tech Stack (AWS focus)
+- **Frontend:** Next.js (App Router, TypeScript)
+- **Compute:** AWS Lambda
+- **API:** Amazon API Gateway
+- **Storage:** Amazon S3
+- **Intelligence:** Amazon Bedrock (Claude 3.5 Sonnet)
+- **Database:** Amazon DynamoDB (Proposed)
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## 📁 Project Structure
+- `src/app/(citizen)`: Frontend routes for citizens to report issues.
+- `src/app/(govt)`: Dashboard for government officials to track and resolve grievances.
+- `src/components`: Shared UI components.
+- `src/lib/aws`: AWS SDK configurations and service wrappers.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## 🤝 Collaboration Guide for Team Members
+1. **Clone the Repo:** `git clone <repo-url>`
+2. **Install Dependencies:** `npm install`
+3. **Environment Variables:** Create a `.env.local` based on `.env.example` (coming soon).
+4. **Development:** Run `npm run dev` to start the local server.
+5. **Route Groups:** 
+   - Public/Citizen: `/`
+   - Government: `/dashboard`
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## 📚 Research Context
+Based on our research:
+- Official state portals average **64 days** for resolution. Our **48-hour** target is a competitive differentiator.
+- The "Vision Auditor" addresses the #1 citizen complaint: **Poor quality of repairs**.
+- Automation of **Section 2(j)(i) RTI requests** provides the legal "teeth" needed for true accountability.
 
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+---
+Built with ❤️ for the Bharat Hackathon.
