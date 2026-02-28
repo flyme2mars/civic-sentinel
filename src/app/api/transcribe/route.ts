@@ -36,7 +36,6 @@ export async function POST(request: Request) {
     console.log(`[Sarvam] Creating job for saaras:v3...`);
     const job = await client.speechToTextJob.createJob({
       model: "saaras:v3",
-      mode: "transcribe",
       languageCode: "unknown", // Auto-detection
       withDiarization: false
     });
