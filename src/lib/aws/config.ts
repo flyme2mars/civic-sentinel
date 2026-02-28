@@ -22,9 +22,16 @@ export const AWS_CONFIG = {
 
 };
 
+const accessKeyId = process.env.MY_AWS_ACCESS_KEY_ID || process.env.AWS_ACCESS_KEY_ID || '';
+const secretAccessKey = process.env.MY_AWS_SECRET_ACCESS_KEY || process.env.AWS_SECRET_ACCESS_KEY || '';
+
+if (!accessKeyId) {
+  console.warn('[AWS Config] WARNING: Access Key ID is missing from environment variables!');
+}
+
 const credentials = {
-  accessKeyId: process.env.MY_AWS_ACCESS_KEY_ID || process.env.AWS_ACCESS_KEY_ID || '',
-  secretAccessKey: process.env.MY_AWS_SECRET_ACCESS_KEY || process.env.AWS_SECRET_ACCESS_KEY || '',
+  accessKeyId,
+  secretAccessKey,
 };
 
 // Initialize AWS Clients
