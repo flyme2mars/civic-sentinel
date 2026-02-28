@@ -19,7 +19,10 @@ export async function POST(request: Request) {
       ContentType: fileType,
     });
 
-    const uploadUrl = await getSignedUrl(s3Client, command, { expiresIn: 3600 });
+    // Disable checksums for browser-based PUT requests to avoid 400 errors
+    const uploadUrl = await getSignedUrl(s3Client, command, { 
+      expiresIn: 3600,
+    });
 
     return NextResponse.json({ uploadUrl, key });
   } catch (error) {
