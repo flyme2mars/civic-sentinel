@@ -732,13 +732,6 @@ export default function GovernmentDashboard() {
             <span style={{ fontSize: 16 }}>{dark ? "☀️" : "🌙"}</span>
             {sidebarOpen && <span>{dark ? "Light Mode" : "Dark Mode"}</span>}
           </button>
-          <button onClick={() => setSidebarOpen(!sidebarOpen)} style={{
-            display: "flex", alignItems: "center", justifyContent: sidebarOpen ? "flex-start" : "center", gap: 10,
-            padding: "10px 12px", borderRadius: 10, background: "transparent", border: "none", color: textSecondary, cursor: "pointer", fontSize: 12,
-          }}>
-            <span style={{ fontSize: 16 }}>{sidebarOpen ? "◀" : "▶"}</span>
-            {sidebarOpen && <span>Collapse</span>}
-          </button>
         </div>
       </aside>
 
@@ -746,6 +739,33 @@ export default function GovernmentDashboard() {
       <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
         {/* TOP BAR */}
         <header style={{ background: surface, borderBottom: `1px solid ${border}`, padding: "14px 24px", display: "flex", alignItems: "center", gap: 16, flexShrink: 0, position: "sticky", top: 0, zIndex: 20 }}>
+          <button onClick={() => setSidebarOpen(!sidebarOpen)} style={{ 
+            background: dark ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.03)", 
+            border: `1px solid ${border}`, 
+            color: textSecondary, cursor: "pointer", 
+            display: "flex", alignItems: "center", justifyContent: "center", 
+            width: 38, height: 38, borderRadius: 10,
+            transition: "background 0.15s, color 0.15s", marginRight: 8
+          }}
+            onMouseEnter={e => { e.currentTarget.style.background = dark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.08)"; e.currentTarget.style.color = textPrimary; }}
+            onMouseLeave={e => { e.currentTarget.style.background = dark ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.03)"; e.currentTarget.style.color = textSecondary; }}
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              {sidebarOpen ? (
+                <>
+                  <path d="M19 12H5" />
+                  <path d="M12 19l-7-7 7-7" />
+                </>
+              ) : (
+                <>
+                  <line x1="3" y1="12" x2="21" y2="12"></line>
+                  <line x1="3" y1="6" x2="21" y2="6"></line>
+                  <line x1="3" y1="18" x2="21" y2="18"></line>
+                </>
+              )}
+            </svg>
+          </button>
+          
           <div>
             <div style={{ fontSize: 18, fontWeight: 800, letterSpacing: "-0.03em" }}>Grievance Control Center</div>
             <div style={{ fontSize: 10, color: textSecondary, fontFamily: "'DM Mono', monospace", letterSpacing: "0.08em" }}>
