@@ -32,6 +32,8 @@ const PRIORITY_MAP = {
 
 const CAT_ICONS = { roads: "⬡", sanitation: "◈", water: "◎", electricity: "◉", waste: "◆", infrastructure: "◫", other: "○" };
 
+type GrievanceType = typeof GRIEVANCES[0];
+
 // ─── HOOKS ────────────────────────────────────────────────────────────────────
 function useCountdown(reportedAt: number, slaHours: number) {
   const deadline = reportedAt + slaHours * 3600000;
@@ -88,7 +90,7 @@ function SLABar({ reportedAt, slaHours, compact, dark }: { reportedAt: number, s
           {breached ? `+${h}h ${m}m ${s}s` : `${h}h ${m}m ${s}s`}
         </span>
       </div>
-      <div style={{ height: 5, borderRadius: 3, background: dark ? "rgba(255,255,255,0.15)" : "rgba(0,0,0,0.07)", overflow: "hidden", position: "relative" }}>
+      <div style={{ height: 5, borderRadius: 3, background: dark ? "rgba(255,255,255,0.07)" : "rgba(0,0,0,0.07)", overflow: "hidden", position: "relative" }}>
         <div style={{
           height: "100%", width: `${pct}%`, background: barColor, borderRadius: 3,
           transition: "width 1s linear",
@@ -102,13 +104,54 @@ function SLABar({ reportedAt, slaHours, compact, dark }: { reportedAt: number, s
   );
 }
 
+// ─── CIRCULAR SLA RING (from Gen 1 style) ────────────────────────────────────
+function SLARing({ reportedAt, slaHours, dark, size = 52 }: { reportedAt: number, slaHours: number, dark: boolean, size?: number }) {
+  const { breached, h, m, pct, urgent } = useCountdown(reportedAt, slaHours);
+  const color = breached ? (dark ? "#EF4444" : "#DC2626") : urgent ? (dark ? "#F97316" : "#EA580C") : (dark ? "#4ADE80" : "#16A34A");
+  const trackColor = dark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.07)";
+  const cx = size / 2, cy = size / 2, r = (size - 6) / 2;
+  const circ = 2 * Math.PI * r;
+  const dash = (pct / 100) * circ;
+
+  return (
+    <div style={{ position: "relative", width: size, height: size, flexShrink: 0 }}>
+      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{ display: "block" }}>
+        {/* Track */}
+        <circle cx={cx} cy={cy} r={r} fill="none" stroke={trackColor} strokeWidth="4" />
+        {/* Progress */}
+        <circle cx={cx} cy={cy} r={r} fill="none" stroke={color} strokeWidth="4"
+          strokeDasharray={`${dash} ${circ}`} strokeLinecap="round"
+          style={{ transformOrigin: "center", transform: "rotate(-90deg)", transition: "stroke-dasharray 1s linear" }} />
+        {/* Glow when urgent/breached */}
+        {(urgent || breached) && (
+          <circle cx={cx} cy={cy} r={r} fill="none" stroke={color} strokeWidth="4" opacity="0.2"
+            strokeDasharray={`${dash} ${circ}`} strokeLinecap="round"
+            style={{ transformOrigin: "center", transform: "rotate(-90deg)", filter: "blur(3px)" }} />
+        )}
+      </svg>
+      {/* Center text */}
+      <div style={{
+        position: "absolute", inset: 0, display: "flex", flexDirection: "column",
+        alignItems: "center", justifyContent: "center", gap: 0
+      }}>
+        <span style={{ fontSize: size < 60 ? 9 : 11, fontFamily: "'DM Mono', monospace", fontWeight: 700, color, lineHeight: 1 }}>
+          {breached ? `+${h}h` : `${h}h`}
+        </span>
+        <span style={{ fontSize: size < 60 ? 7 : 9, fontFamily: "'DM Mono', monospace", color: dark ? "#6B7280" : "#9CA3AF", lineHeight: 1, marginTop: 1 }}>
+          {breached ? "over" : `${m}m`}
+        </span>
+      </div>
+    </div>
+  );
+}
+
 function ScoreRing({ score, dark, size = 44 }: { score: number, dark: boolean, size?: number }) {
   const color = score >= 80 ? (dark ? "#4ADE80" : "#16A34A") : score >= 50 ? (dark ? "#FBBF24" : "#D97706") : (dark ? "#EF4444" : "#DC2626");
   const r = 16; const circ = 2 * Math.PI * r;
   const dash = (score / 100) * circ;
   return (
     <svg width={size} height={size} viewBox="0 0 40 40">
-      <circle cx="20" cy="20" r={r} fill="none" stroke={dark ? "rgba(255,255,255,0.15)" : "rgba(0,0,0,0.06)"} strokeWidth="4" />
+      <circle cx="20" cy="20" r={r} fill="none" stroke={dark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.06)"} strokeWidth="4" />
       <circle cx="20" cy="20" r={r} fill="none" stroke={color} strokeWidth="4"
         strokeDasharray={`${dash} ${circ}`} strokeLinecap="round"
         style={{ transformOrigin: "center", transform: "rotate(-90deg)", transition: "stroke-dasharray 0.6s ease" }} />
@@ -150,9 +193,9 @@ function StatCard({ label, value, sub, accent, icon, dark, delay = 0 }: { label:
     return () => clearInterval(t);
   }, []);
 
-  const bg = dark ? "#000000" : "#FFFFFF";
-  const border = dark ? "rgba(255,255,255,0.15)" : "rgba(0,0,0,0.07)";
-  const textSecondary = dark ? "#9CA3AF" : "#6B7280";
+  const bg = dark ? "#111827" : "#FFFFFF";
+  const border = dark ? "rgba(255,255,255,0.07)" : "rgba(0,0,0,0.07)";
+  const textSecondary = dark ? "#6B7280" : "#9CA3AF";
 
   return (
     <div style={{
@@ -160,7 +203,7 @@ function StatCard({ label, value, sub, accent, icon, dark, delay = 0 }: { label:
       opacity: visible ? 1 : 0, transform: visible ? "translateY(0)" : "translateY(16px)",
       transition: `opacity 0.5s ease ${delay}ms, transform 0.5s ease ${delay}ms`,
       position: "relative", overflow: "hidden",
-      boxShadow: dark ? "0 1px 3px rgba(0,0,0,0.8)" : "0 1px 3px rgba(0,0,0,0.08)"
+      boxShadow: dark ? "0 1px 3px rgba(0,0,0,0.4)" : "0 1px 3px rgba(0,0,0,0.08)"
     }}>
       {/* Accent glow */}
       <div style={{ position: "absolute", top: 0, right: 0, width: 80, height: 80, borderRadius: "50%", background: `${accent}15`, filter: "blur(30px)", pointerEvents: "none" }} />
@@ -171,7 +214,8 @@ function StatCard({ label, value, sub, accent, icon, dark, delay = 0 }: { label:
         <div>
           <div style={{ fontSize: 11, color: textSecondary, fontFamily: "'DM Mono', monospace", letterSpacing: "0.08em", marginBottom: 8 }}>{label}</div>
           <div style={{ fontSize: 30, fontWeight: 800, color: accent, fontFamily: "'Sora', sans-serif", letterSpacing: "-0.04em", lineHeight: 1 }}>
-            {typeof value === "number" ? displayed.toLocaleString() : displayed.toLocaleString() + "%"}
+            {typeof value === "number" ? displayed.toLocaleString() : value}
+            {typeof value === "string" && value.endsWith("%") && ""}
           </div>
           {sub && <div style={{ fontSize: 11, color: textSecondary, marginTop: 5 }}>{sub}</div>}
         </div>
@@ -182,17 +226,15 @@ function StatCard({ label, value, sub, accent, icon, dark, delay = 0 }: { label:
 }
 
 // ─── GRIEVANCE CARD ──────────────────────────────────────────────────────────
-type GrievanceType = typeof GRIEVANCES[0];
-
 function GrievanceCard({ g, dark, onClick, index }: { g: GrievanceType; dark: boolean; onClick: (g: GrievanceType) => void; index: number }) {
   const [hovered, setHovered] = useState(false);
   const [entered, setEntered] = useState(false);
   useEffect(() => { const t = setTimeout(() => setEntered(true), 80 * index + 300); return () => clearTimeout(t); }, [index]);
 
-  const bg = dark ? "#000000" : "#FFFFFF";
-  const border = dark ? (hovered ? "rgba(99,102,241,0.6)" : "rgba(255,255,255,0.15)") : (hovered ? "rgba(99,102,241,0.3)" : "rgba(0,0,0,0.07)");
-  const textPrimary = dark ? "#FFFFFF" : "#111827";
-  const textSecondary = dark ? "#9CA3AF" : "#6B7280";
+  const bg = dark ? "#111827" : "#FFFFFF";
+  const border = dark ? (hovered ? "rgba(99,102,241,0.4)" : "rgba(255,255,255,0.07)") : (hovered ? "rgba(99,102,241,0.3)" : "rgba(0,0,0,0.07)");
+  const textPrimary = dark ? "#F9FAFB" : "#111827";
+  const textSecondary = dark ? "#6B7280" : "#9CA3AF";
   const breached = g.elapsedHours > g.slaHours;
 
   return (
@@ -205,7 +247,7 @@ function GrievanceCard({ g, dark, onClick, index }: { g: GrievanceType; dark: bo
         cursor: "pointer", position: "relative", overflow: "hidden",
         opacity: entered ? 1 : 0, transform: entered ? "translateY(0) scale(1)" : "translateY(20px) scale(0.98)",
         transition: `opacity 0.4s ease, transform 0.4s ease, border-color 0.2s, box-shadow 0.2s`,
-        boxShadow: hovered ? (dark ? "0 8px 30px rgba(0,0,0,0.8)" : "0 8px 30px rgba(0,0,0,0.12)") : (dark ? "0 1px 3px rgba(0,0,0,0.8)" : "0 1px 3px rgba(0,0,0,0.06)")
+        boxShadow: hovered ? (dark ? "0 8px 30px rgba(0,0,0,0.5)" : "0 8px 30px rgba(0,0,0,0.12)") : (dark ? "0 1px 3px rgba(0,0,0,0.4)" : "0 1px 3px rgba(0,0,0,0.06)")
       }}>
 
       {/* Critical pulse strip */}
@@ -213,7 +255,7 @@ function GrievanceCard({ g, dark, onClick, index }: { g: GrievanceType; dark: bo
         <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2, background: dark ? "#EF4444" : "#DC2626", animation: "shimmer 2s linear infinite", backgroundSize: "200% 100%", backgroundImage: `linear-gradient(90deg, transparent 0%, ${dark ? "#EF4444" : "#DC2626"} 50%, transparent 100%)` }} />
       )}
 
-      <div style={{ display: "flex", justifyItems: "space-between", alignItems: "flex-start", marginBottom: 12 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 12 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8, flex: 1, minWidth: 0 }}>
           <span style={{ fontSize: 18, flexShrink: 0 }}>{CAT_ICONS[g.category as keyof typeof CAT_ICONS] || "○"}</span>
           <div style={{ minWidth: 0 }}>
@@ -221,18 +263,18 @@ function GrievanceCard({ g, dark, onClick, index }: { g: GrievanceType; dark: bo
             <div style={{ fontSize: 14, fontWeight: 700, color: textPrimary, lineHeight: 1.3, marginTop: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "100%" }}>{g.title}</div>
           </div>
         </div>
-        <PriorityDot priority={g.priority} dark={dark} />
+        <PriorityDot priority={g.priority as keyof typeof PRIORITY_MAP} dark={dark} />
       </div>
 
       <p style={{ fontSize: 12, color: textSecondary, lineHeight: 1.6, marginBottom: 14, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{g.description}</p>
 
       <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 14 }}>
-        <Pill status={g.status} dark={dark} />
+        <Pill status={g.status as keyof typeof STATUS_MAP} dark={dark} />
         {g.rtiGenerated && (
-          <span style={{ background: dark ? "rgba(139,92,246,0.15)" : "rgba(139,92,246,0.1)", color: dark ? "#A78BFA" : "#7C3AED", border: `1px solid ${dark ? "rgba(139,92,246,0.4)" : "rgba(139,92,246,0.2)"}`, padding: "3px 8px", borderRadius: 999, fontSize: 10, fontWeight: 700, fontFamily: "'DM Mono', monospace" }}>RTI ✓</span>
+          <span style={{ background: dark ? "rgba(139,92,246,0.15)" : "rgba(139,92,246,0.1)", color: dark ? "#A78BFA" : "#7C3AED", border: `1px solid ${dark ? "rgba(139,92,246,0.3)" : "rgba(139,92,246,0.2)"}`, padding: "3px 8px", borderRadius: 999, fontSize: 10, fontWeight: 700, fontFamily: "'DM Mono', monospace" }}>RTI ✓</span>
         )}
         {g.socialShared && (
-          <span style={{ background: dark ? "rgba(59,130,246,0.15)" : "rgba(59,130,246,0.1)", color: dark ? "#60A5FA" : "#2563EB", border: `1px solid ${dark ? "rgba(59,130,246,0.4)" : "rgba(59,130,246,0.2)"}`, padding: "3px 8px", borderRadius: 999, fontSize: 10, fontWeight: 700, fontFamily: "'DM Mono', monospace" }}>𝕏 {g.twitterLikes}</span>
+          <span style={{ background: dark ? "rgba(59,130,246,0.15)" : "rgba(59,130,246,0.1)", color: dark ? "#60A5FA" : "#2563EB", border: `1px solid ${dark ? "rgba(59,130,246,0.3)" : "rgba(59,130,246,0.2)"}`, padding: "3px 8px", borderRadius: 999, fontSize: 10, fontWeight: 700, fontFamily: "'DM Mono', monospace" }}>𝕏 {g.twitterLikes}</span>
         )}
       </div>
 
@@ -242,9 +284,9 @@ function GrievanceCard({ g, dark, onClick, index }: { g: GrievanceType; dark: bo
       </div>
 
       {g.aiConfidence && (
-        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12, padding: "8px 10px", background: dark ? "rgba(255,255,255,0.05)" : "rgba(99,102,241,0.05)", borderRadius: 8, border: `1px solid ${dark ? "rgba(255,255,255,0.15)" : "rgba(99,102,241,0.1)"}` }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12, padding: "8px 10px", background: dark ? "rgba(99,102,241,0.07)" : "rgba(99,102,241,0.05)", borderRadius: 8, border: `1px solid ${dark ? "rgba(99,102,241,0.15)" : "rgba(99,102,241,0.1)"}` }}>
           <span style={{ fontSize: 10, color: dark ? "#818CF8" : "#6366F1", fontFamily: "'DM Mono', monospace", letterSpacing: "0.06em" }}>AI</span>
-          <div style={{ flex: 1, height: 3, background: dark ? "rgba(255,255,255,0.15)" : "rgba(0,0,0,0.06)", borderRadius: 2, overflow: "hidden" }}>
+          <div style={{ flex: 1, height: 3, background: dark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.06)", borderRadius: 2, overflow: "hidden" }}>
             <div style={{ height: "100%", width: `${g.aiConfidence * 100}%`, background: dark ? "#818CF8" : "#6366F1", borderRadius: 2 }} />
           </div>
           <span style={{ fontSize: 10, color: dark ? "#818CF8" : "#6366F1", fontFamily: "'DM Mono', monospace" }}>{Math.round(g.aiConfidence * 100)}%</span>
@@ -253,7 +295,13 @@ function GrievanceCard({ g, dark, onClick, index }: { g: GrievanceType; dark: bo
         </div>
       )}
 
-      <SLABar reportedAt={g.reportedAt} slaHours={g.slaHours} dark={dark} />
+      {/* Bottom: Ring + bar row */}
+      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+        <SLARing reportedAt={g.reportedAt} slaHours={g.slaHours} dark={dark} size={52} />
+        <div style={{ flex: 1 }}>
+          <SLABar reportedAt={g.reportedAt} slaHours={g.slaHours} dark={dark} />
+        </div>
+      </div>
     </div>
   );
 }
@@ -264,15 +312,15 @@ function DetailDrawer({ g, dark, onClose }: { g: GrievanceType; dark: boolean; o
   const [visible, setVisible] = useState(false);
   useEffect(() => { requestAnimationFrame(() => setVisible(true)); }, []);
 
-  const bg = dark ? "#000000" : "#FFFFFF";
-  const border = dark ? "rgba(255,255,255,0.15)" : "rgba(0,0,0,0.06)";
-  const textPrimary = dark ? "#FFFFFF" : "#111827";
-  const textSecondary = dark ? "#9CA3AF" : "#6B7280";
+  const bg = dark ? "#0F172A" : "#FFFFFF";
+  const border = dark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.06)";
+  const textPrimary = dark ? "#F9FAFB" : "#111827";
+  const textSecondary = dark ? "#6B7280" : "#9CA3AF";
 
   return (
     <div style={{
       position: "fixed", inset: 0, zIndex: 50, display: "flex",
-      background: dark ? "rgba(0,0,0,0.8)" : "rgba(0,0,0,0.4)",
+      background: dark ? "rgba(0,0,0,0.7)" : "rgba(0,0,0,0.4)",
       backdropFilter: "blur(4px)",
       opacity: visible ? 1 : 0, transition: "opacity 0.25s ease"
     }} onClick={onClose}>
@@ -282,29 +330,29 @@ function DetailDrawer({ g, dark, onClose }: { g: GrievanceType; dark: boolean; o
 
         {/* Header */}
         <div style={{ padding: "20px 24px", borderBottom: `1px solid ${border}`, flexShrink: 0 }}>
-          <div style={{ display: "flex", justifyItems: "space-between", alignItems: "flex-start" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
             <div>
               <div style={{ fontSize: 10, color: textSecondary, fontFamily: "'DM Mono', monospace", letterSpacing: "0.1em", marginBottom: 4 }}>{g.id} · {g.ward}</div>
               <div style={{ fontSize: 18, fontWeight: 800, color: textPrimary, fontFamily: "'Sora', sans-serif", lineHeight: 1.3 }}>{g.title}</div>
             </div>
-            <button onClick={onClose} style={{ background: dark ? "rgba(255,255,255,0.15)" : "rgba(0,0,0,0.06)", border: "none", borderRadius: 8, width: 32, height: 32, cursor: "pointer", color: textSecondary, fontSize: 16, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>✕</button>
+            <button onClick={onClose} style={{ background: dark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.06)", border: "none", borderRadius: 8, width: 32, height: 32, cursor: "pointer", color: textSecondary, fontSize: 16, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>✕</button>
           </div>
           <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
-            <Pill status={g.status} dark={dark} />
+            <Pill status={g.status as keyof typeof STATUS_MAP} dark={dark} />
             <span style={{ fontSize: 11, color: PRIORITY_MAP[g.priority as keyof typeof PRIORITY_MAP]?.[dark ? "dark" : "light"], fontFamily: "'DM Mono', monospace", fontWeight: 700, display: "flex", alignItems: "center", gap: 4 }}>
-              <PriorityDot priority={g.priority} dark={dark} /> {g.priority.toUpperCase()}
+              <PriorityDot priority={g.priority as keyof typeof PRIORITY_MAP} dark={dark} /> {g.priority.toUpperCase()}
             </span>
           </div>
         </div>
 
         {/* Tabs */}
         <div style={{ display: "flex", borderBottom: `1px solid ${border}`, flexShrink: 0 }}>
-          {["overview", "ai audit", "actions"].map(t => (
+          {["overview", "timeline", "ai audit", "actions"].map(t => (
             <button key={t} onClick={() => setTab(t)} style={{
-              flex: 1, padding: "12px 0", background: "none", border: "none",
+              flex: 1, padding: "11px 0", background: "none", border: "none",
               borderBottom: tab === t ? `2px solid ${dark ? "#818CF8" : "#6366F1"}` : "2px solid transparent",
               color: tab === t ? (dark ? "#818CF8" : "#6366F1") : textSecondary,
-              fontSize: 11, fontWeight: 700, fontFamily: "'DM Mono', monospace", letterSpacing: "0.08em",
+              fontSize: 10, fontWeight: 700, fontFamily: "'DM Mono', monospace", letterSpacing: "0.06em",
               textTransform: "uppercase", cursor: "pointer", transition: "color 0.15s"
             }}>{t}</button>
           ))}
@@ -314,18 +362,23 @@ function DetailDrawer({ g, dark, onClose }: { g: GrievanceType; dark: boolean; o
         <div style={{ flex: 1, overflowY: "auto", padding: 24 }}>
           {tab === "overview" && (
             <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-              <SLABar reportedAt={g.reportedAt} slaHours={g.slaHours} dark={dark} />
+              <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+                <SLARing reportedAt={g.reportedAt} slaHours={g.slaHours} dark={dark} size={64} />
+                <div style={{ flex: 1 }}>
+                  <SLABar reportedAt={g.reportedAt} slaHours={g.slaHours} dark={dark} />
+                </div>
+              </div>
 
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
                 {[["Citizen", g.citizen], ["Phone", g.phone], ["Zone", g.zone], ["Category", g.category]].map(([k, v]) => (
-                  <div key={k} style={{ background: dark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.03)", borderRadius: 10, padding: "12px 14px", border: `1px solid ${border}` }}>
+                  <div key={k} style={{ background: dark ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.03)", borderRadius: 10, padding: "12px 14px", border: `1px solid ${border}` }}>
                     <div style={{ fontSize: 9, color: textSecondary, fontFamily: "'DM Mono', monospace", letterSpacing: "0.1em", marginBottom: 4 }}>{k.toUpperCase()}</div>
                     <div style={{ fontSize: 13, color: textPrimary, fontWeight: 600 }}>{v}</div>
                   </div>
                 ))}
               </div>
 
-              <div style={{ background: dark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.03)", borderRadius: 10, padding: "12px 14px", border: `1px solid ${border}` }}>
+              <div style={{ background: dark ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.03)", borderRadius: 10, padding: "12px 14px", border: `1px solid ${border}` }}>
                 <div style={{ fontSize: 9, color: textSecondary, fontFamily: "'DM Mono', monospace", letterSpacing: "0.1em", marginBottom: 6 }}>DESCRIPTION</div>
                 <p style={{ fontSize: 13, color: textSecondary, lineHeight: 1.7 }}>{g.description}</p>
               </div>
@@ -334,9 +387,9 @@ function DetailDrawer({ g, dark, onClose }: { g: GrievanceType; dark: boolean; o
                 <div style={{ fontSize: 9, color: textSecondary, fontFamily: "'DM Mono', monospace", letterSpacing: "0.1em", marginBottom: 10 }}>PHOTO EVIDENCE</div>
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
                   {["BEFORE", "AFTER"].map(label => (
-                    <div key={label} style={{ aspectRatio: "4/3", borderRadius: 10, background: dark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.03)", border: `1px dashed ${border}`, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 6 }}>
+                    <div key={label} style={{ aspectRatio: "4/3", borderRadius: 10, background: dark ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.03)", border: `1px dashed ${border}`, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 6 }}>
                       <div style={{ fontSize: 22, opacity: 0.2 }}>📷</div>
-                      <div style={{ fontSize: 9, color: dark ? "#6B7280" : "#D1D5DB", fontFamily: "'DM Mono', monospace", letterSpacing: "0.1em" }}>{label}</div>
+                      <div style={{ fontSize: 9, color: dark ? "#374151" : "#D1D5DB", fontFamily: "'DM Mono', monospace", letterSpacing: "0.1em" }}>{label}</div>
                       {label === "AFTER" && g.hasAfter && <div style={{ fontSize: 9, color: dark ? "#4ADE80" : "#16A34A", fontFamily: "'DM Mono', monospace" }}>✓ UPLOADED</div>}
                     </div>
                   ))}
@@ -344,9 +397,9 @@ function DetailDrawer({ g, dark, onClose }: { g: GrievanceType; dark: boolean; o
               </div>
 
               {g.assignee && (
-                <div style={{ background: dark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.03)", borderRadius: 10, padding: "12px 14px", border: `1px solid ${border}`, display: "flex", alignItems: "center", gap: 12 }}>
+                <div style={{ background: dark ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.03)", borderRadius: 10, padding: "12px 14px", border: `1px solid ${border}`, display: "flex", alignItems: "center", gap: 12 }}>
                   <div style={{ width: 36, height: 36, borderRadius: "50%", background: dark ? "rgba(99,102,241,0.2)" : "rgba(99,102,241,0.1)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, fontWeight: 700, color: dark ? "#818CF8" : "#6366F1", flexShrink: 0 }}>
-                    {g.assignee.split(" ").map((n: string) => n[0]).join("")}
+                    {g.assignee.split(" ").map(n => n[0]).join("")}
                   </div>
                   <div>
                     <div style={{ fontSize: 9, color: textSecondary, fontFamily: "'DM Mono', monospace", letterSpacing: "0.1em" }}>ASSIGNED TO</div>
@@ -359,18 +412,18 @@ function DetailDrawer({ g, dark, onClose }: { g: GrievanceType; dark: boolean; o
 
           {tab === "ai audit" && (
             <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-              <div style={{ background: dark ? "rgba(99,102,241,0.1)" : "rgba(99,102,241,0.05)", border: `1px solid ${dark ? "rgba(99,102,241,0.3)" : "rgba(99,102,241,0.15)"}`, borderRadius: 10, padding: 16 }}>
+              <div style={{ background: dark ? "rgba(99,102,241,0.07)" : "rgba(99,102,241,0.05)", border: `1px solid ${dark ? "rgba(99,102,241,0.2)" : "rgba(99,102,241,0.15)"}`, borderRadius: 10, padding: 16 }}>
                 <div style={{ fontSize: 9, color: dark ? "#818CF8" : "#6366F1", fontFamily: "'DM Mono', monospace", letterSpacing: "0.1em", marginBottom: 10 }}>BEDROCK AI ANALYSIS</div>
                 <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                   {[["Confidence", `${Math.round(g.aiConfidence * 100)}%`], ["Urgency Score", `${Math.round(g.urgency * 100)}%`], ["Similar Issues Nearby", `${g.aiSimilar} in 5km`]].map(([k, v]) => (
-                    <div key={k} style={{ display: "flex", justifyItems: "space-between", alignItems: "center" }}>
+                    <div key={k} style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                       <span style={{ fontSize: 12, color: textSecondary }}>{k}</span>
                       <span style={{ fontSize: 12, color: textPrimary, fontWeight: 700, fontFamily: "'DM Mono', monospace" }}>{v}</span>
                     </div>
                   ))}
                 </div>
               </div>
-              <div style={{ background: dark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.03)", borderRadius: 10, padding: 16, border: `1px solid ${border}` }}>
+              <div style={{ background: dark ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.03)", borderRadius: 10, padding: 16, border: `1px solid ${border}` }}>
                 <div style={{ fontSize: 9, color: textSecondary, fontFamily: "'DM Mono', monospace", letterSpacing: "0.1em", marginBottom: 10 }}>VISION AUDIT CRITERIA</div>
                 {["Before photo FOV must match After photo exactly", `All detected issues must be resolved in After photo`, "No zoomed-in or partial frame submissions", "Citizen must verify resolution within 24h"].map((c, i) => (
                   <div key={i} style={{ display: "flex", gap: 10, alignItems: "flex-start", marginBottom: 10 }}>
@@ -380,7 +433,7 @@ function DetailDrawer({ g, dark, onClose }: { g: GrievanceType; dark: boolean; o
                 ))}
               </div>
               {g.score != null && (
-                <div style={{ display: "flex", alignItems: "center", gap: 16, background: dark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.03)", borderRadius: 10, padding: "14px 16px", border: `1px solid ${border}` }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 16, background: dark ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.03)", borderRadius: 10, padding: "14px 16px", border: `1px solid ${border}` }}>
                   <ScoreRing score={g.score} dark={dark} size={52} />
                   <div>
                     <div style={{ fontSize: 9, color: textSecondary, fontFamily: "'DM Mono', monospace", letterSpacing: "0.1em" }}>RESOLUTION QUALITY</div>
@@ -391,17 +444,163 @@ function DetailDrawer({ g, dark, onClose }: { g: GrievanceType; dark: boolean; o
             </div>
           )}
 
+          {tab === "timeline" && (() => {
+            // Derive step states from grievance status
+            const stepMap: Record<string, number> = {
+              pending: 0, "in-progress": 1, escalated: 1,
+              resolved: 2, verified: 3, critical: 0,
+              PENDING: 0, RESOLUTION_SUBMITTED: 1, PENDING_CITIZEN_VERIFICATION: 2,
+              RESOLVED: 3, ESCALATED_DECEPTIVE: 1,
+            };
+            const currentStep = stepMap[g.status] ?? 0;
+
+            const steps = [
+              {
+                label: "AI triage completed",
+                detail: `${g.aiSimilar > 0 ? g.aiSimilar : 4} issues identified, SLA clock started`,
+                time: "Just now",
+                state: "done", // always done
+              },
+              {
+                label: "Official repair & upload",
+                detail: "Upload After photo to trigger Vision Auditor",
+                time: currentStep >= 1 ? "In progress" : "Pending",
+                state: currentStep === 1 ? "active" : currentStep > 1 ? "done" : "pending",
+              },
+              {
+                label: "Vision Auditor check",
+                detail: "Bedrock compares Before vs After",
+                time: currentStep >= 2 ? "In progress" : "Pending",
+                state: currentStep === 2 ? "active" : currentStep > 2 ? "done" : "pending",
+              },
+              {
+                label: "Citizen verification",
+                detail: "Citizen confirms or disputes resolution",
+                time: currentStep >= 3 ? "In progress" : "Pending",
+                state: currentStep === 3 ? "active" : currentStep > 3 ? "done" : "pending",
+              },
+              {
+                label: "Ticket closed",
+                detail: "Status → RESOLVED",
+                time: g.status === "resolved" || g.status === "RESOLVED" ? "Completed" : "Pending",
+                state: g.status === "resolved" || g.status === "RESOLVED" ? "done" : "pending",
+              },
+            ];
+
+            return (
+              <div style={{ display: "flex", flexDirection: "column", paddingTop: 4 }}>
+                {/* Inline keyframes for ring pulse */}
+                <style>{`
+                  @keyframes tlRingExpand {
+                    0% { transform: scale(1); opacity: 0.8; }
+                    100% { transform: scale(2.2); opacity: 0; }
+                  }
+                  @keyframes tlDotPulse {
+                    0%, 100% { opacity: 1; }
+                    50% { opacity: 0.6; }
+                  }
+                `}</style>
+                {steps.map((step, i) => {
+                  const isActive = step.state === "active" || (i === 0); // first is always "just done" = active style
+                  const isDone = step.state === "done";
+                  const isPending = step.state === "pending";
+
+                  // Colors
+                  const dotFill = isDone
+                    ? (dark ? "#4ADE80" : "#16A34A")
+                    : isActive
+                    ? (dark ? "#60A5FA" : "#3B82F6")
+                    : "transparent";
+                  const dotBorder = isDone
+                    ? (dark ? "#4ADE80" : "#16A34A")
+                    : isActive
+                    ? (dark ? "#60A5FA" : "#3B82F6")
+                    : (dark ? "#374151" : "#D1D5DB");
+                  const lineColor = isDone || i < currentStep
+                    ? (dark ? "#4ADE80" : "#16A34A")
+                    : (dark ? "#1F2937" : "#E5E7EB");
+
+                  return (
+                    <div key={i} style={{ display: "flex", gap: 16, paddingBottom: i < steps.length - 1 ? 0 : 0 }}>
+                      {/* Left: dot + connector line */}
+                      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", flexShrink: 0, width: 20 }}>
+                        {/* Dot with optional pulse ring */}
+                        <div style={{ position: "relative", width: 16, height: 16, display: "flex", alignItems: "center", justifyContent: "center", marginTop: 2 }}>
+                          {/* Pulsing outer ring for active steps */}
+                          {(isActive) && (
+                            <div style={{
+                              position: "absolute", width: 16, height: 16, borderRadius: "50%",
+                              border: `2px solid ${dotBorder}`,
+                              animation: "tlRingExpand 1.8s ease-out infinite",
+                              pointerEvents: "none"
+                            }} />
+                          )}
+                          {/* Second ring offset */}
+                          {isActive && (
+                            <div style={{
+                              position: "absolute", width: 16, height: 16, borderRadius: "50%",
+                              border: `2px solid ${dotBorder}`,
+                              animation: "tlRingExpand 1.8s ease-out 0.6s infinite",
+                              pointerEvents: "none"
+                            }} />
+                          )}
+                          {/* Core dot */}
+                          <div style={{
+                            width: isDone ? 10 : isActive ? 12 : 8,
+                            height: isDone ? 10 : isActive ? 12 : 8,
+                            borderRadius: "50%",
+                            background: dotFill,
+                            border: `2px solid ${dotBorder}`,
+                            transition: "all 0.3s ease",
+                            animation: isActive ? "tlDotPulse 2s ease-in-out infinite" : "none",
+                            boxShadow: isActive ? `0 0 8px ${dotBorder}80` : isDone ? `0 0 6px ${dotFill}60` : "none",
+                            zIndex: 1,
+                          }} />
+                          {/* Checkmark for done */}
+                          {isDone && (
+                            <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", zIndex: 2 }}>
+                              <svg width="7" height="7" viewBox="0 0 7 7" fill="none">
+                                <path d="M1 3.5L2.8 5.5L6 1.5" stroke={dark ? "#0B0F1A" : "#fff"} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                              </svg>
+                            </div>
+                          )}
+                        </div>
+                        {/* Connector line */}
+                        {i < steps.length - 1 && (
+                          <div style={{ width: 2, flex: 1, minHeight: 36, marginTop: 4, marginBottom: 4, background: lineColor, borderRadius: 1, transition: "background 0.3s" }} />
+                        )}
+                      </div>
+
+                      {/* Right: text */}
+                      <div style={{ paddingBottom: i < steps.length - 1 ? 24 : 4, flex: 1 }}>
+                        <div style={{ fontSize: 9, color: isActive ? (dark ? "#60A5FA" : "#3B82F6") : isDone ? (dark ? "#4ADE80" : "#16A34A") : textSecondary, fontFamily: "'DM Mono', monospace", letterSpacing: "0.08em", marginBottom: 3, textTransform: "uppercase" }}>
+                          {step.time}
+                        </div>
+                        <div style={{ fontSize: 13, fontWeight: 700, color: isPending ? (dark ? "#4B5563" : "#9CA3AF") : textPrimary, marginBottom: 3 }}>
+                          {step.label}
+                        </div>
+                        <div style={{ fontSize: 11, color: isPending ? (dark ? "#374151" : "#D1D5DB") : textSecondary, lineHeight: 1.5 }}>
+                          {step.detail}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          })()}
+
           {tab === "actions" && (
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
               {[
-                { label: "Upload Repair Proof", icon: "↑", desc: "Submit After photo for Vision Auditor", accent: dark ? "#818CF8" : "#6366F1", primary: true, danger: false },
-                { label: "Generate RTI Request", icon: "📄", desc: "Auto-draft RTI under Section 2(j)(i)", accent: dark ? "#4ADE80" : "#16A34A", primary: false, danger: false },
-                { label: "Share to X (Twitter)", icon: "𝕏", desc: "Post with evidence graphic + SLA breach tag", accent: dark ? "#60A5FA" : "#2563EB", primary: false, danger: false },
-                { label: "Escalate to Commissioner", icon: "!", desc: "Flag as deceptive or unresolved", accent: dark ? "#EF4444" : "#DC2626", danger: true, primary: false },
+                { label: "Upload Repair Proof", icon: "↑", desc: "Submit After photo for Vision Auditor", accent: dark ? "#818CF8" : "#6366F1", primary: true },
+                { label: "Generate RTI Request", icon: "📄", desc: "Auto-draft RTI under Section 2(j)(i)", accent: dark ? "#4ADE80" : "#16A34A", primary: false },
+                { label: "Share to X (Twitter)", icon: "𝕏", desc: "Post with evidence graphic + SLA breach tag", accent: dark ? "#60A5FA" : "#2563EB", primary: false },
+                { label: "Escalate to Commissioner", icon: "!", desc: "Flag as deceptive or unresolved", accent: dark ? "#EF4444" : "#DC2626", danger: true },
               ].map(a => (
                 <button key={a.label} style={{
-                  background: a.danger ? (dark ? "rgba(239,68,68,0.15)" : "rgba(220,38,38,0.05)") : a.primary ? (dark ? "rgba(129,140,248,0.2)" : "rgba(99,102,241,0.1)") : (dark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.03)"),
-                  border: `1px solid ${a.danger ? (dark ? "rgba(239,68,68,0.4)" : "rgba(220,38,38,0.2)") : a.primary ? (dark ? "rgba(129,140,248,0.4)" : "rgba(99,102,241,0.25)") : border}`,
+                  background: a.danger ? (dark ? "rgba(239,68,68,0.08)" : "rgba(220,38,38,0.05)") : a.primary ? (dark ? "rgba(129,140,248,0.15)" : "rgba(99,102,241,0.1)") : (dark ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.03)"),
+                  border: `1px solid ${a.danger ? (dark ? "rgba(239,68,68,0.25)" : "rgba(220,38,38,0.2)") : a.primary ? (dark ? "rgba(129,140,248,0.3)" : "rgba(99,102,241,0.25)") : border}`,
                   borderRadius: 10, padding: "14px 16px", cursor: "pointer", textAlign: "left", width: "100%",
                   display: "flex", gap: 12, alignItems: "center", transition: "all 0.15s"
                 }}>
@@ -432,11 +631,11 @@ export default function GovernmentDashboard() {
   const [viewMode, setViewMode] = useState("grid");
   const [notifOpen, setNotifOpen] = useState(false);
 
-  const bg = dark ? "#000000" : "#F1F5F9";
-  const surface = dark ? "#000000" : "#FFFFFF";
-  const border = dark ? "rgba(255,255,255,0.15)" : "rgba(0,0,0,0.07)";
-  const textPrimary = dark ? "#FFFFFF" : "#111827";
-  const textSecondary = dark ? "#9CA3AF" : "#6B7280";
+  const bg = dark ? "#0B0F1A" : "#F1F5F9";
+  const surface = dark ? "#111827" : "#FFFFFF";
+  const border = dark ? "rgba(255,255,255,0.07)" : "rgba(0,0,0,0.07)";
+  const textPrimary = dark ? "#F9FAFB" : "#111827";
+  const textSecondary = dark ? "#6B7280" : "#9CA3AF";
   const accent = dark ? "#818CF8" : "#6366F1";
 
   const filtered = GRIEVANCES.filter(g => {
@@ -469,6 +668,7 @@ export default function GovernmentDashboard() {
   return (
     <div style={{ minHeight: "100vh", background: bg, fontFamily: "'Sora', sans-serif", color: textPrimary, display: "flex" }}>
       <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=DM+Mono:wght@400;500;700&display=swap');
         * { box-sizing: border-box; margin: 0; padding: 0; }
         ::-webkit-scrollbar { width: 4px; }
         ::-webkit-scrollbar-track { background: transparent; }
@@ -506,16 +706,16 @@ export default function GovernmentDashboard() {
             return (
               <button key={n.id} onClick={() => setActiveNav(n.id)} style={{
                 display: "flex", alignItems: "center", gap: 10, padding: sidebarOpen ? "10px 12px" : "10px", borderRadius: 10,
-                background: isActive ? (dark ? "rgba(255,255,255,0.1)" : "rgba(99,102,241,0.1)") : "transparent",
-                border: `1px solid ${isActive ? (dark ? "rgba(255,255,255,0.2)" : "rgba(99,102,241,0.2)") : "transparent"}`,
-                color: isActive ? (dark ? "#FFFFFF" : accent) : textSecondary, cursor: "pointer",
+                background: isActive ? (dark ? "rgba(99,102,241,0.15)" : "rgba(99,102,241,0.1)") : "transparent",
+                border: `1px solid ${isActive ? (dark ? "rgba(99,102,241,0.25)" : "rgba(99,102,241,0.2)") : "transparent"}`,
+                color: isActive ? accent : textSecondary, cursor: "pointer",
                 transition: "all 0.15s", fontSize: 12, fontWeight: isActive ? 700 : 500,
                 justifyContent: sidebarOpen ? "flex-start" : "center", overflow: "hidden", whiteSpace: "nowrap",
               }}>
                 <span style={{ fontSize: 16, flexShrink: 0 }}>{n.icon}</span>
                 {sidebarOpen && <span>{n.label}</span>}
                 {n.id === "grievances" && sidebarOpen && (
-                  <span style={{ marginLeft: "auto", background: dark ? "rgba(239,68,68,0.3)" : "rgba(220,38,38,0.1)", color: dark ? "#EF4444" : "#DC2626", fontSize: 9, fontWeight: 700, borderRadius: 99, padding: "1px 6px", fontFamily: "'DM Mono', monospace" }}>23</span>
+                  <span style={{ marginLeft: "auto", background: dark ? "rgba(239,68,68,0.2)" : "rgba(220,38,38,0.1)", color: dark ? "#EF4444" : "#DC2626", fontSize: 9, fontWeight: 700, borderRadius: 99, padding: "1px 6px", fontFamily: "'DM Mono', monospace" }}>23</span>
                 )}
               </button>
             );
@@ -556,7 +756,7 @@ export default function GovernmentDashboard() {
           <div style={{ flex: 1 }} />
 
           {/* Live indicator */}
-          <div style={{ display: "flex", alignItems: "center", gap: 6, background: dark ? "rgba(74,222,128,0.1)" : "rgba(22,163,74,0.07)", border: `1px solid ${dark ? "rgba(74,222,128,0.3)" : "rgba(22,163,74,0.2)"}`, borderRadius: 99, padding: "5px 12px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 6, background: dark ? "rgba(74,222,128,0.08)" : "rgba(22,163,74,0.07)", border: `1px solid ${dark ? "rgba(74,222,128,0.2)" : "rgba(22,163,74,0.2)"}`, borderRadius: 99, padding: "5px 12px" }}>
             <span style={{ width: 6, height: 6, borderRadius: "50%", background: dark ? "#4ADE80" : "#16A34A", animation: "pulse 2s infinite" }} />
             <span style={{ fontSize: 10, fontFamily: "'DM Mono', monospace", color: dark ? "#4ADE80" : "#16A34A", fontWeight: 700 }}>LIVE</span>
           </div>
@@ -565,20 +765,20 @@ export default function GovernmentDashboard() {
           <div style={{ position: "relative" }}>
             <span style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", color: textSecondary, fontSize: 13 }}>⊕</span>
             <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search..."
-              style={{ background: dark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.05)", border: `1px solid ${border}`, borderRadius: 10, padding: "8px 12px 8px 30px", color: textPrimary, fontSize: 12, outline: "none", width: 200, fontFamily: "'Sora', sans-serif" }} />
+              style={{ background: dark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)", border: `1px solid ${border}`, borderRadius: 10, padding: "8px 12px 8px 30px", color: textPrimary, fontSize: 12, outline: "none", width: 200, fontFamily: "'Sora', sans-serif" }} />
           </div>
 
           {/* Notif */}
           <div style={{ position: "relative" }}>
-            <button onClick={() => setNotifOpen(!notifOpen)} style={{ background: dark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.05)", border: `1px solid ${border}`, borderRadius: 10, width: 38, height: 38, cursor: "pointer", color: textSecondary, fontSize: 16, display: "flex", alignItems: "center", justifyContent: "center", position: "relative" }}>
+            <button onClick={() => setNotifOpen(!notifOpen)} style={{ background: dark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)", border: `1px solid ${border}`, borderRadius: 10, width: 38, height: 38, cursor: "pointer", color: textSecondary, fontSize: 16, display: "flex", alignItems: "center", justifyContent: "center", position: "relative" }}>
               🔔
               <span style={{ position: "absolute", top: 6, right: 6, width: 8, height: 8, background: dark ? "#EF4444" : "#DC2626", borderRadius: "50%", border: `2px solid ${surface}`, animation: "pulse 2s infinite" }} />
             </button>
             {notifOpen && (
-              <div style={{ position: "absolute", right: 0, top: "calc(100% + 8px)", width: 300, background: surface, border: `1px solid ${border}`, borderRadius: 12, overflow: "hidden", zIndex: 50, boxShadow: dark ? "0 20px 60px rgba(0,0,0,0.8)" : "0 20px 60px rgba(0,0,0,0.15)", animation: "fadeSlideUp 0.2s ease" }}>
+              <div style={{ position: "absolute", right: 0, top: "calc(100% + 8px)", width: 300, background: surface, border: `1px solid ${border}`, borderRadius: 12, overflow: "hidden", zIndex: 50, boxShadow: dark ? "0 20px 60px rgba(0,0,0,0.6)" : "0 20px 60px rgba(0,0,0,0.15)", animation: "fadeSlideUp 0.2s ease" }}>
                 <div style={{ padding: "12px 16px", borderBottom: `1px solid ${border}`, fontSize: 11, fontWeight: 700, fontFamily: "'DM Mono', monospace", letterSpacing: "0.08em", color: textSecondary }}>NOTIFICATIONS</div>
                 {NOTIFS.map((n, i) => (
-                  <div key={i} style={{ padding: "12px 16px", borderBottom: `1px solid ${border}`, display: "flex", gap: 10, alignItems: "flex-start", background: n.read ? "transparent" : (dark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.02)") }}>
+                  <div key={i} style={{ padding: "12px 16px", borderBottom: `1px solid ${border}`, display: "flex", gap: 10, alignItems: "flex-start", background: n.read ? "transparent" : (dark ? "rgba(255,255,255,0.02)" : "rgba(0,0,0,0.02)") }}>
                     <span style={{ width: 6, height: 6, borderRadius: "50%", background: n.color, marginTop: 5, flexShrink: 0 }} />
                     <div>
                       <div style={{ fontSize: 12, color: textPrimary }}>{n.msg}</div>
@@ -604,7 +804,7 @@ export default function GovernmentDashboard() {
         <main style={{ flex: 1, overflowY: "auto", padding: 24 }}>
           {/* STAT CARDS */}
           <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16, marginBottom: 24 }}>
-            <StatCard label="TOTAL GRIEVANCES" value={STATS.total} sub={`+${STATS.todayNew} today`} accent={dark ? "#FFFFFF" : "#6366F1"} icon="◈" dark={dark} delay={0} />
+            <StatCard label="TOTAL GRIEVANCES" value={STATS.total} sub={`+${STATS.todayNew} today`} accent={dark ? "#818CF8" : "#6366F1"} icon="◈" dark={dark} delay={0} />
             <StatCard label="PENDING" value={STATS.pending} sub={`${STATS.inProgress} in progress`} accent={dark ? "#FBBF24" : "#D97706"} icon="⏳" dark={dark} delay={80} />
             <StatCard label="SLA COMPLIANCE" value={`${STATS.slaCompliance}%`} sub={`${STATS.avgResolution}h avg resolution`} accent={dark ? "#4ADE80" : "#16A34A"} icon="◎" dark={dark} delay={160} />
             <StatCard label="ESCALATED / CRITICAL" value={STATS.escalated} sub={`${STATS.critical} critical active`} accent={dark ? "#EF4444" : "#DC2626"} icon="⚡" dark={dark} delay={240} />
@@ -615,9 +815,9 @@ export default function GovernmentDashboard() {
             <div style={{ display: "flex", gap: 6, flex: 1, flexWrap: "wrap" }}>
               {["all", "pending", "in-progress", "critical", "escalated", "resolved"].map(s => (
                 <button key={s} onClick={() => setFilterStatus(s)} style={{
-                  background: filterStatus === s ? (dark ? "rgba(255,255,255,0.15)" : "rgba(99,102,241,0.12)") : (dark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.04)"),
-                  border: `1px solid ${filterStatus === s ? (dark ? "rgba(255,255,255,0.3)" : "rgba(99,102,241,0.3)") : border}`,
-                  color: filterStatus === s ? (dark ? "#FFFFFF" : accent) : textSecondary,
+                  background: filterStatus === s ? (dark ? "rgba(99,102,241,0.2)" : "rgba(99,102,241,0.12)") : (dark ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.04)"),
+                  border: `1px solid ${filterStatus === s ? (dark ? "rgba(99,102,241,0.4)" : "rgba(99,102,241,0.3)") : border}`,
+                  color: filterStatus === s ? accent : textSecondary,
                   borderRadius: 8, padding: "6px 12px", cursor: "pointer", fontSize: 11, fontWeight: 700,
                   fontFamily: "'DM Mono', monospace", letterSpacing: "0.04em", transition: "all 0.15s",
                   textTransform: "capitalize"
@@ -625,7 +825,7 @@ export default function GovernmentDashboard() {
               ))}
             </div>
 
-            <select value={sortBy} onChange={e => setSortBy(e.target.value)} style={{ background: dark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.04)", border: `1px solid ${border}`, borderRadius: 8, padding: "7px 12px", color: textSecondary, fontSize: 11, cursor: "pointer", fontFamily: "'DM Mono', monospace", outline: "none" }}>
+            <select value={sortBy} onChange={e => setSortBy(e.target.value)} style={{ background: dark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.04)", border: `1px solid ${border}`, borderRadius: 8, padding: "7px 12px", color: textSecondary, fontSize: 11, cursor: "pointer", fontFamily: "'DM Mono', monospace", outline: "none" }}>
               <option value="urgency">Sort: Urgency</option>
               <option value="severity">Sort: Severity</option>
               <option value="recent">Sort: Recent</option>
@@ -633,7 +833,7 @@ export default function GovernmentDashboard() {
 
             <div style={{ display: "flex", gap: 4 }}>
               {[["grid", "⊞"], ["list", "☰"]].map(([m, icon]) => (
-                <button key={m} onClick={() => setViewMode(m)} style={{ background: viewMode === m ? (dark ? "rgba(255,255,255,0.15)" : "rgba(99,102,241,0.12)") : "transparent", border: `1px solid ${viewMode === m ? (dark ? "rgba(255,255,255,0.3)" : "rgba(99,102,241,0.3)") : border}`, color: viewMode === m ? (dark ? "#FFFFFF" : accent) : textSecondary, borderRadius: 8, width: 34, height: 34, cursor: "pointer", fontSize: 16, display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.15s" }}>{icon}</button>
+                <button key={m} onClick={() => setViewMode(m)} style={{ background: viewMode === m ? (dark ? "rgba(99,102,241,0.2)" : "rgba(99,102,241,0.12)") : "transparent", border: `1px solid ${viewMode === m ? (dark ? "rgba(99,102,241,0.4)" : "rgba(99,102,241,0.3)") : border}`, color: viewMode === m ? accent : textSecondary, borderRadius: 8, width: 34, height: 34, cursor: "pointer", fontSize: 16, display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.15s" }}>{icon}</button>
               ))}
             </div>
           </div>
@@ -665,7 +865,7 @@ export default function GovernmentDashboard() {
                   transition: "background 0.15s", alignItems: "center",
                   animation: `fadeSlideUp 0.3s ease ${i * 50}ms both`
                 }}
-                  onMouseEnter={e => { e.currentTarget.style.background = dark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.025)"; }}
+                  onMouseEnter={e => { e.currentTarget.style.background = dark ? "rgba(255,255,255,0.025)" : "rgba(0,0,0,0.025)"; }}
                   onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}>
                   <div>
                     <div style={{ fontSize: 10, color: textSecondary, fontFamily: "'DM Mono', monospace" }}>{g.id}</div>
