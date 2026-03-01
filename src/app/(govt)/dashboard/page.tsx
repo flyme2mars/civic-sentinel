@@ -67,12 +67,12 @@ export default function GovernmentDashboard() {
     fetchGrievances();
   }, []);
 
-  const bg = dark ? "#0B0F1A" : "#F1F5F9";
-  const surface = dark ? "#111827" : "#FFFFFF";
-  const border = dark ? "rgba(255,255,255,0.07)" : "rgba(0,0,0,0.07)";
-  const textPrimary = dark ? "#F9FAFB" : "#111827";
-  const textSecondary = dark ? "#6B7280" : "#9CA3AF";
-  const accent = dark ? "#818CF8" : "#6366F1";
+  const bg = dark ? "#0B0F1A" : "#f8fafc"; // dark navy vs light slate-50
+  const surface = dark ? "#111827" : "#ffffff"; // dark surface vs pure white
+  const border = dark ? "rgba(255,255,255,0.07)" : "#e2e8f0"; // dark border vs light slate-200
+  const textPrimary = dark ? "#F9FAFB" : "#0f172a"; // dark text vs slate-900
+  const textSecondary = dark ? "#9CA3AF" : "#64748b"; // dark muted vs slate-500
+  const accent = dark ? "#818CF8" : "#0f172a"; // indigo accent vs strong slate-900 (like citizen UI buttons)
 
   const filtered = grievances.filter(g => {
     const q = search.toLowerCase();
