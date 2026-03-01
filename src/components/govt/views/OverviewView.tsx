@@ -1,15 +1,15 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React from 'react';
 import { StatCard } from '../StatCard';
-import { STATS, GRIEVANCES, CAT_ICONS } from '@/lib/mock-data';
+import { STATS, CAT_ICONS } from '@/lib/mock-data';
 
-export function OverviewView({ dark, setSelected, border, surface, textSecondary }: any) {
+export function OverviewView({ dark, setSelected, border, surface, textSecondary, grievances }: any) {
   return (
     <div style={{ animation: "fadeSlideUp 0.3s ease" }}>
       <h2 style={{ fontSize: 24, fontWeight: 800, marginBottom: 20 }}>Overview Dashboard</h2>
       {/* STAT CARDS */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16, marginBottom: 24 }}>
-        <StatCard label="TOTAL GRIEVANCES" value={STATS.total} sub={`+${STATS.todayNew} today`} accent={dark ? "#818CF8" : "#6366F1"} icon="◈" dark={dark} delay={0} />
+        <StatCard label="TOTAL GRIEVANCES" value={grievances?.length || 0} sub={`+${STATS.todayNew} today`} accent={dark ? "#818CF8" : "#6366F1"} icon="◈" dark={dark} delay={0} />
         <StatCard label="PENDING" value={STATS.pending} sub={`${STATS.inProgress} in progress`} accent={dark ? "#FBBF24" : "#D97706"} icon="⏳" dark={dark} delay={80} />
         <StatCard label="SLA COMPLIANCE" value={`${STATS.slaCompliance}%`} sub={`${STATS.avgResolution}h avg resolution`} accent={dark ? "#4ADE80" : "#16A34A"} icon="◎" dark={dark} delay={160} />
         <StatCard label="ESCALATED / CRITICAL" value={STATS.escalated} sub={`${STATS.critical} critical active`} accent={dark ? "#EF4444" : "#DC2626"} icon="⚡" dark={dark} delay={240} />
@@ -17,7 +17,7 @@ export function OverviewView({ dark, setSelected, border, surface, textSecondary
       <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 16 }}>
         <div style={{ background: surface, border: `1px solid ${border}`, borderRadius: 16, padding: 20 }}>
           <h3 style={{ fontSize: 14, fontWeight: 700, marginBottom: 16 }}>Recent Critical Issues</h3>
-          {GRIEVANCES.filter(g => g.priority === 'critical' || g.priority === 'high').slice(0, 3).map((g, i) => (
+          {(grievances || []).filter((g: any) => g.priority === 'critical' || g.priority === 'high').slice(0, 3).map((g: any, i: number) => (
             <div key={g.id} onClick={() => setSelected(g)} style={{ padding: "12px 0", borderBottom: i < 2 ? `1px solid ${border}` : 'none', cursor: "pointer", display: "flex", gap: 12 }}>
               <span style={{ fontSize: 20 }}>{CAT_ICONS[g.category as keyof typeof CAT_ICONS]}</span>
               <div>

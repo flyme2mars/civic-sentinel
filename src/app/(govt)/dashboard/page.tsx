@@ -11,7 +11,7 @@ import { AnalyticsView } from "@/components/govt/views/AnalyticsView";
 import { ReportsView } from "@/components/govt/views/ReportsView";
 import { SettingsView } from "@/components/govt/views/SettingsView";
 import { DetailDrawer } from "@/components/govt/DetailDrawer";
-import { GRIEVANCES, GrievanceType } from "@/lib/mock-data";
+import { GrievanceType } from "@/lib/mock-data";
 
 export default function GovernmentDashboard() {
   const [dark, setDark] = useState(true);
@@ -23,7 +23,7 @@ export default function GovernmentDashboard() {
   const [sortBy, setSortBy] = useState("urgency");
   const [viewMode, setViewMode] = useState("grid");
   const [notifOpen, setNotifOpen] = useState(false);
-  const [grievances, setGrievances] = useState<GrievanceType[]>(GRIEVANCES);
+  const [grievances, setGrievances] = useState<GrievanceType[]>([]);
 
   useEffect(() => {
     async function fetchGrievances() {
@@ -57,8 +57,8 @@ export default function GovernmentDashboard() {
               imageUrl: dbItem.imageUrl,
             };
           });
-          // Replace mocks entirely or prepend. Let's prepend so we still have lots of data to show.
-          setGrievances([...formatted, ...GRIEVANCES]);
+          // Replace mocks entirely with actual DB data
+          setGrievances(formatted);
         }
       } catch (e) {
         console.error("Failed to fetch grievances", e);
@@ -141,7 +141,7 @@ export default function GovernmentDashboard() {
 
         {/* CONTENT */}
         <main style={{ flex: 1, overflowY: "auto", padding: 24 }}>
-          {activeNav === "overview" && <OverviewView dark={dark} setSelected={setSelected} border={border} surface={surface} textSecondary={textSecondary} />}
+          {activeNav === "overview" && <OverviewView dark={dark} setSelected={setSelected} border={border} surface={surface} textSecondary={textSecondary} grievances={grievances} />}
           {activeNav === "grievances" && (
             <GrievancesView 
               dark={dark} surface={surface} border={border} 
