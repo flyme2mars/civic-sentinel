@@ -7,6 +7,7 @@ import { GrievanceType, PRIORITY_MAP, STATUS_MAP } from '@/lib/mock-data';
 export function DetailDrawer({ g, dark, onClose }: { g: GrievanceType; dark: boolean; onClose: () => void }) {
   const [tab, setTab] = useState("overview");
   const [visible, setVisible] = useState(false);
+  const [zoomedImage, setZoomedImage] = useState<string | null>(null);
   useEffect(() => { requestAnimationFrame(() => setVisible(true)); }, []);
 
   const bg = dark ? "#0F172A" : "#FFFFFF";
@@ -15,13 +16,14 @@ export function DetailDrawer({ g, dark, onClose }: { g: GrievanceType; dark: boo
   const textSecondary = dark ? "#6B7280" : "#9CA3AF";
 
   return (
+    <>
     <div style={{
       position: "fixed", inset: 0, zIndex: 50, display: "flex",
       background: dark ? "rgba(0,0,0,0.7)" : "rgba(0,0,0,0.4)",
       backdropFilter: "blur(4px)",
       opacity: visible ? 1 : 0, transition: "opacity 0.25s ease"
     }} onClick={onClose}>
-      <div style={{ marginLeft: "auto", width: 480, height: "100%", background: bg, borderLeft: `1px solid ${border}`, overflow: "hidden", display: "flex", flexDirection: "column",
+      <div style={{ marginLeft: "auto", width: "100%", height: "100%", background: bg, borderLeft: `1px solid ${border}`, overflow: "hidden", display: "flex", flexDirection: "column",
         transform: visible ? "translateX(0)" : "translateX(40px)", transition: "transform 0.3s cubic-bezier(0.16,1,0.3,1)"
       }} onClick={e => e.stopPropagation()}>
 
@@ -87,8 +89,13 @@ export function DetailDrawer({ g, dark, onClose }: { g: GrievanceType; dark: boo
                     <div key={label} style={{ aspectRatio: "4/3", borderRadius: 10, background: dark ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.03)", border: `1px dashed ${border}`, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 6, overflow: "hidden", position: "relative" }}>
                       {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                       {(label === "BEFORE" && (g as any).imageUrl) ? (
-                        /* eslint-disable-next-line @typescript-eslint/no-explicit-any, @next/next/no-img-element */
-                        <img src={(g as any).imageUrl} alt="Before" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                        <>
+                          {/* eslint-disable-next-line @typescript-eslint/no-explicit-any, @next/next/no-img-element */}
+                          <img src={(g as any).imageUrl} alt="Before" style={{ width: "100%", height: "100%", objectFit: "cover", cursor: "zoom-in" }} onClick={() => setZoomedImage((g as any).imageUrl)} />
+                          <div style={{ position: "absolute", bottom: 8, right: 8, background: "rgba(0,0,0,0.6)", color: "#fff", padding: "4px 8px", borderRadius: 6, fontSize: 10, pointerEvents: "none", display: "flex", alignItems: "center", gap: 4 }}>
+                            🔍 Zoom
+                          </div>
+                        </>
                       ) : (
                         <>
                           <div style={{ fontSize: 22, opacity: 0.2 }}>📷</div>
@@ -321,5 +328,18 @@ export function DetailDrawer({ g, dark, onClose }: { g: GrievanceType; dark: boo
         </div>
       </div>
     </div>
+
+      {/* Image Zoom Modal */}
+      {zoomedImage && (
+        <div style={{
+          position: "fixed", inset: 0, zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center",
+          background: "rgba(0,0,0,0.9)", backdropFilter: "blur(8px)"
+        }} onClick={() => setZoomedImage(null)}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={zoomedImage} alt="Zoomed" style={{ maxWidth: "95%", maxHeight: "95%", objectFit: "contain", borderRadius: 8 }} />
+          <button style={{ position: "absolute", top: 20, right: 20, background: "rgba(255,255,255,0.2)", border: "none", color: "#fff", width: 40, height: 40, borderRadius: "50%", cursor: "pointer", fontSize: 20 }}>✕</button>
+        </div>
+      )}
+    </>
   );
 }
