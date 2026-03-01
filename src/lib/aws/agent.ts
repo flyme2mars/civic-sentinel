@@ -35,17 +35,24 @@ const TOOLS = [
 ];
 
 const SYSTEM_PROMPT = `
-You are an elite civil grievance auditor. 
-Generate a professional, structured formal complaint based on citizen evidence.
+<role>
+You are an elite civil grievance auditor operating within a formal municipal framework.
+Your objective is to process raw citizen input and generate a highly structured, professional formal compliant.
+</role>
 
-LOCATION FUSION STRATEGY:
-1. Use the reverse_geocode tool to get professional map data.
-2. IMPORTANT: If the citizen mentions a specific locality name (e.g. "Chenkulam") in their text/audio, PRIORITIZE that over the map's area name. 
-3. Look for shop names or signs in the image to refine the landmark.
-4. The output must include a precise Landmark, Area, Pincode, City, District, and State.
-5. DO NOT combine city, district, and state into one field. Each MUST be a single, clean name (e.g., City: "Kottarakkara", District: "Kollam", State: "Kerala").
+<instruction>
+1. Analyze the citizen's evidence and extract the core issue 
+2. Determine the precise central/state government department responsible (e.g., Public Works Department (PWD), State Electricity Board, Water Authority).
+3. Evaluate the severity of the issue based on public safety and infrastructure impact.
+4. Consider the map data from the tool reverse_geocode as the baseline. IF RAW GPS IS PROVIDED, YOU MUST CALL THE reverse_geocode TOOL.
+5. IMPORTANT: If the citizen mentions a specific locality name (e.g. "Chenkulam") in their text/audio, PRIORITIZE that over the map's area name. 
+6. Look for shop names or signs in the image to refine the landmark.
+7. The output must include a precise Landmark, Area, Pincode, City, District, and State.
+8. DO NOT combine city, district, and state into one field. Each MUST be a single, clean name (e.g., City: "Kottarakkara", District: "Kollam", State: "Kerala").
+</instruction>
 
-OUTPUT FORMAT (JSON ONLY):
+<output_format>
+You must output ONLY valid JSON. Do not include any conversational filler, markdown formatting blocks (like \`\`\`json), or preamble. Use the exact structure below:
 {
   "investigation_step": "Short note on current logic",
   "draft": {
@@ -67,6 +74,7 @@ OUTPUT FORMAT (JSON ONLY):
     "success_criteria": ["Point 1", "Point 2"]
   }
 }
+</output_format>
 `;
 
 export async function processGrievanceAgent(params: {
@@ -76,7 +84,7 @@ export async function processGrievanceAgent(params: {
   location?: { lat: number, lng: number }
 }) {
   const { imageBytes, imageFormat, description, location } = params;
-  
+
   let messages: any[] = [{
     role: "user",
     content: [
@@ -99,16 +107,18 @@ export async function processGrievanceAgent(params: {
       if (!outputMessage) throw new Error("No response");
       messages.push(outputMessage);
 
+      console.log(outputMessage)
+
       if (response.stopReason === "tool_use") {
         const toolResultsContent: any[] = [];
         for (const contentBlock of outputMessage.content || []) {
           if (contentBlock.toolUse) {
             const { name, input, toolUseId } = contentBlock.toolUse;
             let resultData: any;
-            
+
             if (name === "web_search") resultData = await tavilySearch((input as any).query);
             else if (name === "reverse_geocode") resultData = await reverseGeocode((input as any).lat, (input as any).lng);
-            
+
             toolResultsContent.push({
               toolResult: { toolUseId, content: [{ json: resultData }], status: "success" }
             });
@@ -144,12 +154,12 @@ async function tavilySearch(query: string) {
     });
 
     const data = await response.json();
-    
+
     if (!data.results) throw new Error("No results from Tavily");
 
     // Return the direct answer if available, otherwise join snippets
     const content = data.answer || data.results.map((r: any) => `${r.title}: ${r.content}`).join("\n\n");
-    
+
     return { results: content };
   } catch (e) {
     console.error("[Tavily Search] Error:", e);
@@ -179,7 +189,7 @@ async function reverseGeocode(lat: number, lng: number) {
       else if (val) str = String(val);
 
       if (!str || str === "undefined" || str === "[object Object]") return;
-      
+
       str.split(',').forEach(p => {
         const trimmed = p.trim();
         if (trimmed && !allParts.includes(trimmed)) allParts.push(trimmed);
@@ -200,9 +210,9 @@ async function reverseGeocode(lat: number, lng: number) {
     // Final scrub: ensure no commas remain in individual fields
     const scrub = (s: string) => s.split(',')[0].trim();
 
-    const area = (typeof place.District === 'string' ? place.District : "") || 
-                 (typeof place.SubRegion === 'string' ? place.SubRegion : "") || 
-                 (allParts.length > 0 ? allParts[0] : "");
+    const area = (typeof place.District === 'string' ? place.District : "") ||
+      (typeof place.SubRegion === 'string' ? place.SubRegion : "") ||
+      (allParts.length > 0 ? allParts[0] : "");
 
     return {
       landmark: place.Label || "",
