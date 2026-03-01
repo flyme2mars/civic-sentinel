@@ -12,6 +12,22 @@ const GRIEVANCES = [
   { id: "GRV-2024-006", title: "Broken footpath tiles", description: "Cracked tiles causing falls, elderly residents at risk near market", category: "infrastructure", status: "pending", priority: "medium", ward: "Ward 14", zone: "Central Zone", address: "Andheri Market Road", citizen: "Kavita Mehta", phone: "+91 43210 98765", reportedAt: Date.now() - 3 * 3600000, slaHours: 48, elapsedHours: 3, aiConfidence: 0.89, aiSimilar: 11, urgency: 0.72, rtiGenerated: false, hasAfter: false },
 ];
 
+const DEPARTMENTS = [
+  { id: "DEPT-01", name: "Roads & Infrastructure", head: "Ramesh Sharma", grievances: 420, resolved: 380, sla: 88, active: 40 },
+  { id: "DEPT-02", name: "Sanitation & Health", head: "Dr. Priya Menon", grievances: 550, resolved: 490, sla: 82, active: 60 },
+  { id: "DEPT-03", name: "Water Works", head: "Er. Rajiv Gupta", grievances: 310, resolved: 295, sla: 92, active: 15 },
+  { id: "DEPT-04", name: "Electricity Board", head: "Anil Desai", grievances: 280, resolved: 250, sla: 79, active: 30 },
+  { id: "DEPT-05", name: "Solid Waste Mgmt", head: "Vikram Kumar", grievances: 600, resolved: 510, sla: 71, active: 90 },
+];
+
+const WARDS = [
+  { id: "W-01", name: "Civil Lines", zone: "Central", councillor: "Mrs. Sharma", issues: 45, critical: 2 },
+  { id: "W-02", name: "Sadar Bazaar", zone: "Central", councillor: "Mr. Verma", issues: 78, critical: 5 },
+  { id: "W-03", name: "Model Town", zone: "North", councillor: "Mrs. Gupta", issues: 32, critical: 1 },
+  { id: "W-04", name: "Defence Colony", zone: "South", councillor: "Col. Singh", issues: 24, critical: 0 },
+  { id: "W-05", name: "Laxmi Nagar", zone: "East", councillor: "Mr. Yadav", issues: 110, critical: 12 },
+];
+
 const STATS = { total: 2847, pending: 456, inProgress: 892, resolved: 1243, escalated: 156, slaCompliance: 78.4, avgResolution: 36.5, satisfaction: 4.2, critical: 23, todayNew: 18, todayResolved: 12 };
 
 const STATUS_MAP = {
@@ -68,7 +84,7 @@ function PriorityDot({ priority, dark }: { priority: keyof typeof PRIORITY_MAP, 
 }
 
 function SLABar({ reportedAt, slaHours, compact, dark }: { reportedAt: number, slaHours: number, compact?: boolean, dark: boolean }) {
-  const { breached, h, m, s, pct, urgent } = useCountdown(reportedAt, slaHours);
+  const { breached, h, m, pct, urgent } = useCountdown(reportedAt, slaHours);
   const barColor = breached ? (dark ? "#EF4444" : "#DC2626") : urgent ? (dark ? "#F97316" : "#EA580C") : (dark ? "#4ADE80" : "#16A34A");
   const textColor = breached ? (dark ? "#EF4444" : "#DC2626") : urgent ? (dark ? "#F97316" : "#EA580C") : (dark ? "#4ADE80" : "#16A34A");
 
@@ -87,7 +103,7 @@ function SLABar({ reportedAt, slaHours, compact, dark }: { reportedAt: number, s
           {breached ? "SLA BREACHED" : "SLA DEADLINE"}
         </span>
         <span style={{ color: textColor, fontFamily: "'DM Mono', monospace", fontSize: 13, fontWeight: 700 }}>
-          {breached ? `+${h}h ${m}m ${s}s` : `${h}h ${m}m ${s}s`}
+          {breached ? `+${h}h ${m}m` : `${h}h ${m}m`}
         </span>
       </div>
       <div style={{ height: 5, borderRadius: 3, background: dark ? "rgba(255,255,255,0.07)" : "rgba(0,0,0,0.07)", overflow: "hidden", position: "relative" }}>
@@ -631,7 +647,7 @@ export default function GovernmentDashboard() {
   const [viewMode, setViewMode] = useState("grid");
   const [notifOpen, setNotifOpen] = useState(false);
 
-  const bg = dark ? "#0B0F1A" : "#F1F5F9";
+  const bg = dark ? "#000000" : "#F1F5F9";
   const surface = dark ? "#111827" : "#FFFFFF";
   const border = dark ? "rgba(255,255,255,0.07)" : "rgba(0,0,0,0.07)";
   const textPrimary = dark ? "#F9FAFB" : "#111827";
@@ -781,11 +797,20 @@ export default function GovernmentDashboard() {
             <span style={{ fontSize: 10, fontFamily: "'DM Mono', monospace", color: dark ? "#4ADE80" : "#16A34A", fontWeight: 700 }}>LIVE</span>
           </div>
 
-          {/* Search */}
+          {/* Search - gen 1 style, full width context */}
           <div style={{ position: "relative" }}>
-            <span style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", color: textSecondary, fontSize: 13 }}>⊕</span>
-            <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search..."
-              style={{ background: dark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)", border: `1px solid ${border}`, borderRadius: 10, padding: "8px 12px 8px 30px", color: textPrimary, fontSize: 12, outline: "none", width: 200, fontFamily: "'Sora', sans-serif" }} />
+            <span style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: dark ? "#4B5563" : "#9CA3AF", fontSize: 13, pointerEvents: "none" }}>⊕</span>
+            <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search by ID, issue, or location..."
+              style={{
+                background: dark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)",
+                border: `1px solid ${search ? (dark ? "rgba(99,102,241,0.5)" : "rgba(99,102,241,0.4)") : border}`,
+                borderRadius: 10, padding: "9px 14px 9px 34px", color: textPrimary, fontSize: 12, outline: "none",
+                width: 280, fontFamily: "'Sora', sans-serif", transition: "border-color 0.2s, box-shadow 0.2s",
+                boxShadow: search ? `0 0 0 3px ${dark ? "rgba(99,102,241,0.15)" : "rgba(99,102,241,0.1)"}` : "none"
+              }} />
+            {search && (
+              <button onClick={() => setSearch("")} style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", color: dark ? "#6B7280" : "#9CA3AF", cursor: "pointer", fontSize: 14, lineHeight: 1, padding: 0 }}>✕</button>
+            )}
           </div>
 
           {/* Notif */}
@@ -822,85 +847,266 @@ export default function GovernmentDashboard() {
 
         {/* CONTENT */}
         <main style={{ flex: 1, overflowY: "auto", padding: 24 }}>
-          {/* STAT CARDS */}
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16, marginBottom: 24 }}>
-            <StatCard label="TOTAL GRIEVANCES" value={STATS.total} sub={`+${STATS.todayNew} today`} accent={dark ? "#818CF8" : "#6366F1"} icon="◈" dark={dark} delay={0} />
-            <StatCard label="PENDING" value={STATS.pending} sub={`${STATS.inProgress} in progress`} accent={dark ? "#FBBF24" : "#D97706"} icon="⏳" dark={dark} delay={80} />
-            <StatCard label="SLA COMPLIANCE" value={`${STATS.slaCompliance}%`} sub={`${STATS.avgResolution}h avg resolution`} accent={dark ? "#4ADE80" : "#16A34A"} icon="◎" dark={dark} delay={160} />
-            <StatCard label="ESCALATED / CRITICAL" value={STATS.escalated} sub={`${STATS.critical} critical active`} accent={dark ? "#EF4444" : "#DC2626"} icon="⚡" dark={dark} delay={240} />
-          </div>
-
-          {/* TOOLBAR */}
-          <div style={{ background: surface, border: `1px solid ${border}`, borderRadius: 14, padding: "14px 18px", marginBottom: 18, display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
-            <div style={{ display: "flex", gap: 6, flex: 1, flexWrap: "wrap" }}>
-              {["all", "pending", "in-progress", "critical", "escalated", "resolved"].map(s => (
-                <button key={s} onClick={() => setFilterStatus(s)} style={{
-                  background: filterStatus === s ? (dark ? "rgba(99,102,241,0.2)" : "rgba(99,102,241,0.12)") : (dark ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.04)"),
-                  border: `1px solid ${filterStatus === s ? (dark ? "rgba(99,102,241,0.4)" : "rgba(99,102,241,0.3)") : border}`,
-                  color: filterStatus === s ? accent : textSecondary,
-                  borderRadius: 8, padding: "6px 12px", cursor: "pointer", fontSize: 11, fontWeight: 700,
-                  fontFamily: "'DM Mono', monospace", letterSpacing: "0.04em", transition: "all 0.15s",
-                  textTransform: "capitalize"
-                }}>{s === "all" ? "All" : s}</button>
-              ))}
+          {activeNav === "overview" && (
+            <div style={{ animation: "fadeSlideUp 0.3s ease" }}>
+              <h2 style={{ fontSize: 24, fontWeight: 800, marginBottom: 20 }}>Overview Dashboard</h2>
+              {/* STAT CARDS */}
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16, marginBottom: 24 }}>
+                <StatCard label="TOTAL GRIEVANCES" value={STATS.total} sub={`+${STATS.todayNew} today`} accent={dark ? "#818CF8" : "#6366F1"} icon="◈" dark={dark} delay={0} />
+                <StatCard label="PENDING" value={STATS.pending} sub={`${STATS.inProgress} in progress`} accent={dark ? "#FBBF24" : "#D97706"} icon="⏳" dark={dark} delay={80} />
+                <StatCard label="SLA COMPLIANCE" value={`${STATS.slaCompliance}%`} sub={`${STATS.avgResolution}h avg resolution`} accent={dark ? "#4ADE80" : "#16A34A"} icon="◎" dark={dark} delay={160} />
+                <StatCard label="ESCALATED / CRITICAL" value={STATS.escalated} sub={`${STATS.critical} critical active`} accent={dark ? "#EF4444" : "#DC2626"} icon="⚡" dark={dark} delay={240} />
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 16 }}>
+                <div style={{ background: surface, border: `1px solid ${border}`, borderRadius: 16, padding: 20 }}>
+                  <h3 style={{ fontSize: 14, fontWeight: 700, marginBottom: 16 }}>Recent Critical Issues</h3>
+                  {GRIEVANCES.filter(g => g.priority === 'critical' || g.priority === 'high').slice(0, 3).map((g, i) => (
+                    <div key={g.id} onClick={() => setSelected(g)} style={{ padding: "12px 0", borderBottom: i < 2 ? `1px solid ${border}` : 'none', cursor: "pointer", display: "flex", gap: 12 }}>
+                      <span style={{ fontSize: 20 }}>{CAT_ICONS[g.category as keyof typeof CAT_ICONS]}</span>
+                      <div>
+                        <div style={{ fontSize: 13, fontWeight: 600 }}>{g.title}</div>
+                        <div style={{ fontSize: 11, color: textSecondary, marginTop: 4 }}>{g.address} · {g.ward}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <div style={{ background: surface, border: `1px solid ${border}`, borderRadius: 16, padding: 20 }}>
+                  <h3 style={{ fontSize: 14, fontWeight: 700, marginBottom: 16 }}>System Health</h3>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                    <div>
+                      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, marginBottom: 4 }}><span>Vision Auditor Uptime</span><span style={{color: dark ? "#4ADE80" : "#16A34A"}}>99.9%</span></div>
+                      <div style={{ height: 4, background: dark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.1)", borderRadius: 2 }}><div style={{ width: "99.9%", height: "100%", background: dark ? "#4ADE80" : "#16A34A", borderRadius: 2 }}></div></div>
+                    </div>
+                    <div>
+                      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, marginBottom: 4 }}><span>Bedrock Triage Latency</span><span style={{color: dark ? "#FBBF24" : "#D97706"}}>1.2s</span></div>
+                      <div style={{ height: 4, background: dark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.1)", borderRadius: 2 }}><div style={{ width: "70%", height: "100%", background: dark ? "#FBBF24" : "#D97706", borderRadius: 2 }}></div></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
+          )}
 
-            <select value={sortBy} onChange={e => setSortBy(e.target.value)} style={{ background: dark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.04)", border: `1px solid ${border}`, borderRadius: 8, padding: "7px 12px", color: textSecondary, fontSize: 11, cursor: "pointer", fontFamily: "'DM Mono', monospace", outline: "none" }}>
-              <option value="urgency">Sort: Urgency</option>
-              <option value="severity">Sort: Severity</option>
-              <option value="recent">Sort: Recent</option>
-            </select>
+          {activeNav === "grievances" && (
+            <div style={{ animation: "fadeSlideUp 0.3s ease" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+                <h2 style={{ fontSize: 24, fontWeight: 800 }}>All Grievances</h2>
+              </div>
+              {/* TOOLBAR */}
+              <div style={{ background: surface, border: `1px solid ${border}`, borderRadius: 14, padding: "14px 18px", marginBottom: 18, display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+                <div style={{ display: "flex", gap: 6, flex: 1, flexWrap: "wrap" }}>
+                  {["all", "pending", "in-progress", "critical", "escalated", "resolved"].map(s => (
+                    <button key={s} onClick={() => setFilterStatus(s)} style={{
+                      background: filterStatus === s ? (dark ? "rgba(99,102,241,0.2)" : "rgba(99,102,241,0.12)") : (dark ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.04)"),
+                      border: `1px solid ${filterStatus === s ? (dark ? "rgba(99,102,241,0.4)" : "rgba(99,102,241,0.3)") : border}`,
+                      color: filterStatus === s ? accent : textSecondary,
+                      borderRadius: 8, padding: "6px 12px", cursor: "pointer", fontSize: 11, fontWeight: 700,
+                      fontFamily: "'DM Mono', monospace", letterSpacing: "0.04em", transition: "all 0.15s",
+                      textTransform: "capitalize"
+                    }}>{s === "all" ? "All" : s}</button>
+                  ))}
+                </div>
 
-            <div style={{ display: "flex", gap: 4 }}>
-              {[["grid", "⊞"], ["list", "☰"]].map(([m, icon]) => (
-                <button key={m} onClick={() => setViewMode(m)} style={{ background: viewMode === m ? (dark ? "rgba(99,102,241,0.2)" : "rgba(99,102,241,0.12)") : "transparent", border: `1px solid ${viewMode === m ? (dark ? "rgba(99,102,241,0.4)" : "rgba(99,102,241,0.3)") : border}`, color: viewMode === m ? accent : textSecondary, borderRadius: 8, width: 34, height: 34, cursor: "pointer", fontSize: 16, display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.15s" }}>{icon}</button>
-              ))}
-            </div>
-          </div>
+                <select value={sortBy} onChange={e => setSortBy(e.target.value)} style={{ background: dark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.04)", border: `1px solid ${border}`, borderRadius: 8, padding: "7px 12px", color: textSecondary, fontSize: 11, cursor: "pointer", fontFamily: "'DM Mono', monospace", outline: "none" }}>
+                  <option value="urgency">Sort: Urgency</option>
+                  <option value="severity">Sort: Severity</option>
+                  <option value="recent">Sort: Recent</option>
+                </select>
 
-          {/* GRID VIEW */}
-          {viewMode === "grid" && (
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))", gap: 16 }}>
-              {filtered.map((g, i) => (
-                <GrievanceCard key={g.id} g={g} dark={dark} onClick={setSelected} index={i} />
-              ))}
-              {filtered.length === 0 && (
-                <div style={{ gridColumn: "1/-1", textAlign: "center", padding: 60, color: textSecondary, fontSize: 14 }}>No grievances match your filter.</div>
+                <div style={{ display: "flex", gap: 4 }}>
+                  {[["grid", "⊞"], ["list", "☰"]].map(([m, icon]) => (
+                    <button key={m} onClick={() => setViewMode(m)} style={{ background: viewMode === m ? (dark ? "rgba(99,102,241,0.2)" : "rgba(99,102,241,0.12)") : "transparent", border: `1px solid ${viewMode === m ? (dark ? "rgba(99,102,241,0.4)" : "rgba(99,102,241,0.3)") : border}`, color: viewMode === m ? accent : textSecondary, borderRadius: 8, width: 34, height: 34, cursor: "pointer", fontSize: 16, display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.15s" }}>{icon}</button>
+                  ))}
+                </div>
+              </div>
+
+              {/* GRID VIEW */}
+              {viewMode === "grid" && (
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))", gap: 16 }}>
+                  {filtered.map((g, i) => (
+                    <GrievanceCard key={g.id} g={g} dark={dark} onClick={setSelected} index={i} />
+                  ))}
+                  {filtered.length === 0 && (
+                    <div style={{ gridColumn: "1/-1", textAlign: "center", padding: 60, color: textSecondary, fontSize: 14 }}>No grievances match your filter.</div>
+                  )}
+                </div>
+              )}
+
+              {/* LIST VIEW */}
+              {viewMode === "list" && (
+                <div style={{ background: surface, border: `1px solid ${border}`, borderRadius: 14, overflow: "hidden" }}>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 130px 120px 130px 110px 80px", gap: 16, padding: "10px 18px", borderBottom: `1px solid ${border}` }}>
+                    {["ISSUE", "STATUS", "WARD", "SLA", "PRIORITY", "SCORE"].map(h => (
+                      <div key={h} style={{ fontSize: 9, color: textSecondary, fontFamily: "'DM Mono', monospace", letterSpacing: "0.1em" }}>{h}</div>
+                    ))}
+                  </div>
+                  {filtered.map((g, i) => (
+                    <div key={g.id} onClick={() => setSelected(g)} style={{
+                      display: "grid", gridTemplateColumns: "1fr 130px 120px 130px 110px 80px", gap: 16,
+                      padding: "14px 18px", borderBottom: `1px solid ${border}`, cursor: "pointer",
+                      transition: "background 0.15s", alignItems: "center",
+                      animation: `fadeSlideUp 0.3s ease ${i * 50}ms both`
+                    }}
+                      onMouseEnter={e => { e.currentTarget.style.background = dark ? "rgba(255,255,255,0.025)" : "rgba(0,0,0,0.025)"; }}
+                      onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}>
+                      <div>
+                        <div style={{ fontSize: 10, color: textSecondary, fontFamily: "'DM Mono', monospace" }}>{g.id}</div>
+                        <div style={{ fontSize: 13, fontWeight: 600, color: textPrimary, marginTop: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{g.title}</div>
+                      </div>
+                      <Pill status={g.status as keyof typeof STATUS_MAP} dark={dark} />
+                      <span style={{ fontSize: 12, color: textSecondary }}>{g.ward}</span>
+                      <SLABar reportedAt={g.reportedAt} slaHours={g.slaHours} compact dark={dark} />
+                      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                        <PriorityDot priority={g.priority as keyof typeof PRIORITY_MAP} dark={dark} />
+                        <span style={{ fontSize: 11, color: PRIORITY_MAP[g.priority as keyof typeof PRIORITY_MAP]?.[dark ? "dark" : "light"], fontFamily: "'DM Mono', monospace", textTransform: "capitalize" }}>{g.priority}</span>
+                      </div>
+                      {g.score != null ? <ScoreRing score={g.score} dark={dark} size={36} /> : <span style={{ color: dark ? "#374151" : "#E5E7EB", fontSize: 12 }}>—</span>}
+                    </div>
+                  ))}
+                </div>
               )}
             </div>
           )}
 
-          {/* LIST VIEW */}
-          {viewMode === "list" && (
-            <div style={{ background: surface, border: `1px solid ${border}`, borderRadius: 14, overflow: "hidden" }}>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 130px 120px 130px 110px 80px", gap: 16, padding: "10px 18px", borderBottom: `1px solid ${border}` }}>
-                {["ISSUE", "STATUS", "WARD", "SLA", "PRIORITY", "SCORE"].map(h => (
-                  <div key={h} style={{ fontSize: 9, color: textSecondary, fontFamily: "'DM Mono', monospace", letterSpacing: "0.1em" }}>{h}</div>
+          {activeNav === "departments" && (
+            <div style={{ animation: "fadeSlideUp 0.3s ease" }}>
+              <h2 style={{ fontSize: 24, fontWeight: 800, marginBottom: 20 }}>Department Performance</h2>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: 16 }}>
+                {DEPARTMENTS.map((dept, i) => (
+                  <div key={dept.id} style={{ background: surface, border: `1px solid ${border}`, borderRadius: 16, padding: 20, animation: `fadeSlideUp 0.3s ease ${i * 50}ms both` }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 16 }}>
+                      <div>
+                        <div style={{ fontSize: 10, color: textSecondary, fontFamily: "'DM Mono', monospace", letterSpacing: "0.08em" }}>{dept.id}</div>
+                        <div style={{ fontSize: 16, fontWeight: 700, marginTop: 4 }}>{dept.name}</div>
+                      </div>
+                      <div style={{ width: 40, height: 40, borderRadius: "50%", background: dark ? "rgba(99,102,241,0.15)" : "rgba(99,102,241,0.1)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16 }}>◫</div>
+                    </div>
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 16 }}>
+                      <div style={{ background: dark ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.03)", borderRadius: 8, padding: 12 }}>
+                        <div style={{ fontSize: 10, color: textSecondary, fontFamily: "'DM Mono', monospace" }}>ACTIVE</div>
+                        <div style={{ fontSize: 18, fontWeight: 700, color: textPrimary, marginTop: 4 }}>{dept.active}</div>
+                      </div>
+                      <div style={{ background: dark ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.03)", borderRadius: 8, padding: 12 }}>
+                        <div style={{ fontSize: 10, color: textSecondary, fontFamily: "'DM Mono', monospace" }}>RESOLVED</div>
+                        <div style={{ fontSize: 18, fontWeight: 700, color: textPrimary, marginTop: 4 }}>{dept.resolved}</div>
+                      </div>
+                    </div>
+                    <div style={{ borderTop: `1px solid ${border}`, paddingTop: 16, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                      <div style={{ fontSize: 12, color: textSecondary }}>HOD: <span style={{ color: textPrimary, fontWeight: 600 }}>{dept.head}</span></div>
+                      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                        <ScoreRing score={dept.sla} dark={dark} size={28} />
+                        <span style={{ fontSize: 10, fontFamily: "'DM Mono', monospace", color: textSecondary }}>SLA</span>
+                      </div>
+                    </div>
+                  </div>
                 ))}
               </div>
-              {filtered.map((g, i) => (
-                <div key={g.id} onClick={() => setSelected(g)} style={{
-                  display: "grid", gridTemplateColumns: "1fr 130px 120px 130px 110px 80px", gap: 16,
-                  padding: "14px 18px", borderBottom: `1px solid ${border}`, cursor: "pointer",
-                  transition: "background 0.15s", alignItems: "center",
-                  animation: `fadeSlideUp 0.3s ease ${i * 50}ms both`
-                }}
-                  onMouseEnter={e => { e.currentTarget.style.background = dark ? "rgba(255,255,255,0.025)" : "rgba(0,0,0,0.025)"; }}
-                  onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}>
-                  <div>
-                    <div style={{ fontSize: 10, color: textSecondary, fontFamily: "'DM Mono', monospace" }}>{g.id}</div>
-                    <div style={{ fontSize: 13, fontWeight: 600, color: textPrimary, marginTop: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{g.title}</div>
-                  </div>
-                  <Pill status={g.status as keyof typeof STATUS_MAP} dark={dark} />
-                  <span style={{ fontSize: 12, color: textSecondary }}>{g.ward}</span>
-                  <SLABar reportedAt={g.reportedAt} slaHours={g.slaHours} compact dark={dark} />
-                  <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                    <PriorityDot priority={g.priority as keyof typeof PRIORITY_MAP} dark={dark} />
-                    <span style={{ fontSize: 11, color: PRIORITY_MAP[g.priority as keyof typeof PRIORITY_MAP]?.[dark ? "dark" : "light"], fontFamily: "'DM Mono', monospace", textTransform: "capitalize" }}>{g.priority}</span>
-                  </div>
-                  {g.score != null ? <ScoreRing score={g.score} dark={dark} size={36} /> : <span style={{ color: dark ? "#374151" : "#E5E7EB", fontSize: 12 }}>—</span>}
+            </div>
+          )}
+
+          {activeNav === "wards" && (
+            <div style={{ animation: "fadeSlideUp 0.3s ease" }}>
+              <h2 style={{ fontSize: 24, fontWeight: 800, marginBottom: 20 }}>Ward Monitoring</h2>
+              <div style={{ background: surface, border: `1px solid ${border}`, borderRadius: 14, overflow: "hidden" }}>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 150px 150px 100px 100px", gap: 16, padding: "14px 20px", borderBottom: `1px solid ${border}`, background: dark ? "rgba(255,255,255,0.02)" : "rgba(0,0,0,0.02)" }}>
+                  {["WARD", "ZONE", "COUNCILLOR", "ISSUES", "CRITICAL"].map(h => (
+                    <div key={h} style={{ fontSize: 10, fontWeight: 700, color: textSecondary, fontFamily: "'DM Mono', monospace", letterSpacing: "0.1em" }}>{h}</div>
+                  ))}
                 </div>
-              ))}
+                {WARDS.map((w, i) => (
+                  <div key={w.id} style={{ display: "grid", gridTemplateColumns: "1fr 150px 150px 100px 100px", gap: 16, padding: "16px 20px", borderBottom: `1px solid ${border}`, alignItems: "center", animation: `fadeSlideUp 0.3s ease ${i * 50}ms both` }}>
+                    <div>
+                      <div style={{ fontSize: 10, color: textSecondary, fontFamily: "'DM Mono', monospace" }}>{w.id}</div>
+                      <div style={{ fontSize: 14, fontWeight: 600 }}>{w.name}</div>
+                    </div>
+                    <div style={{ fontSize: 13 }}>{w.zone}</div>
+                    <div style={{ fontSize: 13, color: textSecondary }}>{w.councillor}</div>
+                    <div style={{ fontSize: 14, fontWeight: 700, fontFamily: "'DM Mono', monospace" }}>{w.issues}</div>
+                    <div>
+                      <span style={{ background: w.critical > 5 ? (dark ? "#4C0519" : "#FFF1F2") : (dark ? "rgba(255,255,255,0.05)" : "#F3F4F6"), color: w.critical > 5 ? (dark ? "#FB7185" : "#E11D48") : textSecondary, padding: "4px 10px", borderRadius: 99, fontSize: 12, fontWeight: 700, fontFamily: "'DM Mono', monospace", border: `1px solid ${w.critical > 5 ? (dark ? "#881337" : "#FECDD3") : border}` }}>
+                        {w.critical}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {activeNav === "analytics" && (
+            <div style={{ animation: "fadeSlideUp 0.3s ease", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 60, textAlign: "center" }}>
+              <div style={{ fontSize: 48, marginBottom: 16 }}>📊</div>
+              <h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: 8 }}>Analytics & Insights</h2>
+              <p style={{ fontSize: 14, color: textSecondary, maxWidth: 400 }}>Comprehensive charts and performance metrics powered by AWS QuickSight will be available here.</p>
+            </div>
+          )}
+
+          {activeNav === "reports" && (
+            <div style={{ animation: "fadeSlideUp 0.3s ease" }}>
+              <h2 style={{ fontSize: 24, fontWeight: 800, marginBottom: 20 }}>Automated Reports</h2>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+                {[
+                  { title: "Monthly SLA Compliance Report", type: "PDF", date: "Mar 1, 2026" },
+                  { title: "Ward-wise Grievance Distribution", type: "CSV", date: "Mar 1, 2026" },
+                  { title: "Vision Auditor Success Rates", type: "PDF", date: "Feb 28, 2026" },
+                  { title: "Citizen Verification Logs", type: "CSV", date: "Feb 25, 2026" },
+                ].map((r, i) => (
+                  <div key={i} style={{ background: surface, border: `1px solid ${border}`, borderRadius: 12, padding: 16, display: "flex", justifyContent: "space-between", alignItems: "center", animation: `fadeSlideUp 0.3s ease ${i * 50}ms both` }}>
+                    <div>
+                      <div style={{ fontSize: 14, fontWeight: 600 }}>{r.title}</div>
+                      <div style={{ fontSize: 11, color: textSecondary, marginTop: 4, fontFamily: "'DM Mono', monospace" }}>Generated: {r.date}</div>
+                    </div>
+                    <button style={{ background: dark ? "rgba(99,102,241,0.15)" : "rgba(99,102,241,0.1)", color: accent, border: "none", padding: "6px 12px", borderRadius: 8, fontSize: 11, fontWeight: 700, fontFamily: "'DM Mono', monospace", cursor: "pointer" }}>
+                      Download {r.type}
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {activeNav === "settings" && (
+            <div style={{ animation: "fadeSlideUp 0.3s ease", maxWidth: 600 }}>
+              <h2 style={{ fontSize: 24, fontWeight: 800, marginBottom: 24 }}>System Settings</h2>
+              
+              <div style={{ background: surface, border: `1px solid ${border}`, borderRadius: 16, padding: 24, marginBottom: 16 }}>
+                <h3 style={{ fontSize: 14, fontWeight: 700, marginBottom: 16, borderBottom: `1px solid ${border}`, paddingBottom: 12 }}>Escalation Thresholds</h3>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+                  <div>
+                    <div style={{ fontSize: 13, fontWeight: 600 }}>Auto-Generate RTI</div>
+                    <div style={{ fontSize: 11, color: textSecondary }}>When SLA breaches by specified hours</div>
+                  </div>
+                  <select style={{ background: dark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.04)", border: `1px solid ${border}`, borderRadius: 8, padding: "8px 12px", color: textPrimary, outline: "none" }}>
+                    <option>+24 Hours</option>
+                    <option>+48 Hours</option>
+                    <option>+72 Hours</option>
+                  </select>
+                </div>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <div>
+                    <div style={{ fontSize: 13, fontWeight: 600 }}>Social Media Pressure</div>
+                    <div style={{ fontSize: 11, color: textSecondary }}>Auto-tweet when cluster exceeds threshold</div>
+                  </div>
+                  <select style={{ background: dark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.04)", border: `1px solid ${border}`, borderRadius: 8, padding: "8px 12px", color: textPrimary, outline: "none" }}>
+                    <option>10 Issues / km²</option>
+                    <option>20 Issues / km²</option>
+                    <option>50 Issues / km²</option>
+                  </select>
+                </div>
+              </div>
+
+              <div style={{ background: surface, border: `1px solid ${border}`, borderRadius: 16, padding: 24 }}>
+                <h3 style={{ fontSize: 14, fontWeight: 700, marginBottom: 16, borderBottom: `1px solid ${border}`, paddingBottom: 12 }}>Vision Auditor</h3>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <div>
+                    <div style={{ fontSize: 13, fontWeight: 600 }}>Strict FOV Matching</div>
+                    <div style={{ fontSize: 11, color: textSecondary }}>Require 100% landmark matching for resolution</div>
+                  </div>
+                  <div style={{ width: 44, height: 24, background: accent, borderRadius: 12, position: "relative", cursor: "pointer" }}>
+                    <div style={{ width: 20, height: 20, background: "#fff", borderRadius: "50%", position: "absolute", top: 2, right: 2, boxShadow: "0 1px 3px rgba(0,0,0,0.3)" }}></div>
+                  </div>
+                </div>
+              </div>
             </div>
           )}
         </main>
