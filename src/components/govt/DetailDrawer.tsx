@@ -19,12 +19,13 @@ export function DetailDrawer({ g, dark, onClose }: { g: GrievanceType; dark: boo
     <>
     <div style={{
       position: "fixed", inset: 0, zIndex: 50, display: "flex",
-      background: dark ? "rgba(0,0,0,0.7)" : "rgba(0,0,0,0.4)",
-      backdropFilter: "blur(4px)",
+      background: dark ? "rgba(0,0,0,0.5)" : "rgba(0,0,0,0.3)",
+      backdropFilter: "blur(2px)",
       opacity: visible ? 1 : 0, transition: "opacity 0.25s ease"
     }} onClick={onClose}>
-      <div style={{ marginLeft: "auto", width: "100%", height: "100%", background: bg, borderLeft: `1px solid ${border}`, overflow: "hidden", display: "flex", flexDirection: "column",
-        transform: visible ? "translateX(0)" : "translateX(40px)", transition: "transform 0.3s cubic-bezier(0.16,1,0.3,1)"
+      <div style={{ marginLeft: "auto", width: 600, maxWidth: "100%", height: "100%", background: bg, borderLeft: `1px solid ${border}`, overflow: "hidden", display: "flex", flexDirection: "column",
+        transform: visible ? "translateX(0)" : "translateX(40px)", transition: "transform 0.3s cubic-bezier(0.16,1,0.3,1)",
+        boxShadow: dark ? "-10px 0 40px rgba(0,0,0,0.5)" : "-10px 0 40px rgba(0,0,0,0.1)"
       }} onClick={e => e.stopPropagation()}>
 
         {/* Header */}
