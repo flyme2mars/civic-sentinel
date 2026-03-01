@@ -6,12 +6,30 @@ import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 
 export const dynamic = 'force-dynamic';
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
-    const data = await dynamoDb.send(new ScanCommand({ TableName: AWS_CONFIG.dynamodb.tableName }));
+    // SECURITY: Basic Token-based Authorization for Hackathon
+    const { searchParams } = new URL(request.url);
+    const token = request.headers.get('x-govt-token') || searchParams.get('token');
+    
+    if (token !== process.env.GOVT_API_TOKEN) {
+      return NextResponse.json({ error: 'Unauthorized Access Denied' }, { status: 401 });
+    }
+
+    const data = await dynamoDb.send(new ScanCommand({ 
+      TableName: AWS_CONFIG.dynamodb.tableName,
+      // 'status' and 'location' can be reserved; use ExpressionAttributeNames
+      ProjectionExpression: "id, createdAt, title, #st, severity, slaHours, #loc, imageKey",
+      ExpressionAttributeNames: {
+        "#st": "status",
+        "#loc": "location"
+      }
+    }));
+    
+    const rawItems = (data.Items || []) as Record<string, any>[];
     
     // Generate signed URLs for images
-    const items = await Promise.all((data.Items || []).map(async (item) => {
+    const items = await Promise.all(rawItems.map(async (item) => {
       let imageUrl = null;
       if (item.imageKey) {
         try {
@@ -29,7 +47,7 @@ export async function GET() {
     }));
 
     // Sort by created date descending
-    items.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    items.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
     return NextResponse.json({ success: true, grievances: items });
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

@@ -24,13 +24,35 @@ export default function GovernmentDashboard() {
   const [viewMode, setViewMode] = useState("grid");
   const [notifOpen, setNotifOpen] = useState(false);
   const [grievances, setGrievances] = useState<GrievanceType[]>([]);
+  
+  // SECURITY: Basic Token-based Authorization for Hackathon
+  const [authToken, setAuthToken] = useState<string | null>(null);
+  const [isAuthorized, setIsAuthorized] = useState(false);
 
   useEffect(() => {
+    const savedToken = localStorage.getItem('govt_token');
+    if (savedToken) setAuthToken(savedToken);
+  }, []);
+
+  useEffect(() => {
+    if (!authToken) return;
+
     async function fetchGrievances() {
       try {
-        const res = await fetch('/api/grievance/list');
+        const res = await fetch('/api/grievance/list', {
+          headers: { 'x-govt-token': authToken! }
+        });
         const data = await res.json();
-        if (data.success && data.grievances && data.grievances.length > 0) {
+        
+        if (res.status === 401) {
+          setIsAuthorized(false);
+          localStorage.removeItem('govt_token');
+          return;
+        }
+
+        if (data.success && data.grievances) {
+          setIsAuthorized(true);
+          localStorage.setItem('govt_token', authToken!);
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const formatted = data.grievances.map((dbItem: any) => {
             return {
@@ -57,7 +79,6 @@ export default function GovernmentDashboard() {
               imageUrl: dbItem.imageUrl,
             };
           });
-          // Replace mocks entirely with actual DB data
           setGrievances(formatted);
         }
       } catch (e) {
@@ -65,7 +86,7 @@ export default function GovernmentDashboard() {
       }
     }
     fetchGrievances();
-  }, []);
+  }, [authToken]);
 
   const bg = dark ? "#0B0F1A" : "#f8fafc"; // dark navy vs light slate-50
   const surface = dark ? "#111827" : "#ffffff"; // dark surface vs pure white
@@ -74,16 +95,22 @@ export default function GovernmentDashboard() {
   const textSecondary = dark ? "#9CA3AF" : "#64748b"; // dark muted vs slate-500
   const accent = dark ? "#818CF8" : "#0f172a"; // indigo accent vs strong slate-900 (like citizen UI buttons)
 
-  const filtered = grievances.filter(g => {
-    const q = search.toLowerCase();
-    const matchSearch = !q || g.title.toLowerCase().includes(q) || g.id.toLowerCase().includes(q) || g.citizen.toLowerCase().includes(q) || g.address.toLowerCase().includes(q);
-    const matchStatus = filterStatus === "all" || g.status === filterStatus;
-    return matchSearch && matchStatus;
-  }).sort((a, b) => {
-    if (sortBy === "urgency") return (b.elapsedHours / b.slaHours) - (a.elapsedHours / a.slaHours);
-    if (sortBy === "severity") return ["critical","high","medium","low"].indexOf(a.priority) - ["critical","high","medium","low"].indexOf(b.priority);
-    return b.reportedAt - a.reportedAt;
-  });
+  // PERFORMANCE: Memoize filtering and sorting logic
+  const filtered = React.useMemo(() => {
+    return grievances.filter(g => {
+      const q = search.toLowerCase();
+      const matchSearch = !q || g.title.toLowerCase().includes(q) || g.id.toLowerCase().includes(q) || g.citizen.toLowerCase().includes(q) || g.address.toLowerCase().includes(q);
+      const matchStatus = filterStatus === "all" || g.status === filterStatus;
+      return matchSearch && matchStatus;
+    }).sort((a, b) => {
+      if (sortBy === "urgency") return (b.elapsedHours / b.slaHours) - (a.elapsedHours / a.slaHours);
+      if (sortBy === "severity") {
+        const order = ["critical", "high", "medium", "low"];
+        return order.indexOf(a.priority) - order.indexOf(b.priority);
+      }
+      return b.reportedAt - a.reportedAt;
+    });
+  }, [grievances, search, filterStatus, sortBy]);
 
   const NAV = [
     { id: "overview", icon: "⬡", label: "Overview" },
@@ -100,6 +127,36 @@ export default function GovernmentDashboard() {
     { msg: "SLA breach: GRV-2024-003", time: "1 hour ago", read: false, color: dark ? "#F97316" : "#EA580C" },
     { msg: "Vision audit completed: 3 grievances", time: "2 hours ago", read: true, color: dark ? "#4ADE80" : "#16A34A" },
   ];
+
+  if (!isAuthorized) {
+    return (
+      <div style={{ minHeight: "100vh", background: "#0B0F1A", display: "flex", alignItems: "center", justifyItems: "center", justifyContent: "center", padding: 24, fontFamily: "'Sora', sans-serif" }}>
+        <div style={{ background: "#111827", padding: 40, borderRadius: 24, border: "1px solid rgba(255,255,255,0.07)", width: "100%", maxWidth: 400, textAlign: "center", spaceY: 24 }}>
+          <div style={{ fontSize: 40, marginBottom: 16 }}>🛡️</div>
+          <h1 style={{ color: "#F9FAFB", fontSize: 24, fontWeight: 800, marginBottom: 8, letterSpacing: "-0.02em" }}>GOVERNMENT ACCESS</h1>
+          <p style={{ color: "#9CA3AF", fontSize: 14, marginBottom: 32 }}>Secure portal for authorized civil auditors.</p>
+          
+          <input 
+            type="password" 
+            placeholder="Enter Government Access Token"
+            style={{ width: "100%", padding: "16px 20px", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 12, color: "#fff", fontSize: 14, marginBottom: 16, outline: "none" }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') setAuthToken((e.target as HTMLInputElement).value);
+            }}
+          />
+          <button 
+            onClick={(e) => {
+              const input = (e.currentTarget.previousSibling as HTMLInputElement);
+              setAuthToken(input.value);
+            }}
+            style={{ width: "100%", padding: "16px", background: "#F9FAFB", color: "#0B0F1A", borderRadius: 12, fontWeight: 800, fontSize: 14, border: "none", cursor: "pointer" }}
+          >
+            VERIFY IDENTITY
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div style={{ minHeight: "100vh", background: bg, fontFamily: "'Sora', sans-serif", color: textPrimary, display: "flex" }}>
