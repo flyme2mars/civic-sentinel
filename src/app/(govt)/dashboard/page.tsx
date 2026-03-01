@@ -24,7 +24,7 @@ export default function GovernmentDashboard() {
   const [viewMode, setViewMode] = useState("grid");
   const [notifOpen, setNotifOpen] = useState(false);
 
-  const bg = dark ? "#000000" : "#F1F5F9";
+  const bg = dark ? "#0B0F1A" : "#F1F5F9";
   const surface = dark ? "#111827" : "#FFFFFF";
   const border = dark ? "rgba(255,255,255,0.07)" : "rgba(0,0,0,0.07)";
   const textPrimary = dark ? "#F9FAFB" : "#111827";
