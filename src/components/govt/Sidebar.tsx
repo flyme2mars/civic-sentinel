@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React from 'react';
 
-export function Sidebar({ dark, setDark, sidebarOpen, activeNav, setActiveNav, NAV, surface, border, textSecondary, accent }: any) {
+export function Sidebar({ dark, setDark, sidebarOpen, activeNav, setActiveNav, NAV, surface, border, textSecondary, accent, grievancesCount }: any) {
   return (
     <aside style={{
       width: sidebarOpen ? 220 : 68, flexShrink: 0, background: surface, borderRight: `1px solid ${border}`,
@@ -34,7 +34,7 @@ export function Sidebar({ dark, setDark, sidebarOpen, activeNav, setActiveNav, N
               <span style={{ fontSize: 16, flexShrink: 0 }}>{n.icon}</span>
               {sidebarOpen && <span>{n.label}</span>}
               {n.id === "grievances" && sidebarOpen && (
-                <span style={{ marginLeft: "auto", background: dark ? "rgba(239,68,68,0.2)" : "rgba(220,38,38,0.1)", color: dark ? "#EF4444" : "#DC2626", fontSize: 9, fontWeight: 700, borderRadius: 99, padding: "1px 6px", fontFamily: "'DM Mono', monospace" }}>23</span>
+                <span style={{ marginLeft: "auto", background: dark ? "rgba(239,68,68,0.2)" : "rgba(220,38,38,0.1)", color: dark ? "#EF4444" : "#DC2626", fontSize: 9, fontWeight: 700, borderRadius: 99, padding: "1px 6px", fontFamily: "'DM Mono', monospace" }}>{grievancesCount}</span>
               )}
             </button>
           );

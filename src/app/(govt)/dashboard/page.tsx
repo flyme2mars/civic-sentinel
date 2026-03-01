@@ -126,6 +126,7 @@ export default function GovernmentDashboard() {
         NAV={NAV} 
         surface={surface} border={border} 
         textSecondary={textSecondary} accent={accent} 
+        grievancesCount={grievances.length}
       />
 
       {/* MAIN */}
