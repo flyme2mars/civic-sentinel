@@ -1,0 +1,100 @@
+================================================================================
+CIVICSENTINEL: DETAILED WORKFLOW & TECHNOLOGY ARCHITECTURE
+================================================================================
+
+1. OVERVIEW & VISION
+--------------------------------------------------------------------------------
+CivicSentinel is an AI-powered closed-loop accountability engine designed to combat "accountability theatre" in Indian civic governance. Instead of passively forwarding grievances (like CPGRAMS), it actively audits municipal repairs using multimodal AI, enforces strict 48-hour Service Level Agreements (SLAs), and automatically triggers legal/social escalation when authorities fail to act.
+
+2. TECHNOLOGY STACK
+--------------------------------------------------------------------------------
+- Frontend: Next.js (App Router, TypeScript)
+- Styling: Tailwind CSS
+- Compute: AWS Lambda (Serverless)
+- API Layer: Amazon API Gateway
+- Database: Amazon DynamoDB (NoSQL for fast, scalable grievance tracking)
+- Storage: Amazon S3 (for storing "Before" and "After" image evidence)
+- AI Intelligence: Amazon Bedrock (Claude 3.5/4.5 Sonnet for multimodal vision and text generation)
+
+3. CORE AI MECHANISMS (THE "ENGINE")
+--------------------------------------------------------------------------------
+A. The "Proof of Work" Vision Auditor (Malicious Compliance Filter)
+   - Function: Prevents officials from submitting deceptive, zoomed-in photos of partial fixes.
+   - Mechanism: Uses Bedrock (Claude) to perform a "Before vs. After" comparison.
+   - Checks:
+     1. Field of View (FOV) Matching: Ensures the "After" photo shows the exact same wide-angle context and landmarks as the "Before" photo.
+     2. Issue Quantification: If the AI counted 4 potholes in the original image, the "After" image must show 4 repaired potholes.
+
+B. Algorithmic Public Pressure (The Viral Simulator)
+   - Function: Automates public embarrassment to force civic action.
+   - Mechanism: If the 48-hour SLA expires, Bedrock generates a ready-to-publish social media thread (X/Twitter) tagging the specific ward corporator, municipal commissioner, and local news, pairing it with an "Evidence Graphic" (Before photo + "SLA BREACHED" stamp).
+
+C. Legal Clustering & Escalation
+   - Function: Turns individual complaints into systemic legal liabilities.
+   - Mechanism: Automatically drafts a Public Interest Litigation (PIL) framework or mass RTI request (Section 2(j)(i) of the RTI Act) when a geographic cluster of unresolved issues is detected (e.g., 50 unaddressed potholes in a 2km radius).
+
+4. DETAILED USER WORKFLOWS
+--------------------------------------------------------------------------------
+
+4.1 THE CITIZEN FLOW (THE "REPORTER")
+Step 1: Spot & Snap
+  - The citizen spots a civic issue (garbage dump, broken footpath).
+  - They capture a "Before" photo and record a voice note in their local language via the Next.js PWA/App.
+  - S3 Upload: The photo is uploaded directly to an Amazon S3 bucket.
+
+Step 2: AI Triage & Onboarding
+  - Bedrock processes the multimodal input (image + transcribed voice).
+  - It identifies the issue, extracts GPS coordinates, quantifies the damage, and maps it to the correct Municipal Ward/Department.
+  - DynamoDB Entry: A new grievance record is created with a unique ID, SLA Deadline (current time + 48 hours), and the "Success Criteria" defined by the AI.
+
+Step 3: Active Monitoring & The "Doomsday Clock"
+  - The citizen dashboard displays a ticking 48-hour countdown clock.
+  - If the clock hits zero without resolution, the "Escalation Tab" unlocks.
+
+Step 4: The Escalation Kit (SLA Breach)
+  - The citizen can download an AI-generated, perfectly formatted RTI draft PDF.
+  - They can click "Share to X", which opens their Twitter app with a pre-filled, hard-hitting post containing the auto-generated "Evidence Graphic".
+
+4.2 THE GOVERNMENT OFFICIAL FLOW (THE "RESOLVER")
+Step 1: The Priority Inbox
+  - The official (e.g., Ward Health Inspector) logs into the Next.js Dashboard.
+  - API Gateway + Lambda fetch data from DynamoDB.
+  - Grievances are sorted by "Time to Escalation" (most urgent at the top).
+
+Step 2: The Resolution Attempt
+  - The official dispatches a team to fix the issue.
+  - To stop the Doomsday Clock, the official must upload an "After" photo as Proof of Work.
+
+Step 3: The Vision Auditor Check
+  - The uploaded "After" photo is sent to the Bedrock AI API.
+  - Bedrock compares it against the "Before" photo using the Malicious Compliance Filter (FOV Matching + Quantification).
+  - If the AI detects a deceptive or partial fix (e.g., clearing only 2 meters of a 10-meter garbage dump), it flags a "Partial Repair Warning" and issues a low "Resolution Quality Score". The SLA clock continues ticking.
+
+4.3 THE CLOSING THE LOOP FLOW (TRUE ACCOUNTABILITY)
+Step 1: The Citizen Audit
+  - Even if the AI Vision Auditor accepts the "After" photo, the ticket is NOT automatically closed.
+  - State changes to "Pending Citizen Verification".
+  - The citizen receives a notification (e.g., via WhatsApp API or Push) with the official's photo, asking: "Does this look fixed to you?"
+
+Step 2: Confirmation vs. Dispute
+  - Path A (Confirm Fix): Citizen clicks "Confirm". The state in DynamoDB changes to "RESOLVED". The clock stops permanently.
+  - Path B (Dispute Fix): Citizen clicks "Dispute" (e.g., "They only cleared the front part").
+    - The AI cross-references the citizen's dispute with its own internal "Partial Repair Warning".
+    - The ticket is immediately escalated to the Senior Commissioner's Dashboard, tagged as a "Deceptive Resolution Attempt".
+
+5. DATABASE SCHEMA (DYNAMODB PROPOSAL)
+--------------------------------------------------------------------------------
+Table: CivicGrievances
+- Primary Key (Partition): grievance_id (String)
+- Global Secondary Index (GSI): ward_id (for official dashboard querying)
+- Attributes:
+  - citizen_id (String)
+  - issue_type (String)
+  - location_gps (Map: {lat, lng})
+  - before_image_url (String - S3 URI)
+  - after_image_url (String - S3 URI, null initially)
+  - status (String: PENDING, RESOLUTION_SUBMITTED, PENDING_CITIZEN_VERIFICATION, RESOLVED, ESCALATED_DECEPTIVE)
+  - created_at (Timestamp)
+  - sla_deadline (Timestamp - created_at + 48h)
+  - ai_analysis (Map: {issue_count, landmarks, severity})
+  - resolution_score (Number)
