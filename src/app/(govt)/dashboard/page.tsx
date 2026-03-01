@@ -131,7 +131,7 @@ export default function GovernmentDashboard() {
   if (!isAuthorized) {
     return (
       <div style={{ minHeight: "100vh", background: "#0B0F1A", display: "flex", alignItems: "center", justifyItems: "center", justifyContent: "center", padding: 24, fontFamily: "'Sora', sans-serif" }}>
-        <div style={{ background: "#111827", padding: 40, borderRadius: 24, border: "1px solid rgba(255,255,255,0.07)", width: "100%", maxWidth: 400, textAlign: "center", spaceY: 24 }}>
+        <div style={{ background: "#111827", padding: 40, borderRadius: 24, border: "1px solid rgba(255,255,255,0.07)", width: "100%", maxWidth: 400, textAlign: "center" }}>
           <div style={{ fontSize: 40, marginBottom: 16 }}>🛡️</div>
           <h1 style={{ color: "#F9FAFB", fontSize: 24, fontWeight: 800, marginBottom: 8, letterSpacing: "-0.02em" }}>GOVERNMENT ACCESS</h1>
           <p style={{ color: "#9CA3AF", fontSize: 14, marginBottom: 32 }}>Secure portal for authorized civil auditors.</p>

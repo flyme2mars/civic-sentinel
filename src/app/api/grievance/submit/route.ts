@@ -5,7 +5,7 @@ import { v4 as uuidv4 } from 'uuid';
 
 export async function POST(request: Request) {
   try {
-    const { draft, imageKey, location, originalDescription } = await request.json();
+    const { draft, imageKey, location, originalDescription, citizenId, phoneNumber } = await request.json();
 
     if (!draft) {
       return NextResponse.json({ error: 'Draft data is required' }, { status: 400 });
@@ -25,6 +25,8 @@ export async function POST(request: Request) {
       status: 'OPEN', // OPEN, IN_PROGRESS, FIXED, VERIFIED, EXPIRED
       imageKey,
       originalDescription,
+      citizenId: citizenId || 'ANONYMOUS',
+      phoneNumber: phoneNumber || 'Not provided',
       location: {
         ...location, // raw GPS
         ...draft.location // AI fused location
