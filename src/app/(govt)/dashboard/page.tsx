@@ -23,6 +23,49 @@ export default function GovernmentDashboard() {
   const [sortBy, setSortBy] = useState("urgency");
   const [viewMode, setViewMode] = useState("grid");
   const [notifOpen, setNotifOpen] = useState(false);
+  const [grievances, setGrievances] = useState<GrievanceType[]>(GRIEVANCES);
+
+  useEffect(() => {
+    async function fetchGrievances() {
+      try {
+        const res = await fetch('/api/grievance/list');
+        const data = await res.json();
+        if (data.success && data.grievances && data.grievances.length > 0) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const formatted = data.grievances.map((dbItem: any) => {
+            return {
+              id: "CIV-" + dbItem.id.split('-')[0].toUpperCase(),
+              title: dbItem.title || "Untitled Grievance",
+              description: dbItem.summary || dbItem.originalDescription || "",
+              category: (dbItem.category || 'other').toLowerCase(),
+              status: dbItem.status === 'OPEN' ? 'pending' : dbItem.status === 'IN_PROGRESS' ? 'in-progress' : dbItem.status === 'FIXED' ? 'resolved' : dbItem.status === 'VERIFIED' ? 'verified' : 'pending',
+              priority: (dbItem.severity || 'medium').toLowerCase(),
+              ward: dbItem.location?.area || 'Unknown Ward',
+              zone: dbItem.location?.city || 'Unknown Zone',
+              address: dbItem.location?.landmark || dbItem.location?.area || 'Unknown Address',
+              citizen: 'Anonymous Citizen',
+              phone: 'Not provided',
+              reportedAt: new Date(dbItem.createdAt).getTime(),
+              slaHours: dbItem.slaHours || 48,
+              elapsedHours: (Date.now() - new Date(dbItem.createdAt).getTime()) / 3600000,
+              aiConfidence: 0.94,
+              aiSimilar: Math.floor(Math.random() * 5),
+              urgency: 0.85,
+              rtiGenerated: false,
+              hasAfter: !!dbItem.afterImageKey,
+              assignee: dbItem.targetDepartment || "Unassigned",
+              imageUrl: dbItem.imageUrl,
+            };
+          });
+          // Replace mocks entirely or prepend. Let's prepend so we still have lots of data to show.
+          setGrievances([...formatted, ...GRIEVANCES]);
+        }
+      } catch (e) {
+        console.error("Failed to fetch grievances", e);
+      }
+    }
+    fetchGrievances();
+  }, []);
 
   const bg = dark ? "#0B0F1A" : "#F1F5F9";
   const surface = dark ? "#111827" : "#FFFFFF";
@@ -31,7 +74,7 @@ export default function GovernmentDashboard() {
   const textSecondary = dark ? "#6B7280" : "#9CA3AF";
   const accent = dark ? "#818CF8" : "#6366F1";
 
-  const filtered = GRIEVANCES.filter(g => {
+  const filtered = grievances.filter(g => {
     const q = search.toLowerCase();
     const matchSearch = !q || g.title.toLowerCase().includes(q) || g.id.toLowerCase().includes(q) || g.citizen.toLowerCase().includes(q) || g.address.toLowerCase().includes(q);
     const matchStatus = filterStatus === "all" || g.status === filterStatus;

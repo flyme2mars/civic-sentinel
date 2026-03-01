@@ -84,10 +84,18 @@ export function DetailDrawer({ g, dark, onClose }: { g: GrievanceType; dark: boo
                 <div style={{ fontSize: 9, color: textSecondary, fontFamily: "'DM Mono', monospace", letterSpacing: "0.1em", marginBottom: 10 }}>PHOTO EVIDENCE</div>
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
                   {["BEFORE", "AFTER"].map(label => (
-                    <div key={label} style={{ aspectRatio: "4/3", borderRadius: 10, background: dark ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.03)", border: `1px dashed ${border}`, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 6 }}>
-                      <div style={{ fontSize: 22, opacity: 0.2 }}>📷</div>
-                      <div style={{ fontSize: 9, color: dark ? "#374151" : "#D1D5DB", fontFamily: "'DM Mono', monospace", letterSpacing: "0.1em" }}>{label}</div>
-                      {label === "AFTER" && g.hasAfter && <div style={{ fontSize: 9, color: dark ? "#4ADE80" : "#16A34A", fontFamily: "'DM Mono', monospace" }}>✓ UPLOADED</div>}
+                    <div key={label} style={{ aspectRatio: "4/3", borderRadius: 10, background: dark ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.03)", border: `1px dashed ${border}`, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 6, overflow: "hidden", position: "relative" }}>
+                      {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                      {(label === "BEFORE" && (g as any).imageUrl) ? (
+                        /* eslint-disable-next-line @typescript-eslint/no-explicit-any, @next/next/no-img-element */
+                        <img src={(g as any).imageUrl} alt="Before" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                      ) : (
+                        <>
+                          <div style={{ fontSize: 22, opacity: 0.2 }}>📷</div>
+                          <div style={{ fontSize: 9, color: dark ? "#374151" : "#D1D5DB", fontFamily: "'DM Mono', monospace", letterSpacing: "0.1em" }}>{label}</div>
+                          {label === "AFTER" && g.hasAfter && <div style={{ fontSize: 9, color: dark ? "#4ADE80" : "#16A34A", fontFamily: "'DM Mono', monospace" }}>✓ UPLOADED</div>}
+                        </>
+                      )}
                     </div>
                   ))}
                 </div>
