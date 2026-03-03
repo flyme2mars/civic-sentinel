@@ -1,95 +1,92 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+'use client';
+
 import React from 'react';
-import { GrievanceCard } from '../GrievanceCard';
-import { Pill, PriorityDot, SLARing, SLABar, ScoreRing } from '../Atoms';
-import { STATUS_MAP, PRIORITY_MAP } from '@/lib/mock-data';
+import { CivicIssue } from '@/lib/types';
+import { StatusIcon, PriorityIcon, DoomsdayClock } from '../Atoms';
+import { formatDate } from '@/lib/utils';
 
 export function GrievancesView({ 
-  dark, surface, border, textSecondary, textPrimary, accent, 
-  filterStatus, setFilterStatus, sortBy, setSortBy, viewMode, setViewMode, 
-  filtered, setSelected 
-}: any) {
+  issues, 
+  onSelect 
+}: { 
+  issues: CivicIssue[], 
+  onSelect: (issue: CivicIssue) => void 
+}) {
   return (
-    <div style={{ animation: "fadeSlideUp 0.3s ease" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
-        <h2 style={{ fontSize: 24, fontWeight: 800 }}>All Grievances</h2>
-      </div>
-      {/* TOOLBAR */}
-      <div style={{ background: surface, border: `1px solid ${border}`, borderRadius: 14, padding: "14px 18px", marginBottom: 18, display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
-        <div style={{ display: "flex", gap: 6, flex: 1, flexWrap: "wrap" }}>
-          {["all", "pending", "in-progress", "critical", "escalated", "resolved"].map(s => (
-            <button key={s} onClick={() => setFilterStatus(s)} style={{
-              background: filterStatus === s ? (dark ? "rgba(99,102,241,0.2)" : "rgba(99,102,241,0.12)") : (dark ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.04)"),
-              border: `1px solid ${filterStatus === s ? (dark ? "rgba(99,102,241,0.4)" : "rgba(99,102,241,0.3)") : border}`,
-              color: filterStatus === s ? accent : textSecondary,
-              borderRadius: 8, padding: "6px 12px", cursor: "pointer", fontSize: 11, fontWeight: 700,
-              fontFamily: "'DM Mono', monospace", letterSpacing: "0.04em", transition: "all 0.15s",
-              textTransform: "capitalize"
-            }}>{s === "all" ? "All" : s}</button>
-          ))}
+    <div className="flex-1 flex flex-col min-w-0">
+      {/* Header / Filter bar */}
+      <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+        <div className="flex items-center gap-2">
+          <h1 className="text-lg font-semibold text-gray-900">Active Issues</h1>
+          <span className="px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-500 text-[10px] font-bold uppercase tracking-wider">
+            {issues.length}
+          </span>
         </div>
-
-        <select value={sortBy} onChange={e => setSortBy(e.target.value)} style={{ background: dark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.04)", border: `1px solid ${border}`, borderRadius: 8, padding: "7px 12px", color: textSecondary, fontSize: 11, cursor: "pointer", fontFamily: "'DM Mono', monospace", outline: "none" }}>
-          <option value="urgency">Sort: Urgency</option>
-          <option value="severity">Sort: Severity</option>
-          <option value="recent">Sort: Recent</option>
-        </select>
-
-        <div style={{ display: "flex", gap: 4 }}>
-          {[["grid", "⊞"], ["list", "☰"]].map(([m, icon]) => (
-            <button key={m} onClick={() => setViewMode(m)} style={{ background: viewMode === m ? (dark ? "rgba(99,102,241,0.2)" : "rgba(99,102,241,0.12)") : "transparent", border: `1px solid ${viewMode === m ? (dark ? "rgba(99,102,241,0.4)" : "rgba(99,102,241,0.3)") : border}`, color: viewMode === m ? accent : textSecondary, borderRadius: 8, width: 34, height: 34, cursor: "pointer", fontSize: 16, display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.15s" }}>{icon}</button>
-          ))}
+        <div className="flex items-center gap-2">
+          <button className="text-xs font-medium text-gray-500 hover:text-gray-900 px-3 py-1.5 rounded hover:bg-gray-50 transition-colors border border-gray-100 shadow-sm">
+            View Settings
+          </button>
         </div>
       </div>
 
-      {/* GRID VIEW */}
-      {viewMode === "grid" && (
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))", gap: 16 }}>
-          {filtered.map((g: any, i: number) => (
-            <GrievanceCard key={g.id} g={g} dark={dark} onClick={setSelected} index={i} />
-          ))}
-          {filtered.length === 0 && (
-            <div style={{ gridColumn: "1/-1", textAlign: "center", padding: 60, color: textSecondary, fontSize: 14 }}>No grievances match your filter.</div>
-          )}
-        </div>
-      )}
-
-      {/* LIST VIEW */}
-      {viewMode === "list" && (
-        <div style={{ background: surface, border: `1px solid ${border}`, borderRadius: 14, overflow: "hidden" }}>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 130px 120px 130px 110px 80px", gap: 16, padding: "10px 18px", borderBottom: `1px solid ${border}` }}>
-            {["ISSUE", "STATUS", "WARD", "SLA", "PRIORITY", "SCORE"].map(h => (
-              <div key={h} style={{ fontSize: 9, color: textSecondary, fontFamily: "'DM Mono', monospace", letterSpacing: "0.1em" }}>{h}</div>
+      {/* List */}
+      <div className="flex-1 overflow-y-auto">
+        <table className="w-full text-left border-collapse">
+          <thead>
+            <tr className="border-b border-gray-50 text-[10px] font-bold text-gray-400 uppercase tracking-widest bg-gray-50/30">
+              <th className="px-6 py-3 font-semibold w-12">Priority</th>
+              <th className="px-6 py-3 font-semibold">Title</th>
+              <th className="px-6 py-3 font-semibold w-32">Status</th>
+              <th className="px-6 py-3 font-semibold w-40">Reported Date</th>
+              <th className="px-6 py-3 font-semibold w-48 text-right">Doomsday Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {issues.map((issue) => (
+              <tr 
+                key={issue.id}
+                onClick={() => onSelect(issue)}
+                className="group border-b border-gray-50 hover:bg-gray-50 transition-colors cursor-pointer select-none"
+              >
+                <td className="px-6 py-4">
+                  <div className="flex items-center justify-center">
+                    <PriorityIcon priority={issue.priority} className="w-4 h-4" />
+                  </div>
+                </td>
+                <td className="px-6 py-4">
+                  <div className="flex flex-col gap-0.5">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-mono text-gray-400 uppercase">{issue.id}</span>
+                      <span className="text-sm font-medium text-gray-900 group-hover:text-blue-600 transition-colors truncate max-w-md">
+                        {issue.title}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2 text-[11px] text-gray-400">
+                      <span>{issue.ward}</span>
+                      <span>•</span>
+                      <span>{issue.category}</span>
+                    </div>
+                  </div>
+                </td>
+                <td className="px-6 py-4">
+                  <div className="flex items-center gap-2">
+                    <StatusIcon status={issue.status} />
+                    <span className="text-xs text-gray-600 capitalize">{issue.status.replace('-', ' ')}</span>
+                  </div>
+                </td>
+                <td className="px-6 py-4">
+                  <span className="text-xs text-gray-500">
+                    {formatDate(issue.reportedAt)}
+                  </span>
+                </td>
+                <td className="px-6 py-4 text-right">
+                  <DoomsdayClock reportedAt={issue.reportedAt} slaHours={issue.slaHours} status={issue.status} />
+                </td>
+              </tr>
             ))}
-          </div>
-          {filtered.map((g: any, i: number) => (
-            <div key={g.id} onClick={() => setSelected(g)} style={{
-              display: "grid", gridTemplateColumns: "1fr 130px 120px 130px 110px 80px", gap: 16,
-              padding: "14px 18px", borderBottom: `1px solid ${border}`, cursor: "pointer",
-              transition: "background 0.15s", alignItems: "center",
-              animation: `fadeSlideUp 0.3s ease ${i * 50}ms both`
-            }}
-              onMouseEnter={e => { e.currentTarget.style.background = dark ? "rgba(255,255,255,0.025)" : "rgba(0,0,0,0.025)"; }}
-              onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}>
-              <div>
-                <div style={{ fontSize: 10, color: textSecondary, fontFamily: "'DM Mono', monospace" }}>{g.id}</div>
-                <div style={{ fontSize: 13, fontWeight: 600, color: textPrimary, marginTop: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{g.title}</div>
-              </div>
-              <Pill status={g.status as keyof typeof STATUS_MAP} dark={dark} />
-              <span style={{ fontSize: 12, color: textSecondary }}>{g.ward}</span>
-              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <SLARing reportedAt={g.reportedAt} slaHours={g.slaHours} dark={dark} size={44} />
-                <SLABar reportedAt={g.reportedAt} slaHours={g.slaHours} compact dark={dark} />
-              </div>
-              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                <PriorityDot priority={g.priority as keyof typeof PRIORITY_MAP} dark={dark} />
-                <span style={{ fontSize: 11, color: PRIORITY_MAP[g.priority as keyof typeof PRIORITY_MAP]?.[dark ? "dark" : "light"], fontFamily: "'DM Mono', monospace", textTransform: "capitalize" }}>{g.priority}</span>
-              </div>
-              {g.score != null ? <ScoreRing score={g.score} dark={dark} size={36} /> : <span style={{ color: dark ? "#374151" : "#E5E7EB", fontSize: 12 }}>—</span>}
-            </div>
-          ))}
-        </div>
-      )}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }

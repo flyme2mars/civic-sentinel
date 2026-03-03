@@ -1,16 +1,16 @@
 'use client';
 
 import React, { useState, useEffect } from "react";
-import { Sidebar } from "@/components/govt/Sidebar";
-import { TopNav } from "@/components/govt/TopNav";
-import { OverviewView } from "@/components/govt/views/OverviewView";
-import { GrievancesView } from "@/components/govt/views/GrievancesView";
-import { DepartmentsView } from "@/components/govt/views/DepartmentsView";
-import { WardsView } from "@/components/govt/views/WardsView";
-import { AnalyticsView } from "@/components/govt/views/AnalyticsView";
-import { ReportsView } from "@/components/govt/views/ReportsView";
-import { SettingsView } from "@/components/govt/views/SettingsView";
-import { DetailDrawer } from "@/components/govt/DetailDrawer";
+import { Sidebar } from "@/components/admin/Sidebar";
+import { TopNav } from "@/components/admin/TopNav";
+import { OverviewView } from "@/components/admin/views/OverviewView";
+import { GrievancesView } from "@/components/admin/views/GrievancesView";
+import { DepartmentsView } from "@/components/admin/views/DepartmentsView";
+import { WardsView } from "@/components/admin/views/WardsView";
+import { AnalyticsView } from "@/components/admin/views/AnalyticsView";
+import { ReportsView } from "@/components/admin/views/ReportsView";
+import { SettingsView } from "@/components/admin/views/SettingsView";
+import { DetailDrawer } from "@/components/admin/DetailDrawer";
 import { GrievanceType } from "@/lib/mock-data";
 
 export default function GovernmentDashboard() {

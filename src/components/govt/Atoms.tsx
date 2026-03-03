@@ -2,111 +2,108 @@
 
 import React from 'react';
 import { useCountdown } from '@/hooks/useCountdown';
-import { STATUS_MAP, PRIORITY_MAP } from '@/lib/mock-data';
+import { 
+  Circle, 
+  CircleDashed, 
+  CircleDot, 
+  CheckCircle2, 
+  AlertCircle, 
+  Clock,
+  AlertTriangle,
+  ArrowUpCircle,
+  ArrowRightCircle,
+  ArrowDownCircle,
+  MoreHorizontal
+} from 'lucide-react';
+import { Status, Priority } from '@/lib/types';
 
-export function Pill({ status, dark }: { status: keyof typeof STATUS_MAP, dark: boolean }) {
-  const cfg = STATUS_MAP[status] || STATUS_MAP.pending;
-  const c = dark ? cfg.dark : cfg.light;
-  return (
-    <span style={{ background: c.bg, color: c.text, border: `1px solid ${c.border}`, padding: "3px 10px", borderRadius: 999, fontSize: 11, fontWeight: 700, fontFamily: "'DM Mono', monospace", letterSpacing: "0.04em", whiteSpace: "nowrap" }}>
-      {cfg.label}
-    </span>
-  );
+export function StatusIcon({ status, className = "w-4 h-4" }: { status: Status, className?: string }) {
+  switch (status) {
+    case 'pending':
+      return <Circle className={`${className} text-gray-400`} />;
+    case 'in-progress':
+      return <CircleDot className={`${className} text-blue-500`} />;
+    case 'resolved':
+      return <CheckCircle2 className={`${className} text-green-500`} />;
+    case 'escalated':
+      return <AlertTriangle className={`${className} text-orange-500`} />;
+    case 'critical':
+      return <AlertCircle className={`${className} text-red-500`} />;
+    case 'verified':
+      return <CheckCircle2 className={`${className} text-purple-500`} />;
+    default:
+      return <CircleDashed className={`${className} text-gray-300`} />;
+  }
 }
 
-export function PriorityDot({ priority, dark }: { priority: keyof typeof PRIORITY_MAP, dark: boolean }) {
-  const color = dark ? PRIORITY_MAP[priority]?.dark : PRIORITY_MAP[priority]?.light;
-  return <span style={{ display: "inline-block", width: 7, height: 7, borderRadius: "50%", background: color, boxShadow: priority === "critical" ? `0 0 6px ${color}` : "none", flexShrink: 0 }} />;
+export function PriorityIcon({ priority, className = "w-4 h-4" }: { priority: Priority, className?: string }) {
+  switch (priority) {
+    case 'critical':
+      return <AlertCircle className={`${className} text-red-600`} />;
+    case 'high':
+      return <ArrowUpCircle className={`${className} text-orange-500`} />;
+    case 'medium':
+      return <ArrowRightCircle className={`${className} text-yellow-500`} />;
+    case 'low':
+      return <ArrowDownCircle className={`${className} text-blue-400`} />;
+    default:
+      return <MoreHorizontal className={`${className} text-gray-400`} />;
+  }
 }
 
-export function SLABar({ reportedAt, slaHours, compact, dark }: { reportedAt: number, slaHours: number, compact?: boolean, dark: boolean }) {
-  const { breached, h, m, pct, urgent } = useCountdown(reportedAt, slaHours);
-  const barColor = breached ? (dark ? "#EF4444" : "#DC2626") : urgent ? (dark ? "#F97316" : "#EA580C") : (dark ? "#4ADE80" : "#16A34A");
-  const textColor = breached ? (dark ? "#EF4444" : "#DC2626") : urgent ? (dark ? "#F97316" : "#EA580C") : (dark ? "#4ADE80" : "#16A34A");
+export function DoomsdayClock({ reportedAt, slaHours, status }: { reportedAt: number, slaHours: number, status: Status }) {
+  const { breached, h, m, pct } = useCountdown(reportedAt, slaHours);
+  const [isMounted, setIsMounted] = React.useState(false);
 
-  if (compact) {
+  React.useEffect(() => {
+    setIsMounted(true);
+  }, []);
+  
+  if (status === 'pending') {
     return (
-      <span style={{ color: textColor, fontFamily: "'DM Mono', monospace", fontSize: 11, fontWeight: 700 }}>
-        {breached ? `+${h}h overdue` : `${h}h ${m}m`}
+      <span className="text-[11px] font-medium text-gray-400 uppercase tracking-wider">
+        Pending Audit
       </span>
     );
   }
 
-  return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <span style={{ fontSize: 10, color: dark ? "#6B7280" : "#9CA3AF", fontFamily: "'DM Mono', monospace", letterSpacing: "0.08em" }}>
-          {breached ? "SLA BREACHED" : "SLA DEADLINE"}
-        </span>
-        <span style={{ color: textColor, fontFamily: "'DM Mono', monospace", fontSize: 13, fontWeight: 700 }}>
-          {breached ? `+${h}h ${m}m` : `${h}h ${m}m`}
-        </span>
-      </div>
-      <div style={{ height: 5, borderRadius: 3, background: dark ? "rgba(255,255,255,0.07)" : "rgba(0,0,0,0.07)", overflow: "hidden", position: "relative" }}>
-        <div style={{
-          height: "100%", width: `${pct}%`, background: barColor, borderRadius: 3,
-          transition: "width 1s linear",
-          boxShadow: `0 0 8px ${barColor}50`
-        }} />
-        {(urgent || breached) && (
-          <div style={{ position: "absolute", inset: 0, background: `linear-gradient(90deg, transparent 60%, ${barColor}30)`, animation: "pulse 2s infinite" }} />
-        )}
-      </div>
-    </div>
-  );
-}
+  if (status === 'resolved' || status === 'verified') {
+    return (
+      <span className="text-[11px] font-medium text-green-600 uppercase tracking-wider">
+        Completed
+      </span>
+    );
+  }
 
-export function SLARing({ reportedAt, slaHours, dark, size = 52 }: { reportedAt: number, slaHours: number, dark: boolean, size?: number }) {
-  const { breached, h, m, pct, urgent } = useCountdown(reportedAt, slaHours);
-  const color = breached ? (dark ? "#EF4444" : "#DC2626") : urgent ? (dark ? "#F97316" : "#EA580C") : (dark ? "#4ADE80" : "#16A34A");
-  const trackColor = dark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.07)";
-  const cx = size / 2, cy = size / 2, r = (size - 6) / 2;
-  const circ = 2 * Math.PI * r;
-  const dash = (pct / 100) * circ;
+  if (!isMounted) {
+    return <div className="h-5" />; // Placeholder to avoid layout shift
+  }
 
   return (
-    <div style={{ position: "relative", width: size, height: size, flexShrink: 0 }}>
-      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{ display: "block" }}>
-        {/* Track */}
-        <circle cx={cx} cy={cy} r={r} fill="none" stroke={trackColor} strokeWidth="4" />
-        {/* Progress */}
-        <circle cx={cx} cy={cy} r={r} fill="none" stroke={color} strokeWidth="4"
-          strokeDasharray={`${dash} ${circ}`} strokeLinecap="round"
-          style={{ transformOrigin: "center", transform: "rotate(-90deg)", transition: "stroke-dasharray 1s linear" }} />
-        {/* Glow when urgent/breached */}
-        {(urgent || breached) && (
-          <circle cx={cx} cy={cy} r={r} fill="none" stroke={color} strokeWidth="4" opacity="0.2"
-            strokeDasharray={`${dash} ${circ}`} strokeLinecap="round"
-            style={{ transformOrigin: "center", transform: "rotate(-90deg)", filter: "blur(3px)" }} />
-        )}
-      </svg>
-      {/* Center text */}
-      <div style={{
-        position: "absolute", inset: 0, display: "flex", flexDirection: "column",
-        alignItems: "center", justifyContent: "center", gap: 0
-      }}>
-        <span style={{ fontSize: size < 60 ? 9 : 11, fontFamily: "'DM Mono', monospace", fontWeight: 700, color, lineHeight: 1 }}>
-          {breached ? `+${h}h` : `${h}h`}
-        </span>
-        <span style={{ fontSize: size < 60 ? 7 : 9, fontFamily: "'DM Mono', monospace", color: dark ? "#6B7280" : "#9CA3AF", lineHeight: 1, marginTop: 1 }}>
-          {breached ? "over" : `${m}m`}
-        </span>
+    <div className="flex items-center gap-3">
+      <span className={`font-mono text-sm font-bold tracking-tighter ${breached ? 'text-red-600' : 'text-gray-900'}`}>
+        {breached ? '-' : ''}{String(Math.abs(h)).padStart(2, '0')}:{String(Math.abs(m)).padStart(2, '0')}:00
+      </span>
+      <div className="w-12 h-1 bg-gray-100 rounded-full overflow-hidden">
+        <div 
+          className={`h-full transition-all duration-1000 ${breached ? 'bg-red-500' : 'bg-gray-400'}`}
+          style={{ width: `${Math.max(0, Math.min(100, pct))}%` }}
+        />
       </div>
     </div>
   );
 }
 
-export function ScoreRing({ score, dark, size = 44 }: { score: number, dark: boolean, size?: number }) {
-  const color = score >= 80 ? (dark ? "#4ADE80" : "#16A34A") : score >= 50 ? (dark ? "#FBBF24" : "#D97706") : (dark ? "#EF4444" : "#DC2626");
-  const r = 16; const circ = 2 * Math.PI * r;
-  const dash = (score / 100) * circ;
+export function Badge({ children, variant = 'default' }: { children: React.ReactNode, variant?: 'default' | 'outline' | 'secondary' }) {
+  const styles = {
+    default: "bg-gray-100 text-gray-700",
+    outline: "border border-gray-200 text-gray-600",
+    secondary: "bg-blue-50 text-blue-700 border border-blue-100"
+  };
+  
   return (
-    <svg width={size} height={size} viewBox="0 0 40 40">
-      <circle cx="20" cy="20" r={r} fill="none" stroke={dark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.06)"} strokeWidth="4" />
-      <circle cx="20" cy="20" r={r} fill="none" stroke={color} strokeWidth="4"
-        strokeDasharray={`${dash} ${circ}`} strokeLinecap="round"
-        style={{ transformOrigin: "center", transform: "rotate(-90deg)", transition: "stroke-dasharray 0.6s ease" }} />
-      <text x="20" y="24" textAnchor="middle" fill={color} fontSize="9" fontFamily="'DM Mono', monospace" fontWeight="700">{score}</text>
-    </svg>
+    <span className={`px-2 py-0.5 rounded text-[10px] font-semibold uppercase tracking-tight ${styles[variant]}`}>
+      {children}
+    </span>
   );
 }
