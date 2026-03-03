@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
-import { dynamoDb, s3Client, AWS_CONFIG } from '@/lib/aws/config';
+import { dynamoDb, s3Client, AWS_CONFIG, ddbClient } from '@/lib/aws/config';
 import { ScanCommand } from '@aws-sdk/lib-dynamodb';
 import { GetObjectCommand } from '@aws-sdk/client-s3';
+import { ListTablesCommand } from '@aws-sdk/client-dynamodb';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 
 export const dynamic = 'force-dynamic';
@@ -52,6 +53,14 @@ export async function GET(request: Request) {
     return NextResponse.json({ success: true, grievances: items });
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (error: any) {
+    if (error.name === 'ResourceNotFoundException') {
+      try {
+        const tables = await ddbClient.send(new ListTablesCommand({}));
+        console.error(`[DYNAMODB DIAGNOSIS] Table "${AWS_CONFIG.dynamodb.tableName}" NOT FOUND. Available tables in ${AWS_CONFIG.region}:`, tables.TableNames);
+      } catch (listErr) {
+        console.error("[DYNAMODB DIAGNOSIS] Failed to list tables:", listErr);
+      }
+    }
     console.error('[Grievance List API] Error:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }

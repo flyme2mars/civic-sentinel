@@ -31,7 +31,10 @@ export default function GovernmentDashboard() {
 
   useEffect(() => {
     const savedToken = localStorage.getItem('govt_token');
-    if (savedToken) setAuthToken(savedToken);
+    if (savedToken) {
+      setAuthToken(savedToken);
+      setIsAuthorized(true);
+    }
   }, []);
 
   useEffect(() => {
@@ -141,13 +144,17 @@ export default function GovernmentDashboard() {
             placeholder="Enter Government Access Token"
             style={{ width: "100%", padding: "16px 20px", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 12, color: "#fff", fontSize: 14, marginBottom: 16, outline: "none" }}
             onKeyDown={(e) => {
-              if (e.key === 'Enter') setAuthToken((e.target as HTMLInputElement).value);
+              if (e.key === 'Enter') {
+                setAuthToken((e.target as HTMLInputElement).value);
+                setIsAuthorized(true);
+              }
             }}
           />
           <button 
             onClick={(e) => {
               const input = (e.currentTarget.previousSibling as HTMLInputElement);
               setAuthToken(input.value);
+              setIsAuthorized(true);
             }}
             style={{ width: "100%", padding: "16px", background: "#F9FAFB", color: "#0B0F1A", borderRadius: 12, fontWeight: 800, fontSize: 14, border: "none", cursor: "pointer" }}
           >

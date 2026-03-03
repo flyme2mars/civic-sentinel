@@ -25,7 +25,102 @@ export function DetailDrawer({
   onClose: () => void 
 }) {
   const [dragActive, setDragActive] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
   const [isVerifying, setIsVerifying] = useState(false);
+  const [resolutionKey, setResolutionKey] = useState<string | null>(null);
+  const [verificationResult, setVerificationResult] = useState<{
+    success: boolean;
+    verified?: boolean;
+    reasoning?: string;
+    error?: string;
+  } | null>(null);
+
+  const handleFileUpload = async (file: File) => {
+    setIsUploading(true);
+    try {
+      // 1. Get Presigned URL
+      const res = await fetch('/api/upload-url', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fileName: file.name, fileType: file.type })
+      });
+      const { uploadUrl, key } = await res.json();
+
+      // 2. Upload to S3
+      await fetch(uploadUrl, {
+        method: 'PUT',
+        headers: { 'Content-Type': file.type },
+        body: file
+      });
+
+      setResolutionKey(key);
+      console.log("Uploaded resolution image to S3:", key);
+    } catch (e) {
+      console.error("Upload failed", e);
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(false);
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      handleFileUpload(e.dataTransfer.files[0]);
+    }
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      handleFileUpload(e.target.files[0]);
+    }
+  };
+
+  const handleSubmitResolution = async () => {
+    const targetId = issue.rawId || issue.id;
+    console.log("[DetailDrawer] Submitting resolution for targetId:", targetId);
+    console.log("[DetailDrawer] Resolution key from state:", resolutionKey);
+
+    if (!resolutionKey || !targetId) {
+      setVerificationResult({ success: false, error: "Missing ID or Image Evidence." });
+      return;
+    }
+    
+    setIsVerifying(true);
+    setVerificationResult(null);
+    try {
+      // 1. Submit the resolution to the database
+      const res = await fetch('/api/grievance/resolve', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: targetId,
+          resolvedImageKey: resolutionKey,
+          note: "Issue resolved and image evidence uploaded via official dashboard."
+        })
+      });
+      const data = await res.json();
+      
+      if (data.success) {
+        // 2. Trigger the AI Vision Auditor
+        const verifyRes = await fetch('/api/grievance/verify', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: targetId })
+        });
+        const verifyData = await verifyRes.json();
+        setVerificationResult(verifyData);
+      } else {
+        setVerificationResult({ success: false, error: data.error || "Failed to mark as fixed." });
+      }
+    } catch (e: any) {
+      console.error("Resolution submit failed", e);
+      setVerificationResult({ success: false, error: e.message || "An unexpected error occurred." });
+    } finally {
+      setIsVerifying(false);
+    }
+  };
 
   const handleDrag = (e: React.DragEvent) => {
     e.preventDefault();
@@ -127,37 +222,76 @@ export function DetailDrawer({
               onDragEnter={handleDrag}
               onDragLeave={handleDrag}
               onDragOver={handleDrag}
+              onDrop={handleDrop}
               className={`
                 relative aspect-video rounded-xl border-2 border-dashed transition-all duration-200 flex flex-col items-center justify-center gap-3 p-8
                 ${dragActive ? 'border-blue-500 bg-blue-50' : 'border-gray-200 bg-gray-50 hover:bg-white hover:border-gray-300'}
+                ${resolutionKey ? 'border-green-500 bg-green-50' : ''}
               `}
             >
-              <div className={`w-12 h-12 rounded-full flex items-center justify-center ${dragActive ? 'bg-blue-100' : 'bg-gray-100'}`}>
-                <Upload className={`w-6 h-6 ${dragActive ? 'text-blue-500' : 'text-gray-400'}`} />
-              </div>
-              <div className="text-center">
-                <p className="text-sm font-semibold text-gray-900">Drag & Drop "Fixed" Image</p>
-                <p className="text-xs text-gray-500 mt-1">PNG, JPG up to 10MB</p>
-              </div>
-              <button className="mt-2 px-4 py-2 bg-white border border-gray-200 rounded-lg text-xs font-bold text-gray-900 hover:shadow-md transition-shadow">
-                Browse Files
-              </button>
+              {isUploading ? (
+                <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
+              ) : resolutionKey ? (
+                <>
+                  <CheckCircle className="w-10 h-10 text-green-500" />
+                  <p className="text-sm font-semibold text-green-900">Evidence Uploaded</p>
+                  <button onClick={() => { setResolutionKey(null); setVerificationResult(null); }} className="text-[10px] text-red-500 hover:underline">Remove and retry</button>
+                </>
+              ) : (
+                <>
+                  <div className={`w-12 h-12 rounded-full flex items-center justify-center ${dragActive ? 'bg-blue-100' : 'bg-gray-100'}`}>
+                    <Upload className={`w-6 h-6 ${dragActive ? 'text-blue-500' : 'text-gray-400'}`} />
+                  </div>
+                  <div className="text-center">
+                    <p className="text-sm font-semibold text-gray-900">Drag & Drop "Fixed" Image</p>
+                    <p className="text-xs text-gray-500 mt-1">PNG, JPG up to 10MB</p>
+                  </div>
+                  <label className="mt-2 px-4 py-2 bg-white border border-gray-200 rounded-lg text-xs font-bold text-gray-900 hover:shadow-md transition-shadow cursor-pointer">
+                    Browse Files
+                    <input type="file" className="hidden" accept="image/*" onChange={handleFileChange} />
+                  </label>
+                </>
+              )}
             </div>
           </div>
+
+          {/* AI Auditor Result Section */}
+          {verificationResult && (
+            <div className={`p-4 rounded-xl border ${verificationResult.verified ? 'bg-green-50 border-green-100' : 'bg-red-50 border-red-100'} animate-in fade-in slide-in-from-bottom-2 duration-500`}>
+              <div className="flex items-center gap-2 mb-2">
+                {verificationResult.verified ? (
+                  <CheckCircle className="w-4 h-4 text-green-600" />
+                ) : (
+                  <X className="w-4 h-4 text-red-600" />
+                )}
+                <span className={`text-sm font-bold ${verificationResult.verified ? 'text-green-900' : 'text-red-900'}`}>
+                  AI Auditor {verificationResult.verified ? 'Verified' : 'Rejected'}
+                </span>
+              </div>
+              <p className={`text-xs leading-relaxed ${verificationResult.verified ? 'text-green-700' : 'text-red-700'}`}>
+                {verificationResult.reasoning || verificationResult.error || "Verification failed."}
+              </p>
+              {!verificationResult.verified && (
+                <p className="text-[10px] text-red-500 mt-2 italic font-medium">
+                  Manual auditing required. Please re-upload clearer evidence or re-examine the site.
+                </p>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
       {/* Footer Actions */}
       <div className="p-6 border-t border-gray-100 bg-gray-50/50 flex items-center gap-3">
         <button 
-          onClick={() => setIsVerifying(true)}
-          disabled={isVerifying}
+          onClick={handleSubmitResolution}
+          disabled={isVerifying || !resolutionKey}
           className="flex-1 bg-gray-900 hover:bg-black text-white px-6 py-3 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-gray-200"
         >
           {isVerifying ? (
             <>
               <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" />
-              Analyzing with Vision Auditor...
+              Submitting Resolution...
             </>
           ) : (
             <>

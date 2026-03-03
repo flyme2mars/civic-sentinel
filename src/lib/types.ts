@@ -2,7 +2,8 @@ export type Priority = 'low' | 'medium' | 'high' | 'critical';
 export type Status = 'pending' | 'in-progress' | 'resolved' | 'escalated' | 'critical' | 'verified';
 
 export interface CivicIssue {
-  id: string;
+  id: string;      // Display ID (e.g., CIV-21D48F3E)
+  rawId: string;   // Database UUID (e.g., 21d48f3e-...)
   title: string;
   description: string;
   category: string;
