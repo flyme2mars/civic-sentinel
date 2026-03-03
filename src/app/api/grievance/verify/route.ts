@@ -33,6 +33,14 @@ export async function POST(request: Request) {
       fetchS3Bytes(grievance.fixedImageKey)
     ]);
 
+    // Helper to determine format for Bedrock
+    const getFormat = (key: string): "png" | "jpeg" | "webp" => {
+      const ext = key.split('.').pop()?.toLowerCase();
+      if (ext === 'png') return 'png';
+      if (ext === 'webp') return 'webp';
+      return 'jpeg'; // default to jpeg for jpg/jpeg
+    };
+
     // 3. Trigger Bedrock Claude 3.5 Sonnet to compare
     const systemPrompt = `
       You are an elite Civil Infrastructure Inspector. 
@@ -61,9 +69,9 @@ export async function POST(request: Request) {
           role: "user",
           content: [
             { text: "Before Image:" },
-            { image: { format: "jpeg", source: { bytes: beforeBytes } } },
+            { image: { format: getFormat(grievance.imageKey), source: { bytes: beforeBytes } } },
             { text: "After Image:" },
-            { image: { format: "jpeg", source: { bytes: afterBytes } } },
+            { image: { format: getFormat(grievance.fixedImageKey), source: { bytes: afterBytes } } },
             { text: "Please analyze the resolution." }
           ]
         }

@@ -50,7 +50,7 @@ export default function GovtDashboard() {
           
           const formatted: CivicIssue[] = data.grievances.map((dbItem: any) => {
             console.log("[Dashboard] Mapping item:", dbItem.id);
-            const reportedAt = new Date(dbItem.createdAt).getTime();
+            const reportedAt = dbItem.createdAt ? new Date(dbItem.createdAt).getTime() : Date.now();
             const slaHours = dbItem.slaHours || 48;
             return {
               id: dbItem.id.includes('-') ? "CIV-" + dbItem.id.split('-')[0].toUpperCase() : dbItem.id,
