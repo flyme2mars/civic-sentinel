@@ -1,7 +1,7 @@
 import { CivicIssue, Department } from "./types";
 
-// Static timestamp for consistent SSR/Hydration
-const now = 1740988800000; // March 3, 2025 00:00:00 UTC
+// Static timestamp for consistent SSR/Hydration (March 3, 2026)
+const now = 1772496000000; 
 const hour = 3600000;
 
 export const GRIEVANCES: CivicIssue[] = [
