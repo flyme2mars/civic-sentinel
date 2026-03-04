@@ -14,7 +14,7 @@ export const AWS_CONFIG = {
     bucketName: process.env.NEXT_PUBLIC_S3_BUCKET_NAME || 'civic-sentinel-uploads',
   },
   bedrock: {
-    modelId: process.env.BEDROCK_MODEL_ID || 'apac.anthropic.claude-3-5-sonnet-20240620-v1:0',
+    modelId: process.env.BEDROCK_MODEL_ID || 'apac.amazon.nova-pro-v1:0',
   },
   dynamodb: {
     tableName: process.env.DYNAMODB_TABLE_NAME || 'CivicGrievances',
