@@ -19,7 +19,7 @@ const TOOLS = [
   {
     toolSpec: {
       name: "reverse_geocode",
-      description: "Get pinpoint address including sub-locality, area, and city from GPS coordinates using professional maps.",
+      description: "Get pinpoint address components. Use this to distinguish between the specific City/Town and the larger administrative District.",
       inputSchema: {
         json: {
           type: "object",
@@ -43,13 +43,46 @@ Your objective is to process raw citizen input and generate a highly structured,
 <instruction>
 1. Analyze the citizen's evidence and extract the core issue 
 2. Determine the precise central/state government department responsible (e.g., Public Works Department (PWD), State Electricity Board, Water Authority).
-3. Evaluate the severity of the issue based on public safety and infrastructure impact.
-4. Consider the map data from the tool reverse_geocode as the baseline. IF RAW GPS IS PROVIDED, YOU MUST CALL THE reverse_geocode TOOL.
-5. IMPORTANT: If the citizen mentions a specific locality name (e.g. "Chenkulam") in their text/audio, PRIORITIZE that over the map's area name. 
-6. Look for shop names or signs in the image to refine the landmark.
-7. The output must include a precise Landmark, Area, Pincode, City, District, and State.
-8. DO NOT combine city, district, and state into one field. Each MUST be a single, clean name (e.g., City: "Kottarakkara", District: "Kollam", State: "Kerala").
+4. Determine the official designation of the officer/officers in the specified department who are responsible for mitigating or solving the issue. 
+5. Evaluate the severity of the issue based on public safety and infrastructure impact.
+6. Consider the map data from the tool reverse_geocode as the baseline. IF RAW GPS IS PROVIDED, YOU MUST CALL THE reverse_geocode TOOL.
+7. IMPORTANT: If the citizen mentions a specific locality name (e.g. "Chenkulam") in their text/audio, PRIORITIZE that over the map's area name. 
+8. Look for shop names or signs in the image to refine the landmark.
+9. The output must include a precise Landmark, Area, Pincode, City, District, and State.
+10. DO NOT combine city, district, and state into one field. Each MUST be a single, clean name (e.g., City: "Kottarakkara", District: "Kollam", State: "Kerala").
+11. The success criteria must include details like which type of standard set up by the government or the regulating body must be followed. 
 </instruction>
+
+<example>
+{
+  "investigation_step": "Citizen reported a large water-filled pothole with surrounding pavement cracking on NH 66 (formerly NH 17) at Varappuzha, between North Paravur and Edapally. No GPS provided; location resolved via textual description and web lookup. Varappuzha PIN confirmed as 683517, Ernakulam district. NH 66 falls under NHAI jurisdiction. Severity assessed as HIGH due to visible deep pothole with standing water and advanced pavement fracturing posing active accident risk on a national arterial corridor.",
+  "draft": {
+    "title": "Formal Complaint: Dangerous Water-Filled Pothole and Pavement Deterioration on NH 66 at Varappuzha — Immediate Rectification Demanded",
+    "category": "Infrastructure",
+    "severity": "HIGH",
+    "target_department": "National Highways Authority of India (NHAI) — Kerala Regional Office, Ernakulam",
+    "official_designation": "Project Director, NHAI (Kerala RO) / Executive Engineer, PWD (NH Division), Ernakulam",
+    "summary": "This complaint formally brings to the attention of the competent authority the existence of a severe, water-filled pothole accompanied by extensive radial pavement cracking on National Highway 66 (NH 66), located at Varappuzha, along the North Paravur–Edapally corridor in Ernakulam District, Kerala. As evidenced by the photographic documentation submitted herewith, the pothole exhibits full pavement layer penetration, structural sub-base exposure, and accumulated stagnant water rendering its true depth indeterminate to motorists — a condition of acute hazard. The surrounding carriageway surface shows progressive alligator cracking indicative of wide-scale structural failure beyond isolated spot damage. This stretch is a high-density arterial route carrying substantial daily traffic including two-wheelers, heavy goods vehicles, and KSRTC buses. The defect poses a clear and present risk of fatal road traffic accidents, vehicular axle damage, and injury to vulnerable road users. Despite the ongoing NH widening and improvement programme on this corridor, the maintenance obligation under the Motor Vehicles Act and NHAI contractual framework remains fully enforceable. The responsible department is urgently directed to mobilise emergency patch repair within the stipulated SLA, undertake comprehensive structural investigation, and implement permanent resurfacing with appropriate water drainage remediation.",
+    "location": {
+      "landmark": "NH 66 Carriageway, Near Varappuzha Bridge / Periyar River Crossing",
+      "area": "Varappuzha",
+      "pincode": "683517",
+      "city": "North Paravur",
+      "district": "Ernakulam",
+      "state": "Kerala"
+    },
+    "legal_sla_hours": 48,
+    "success_criteria": [
+      "Emergency cold-mix or hot-mix bituminous patch repair of the reported pothole completed within 48 hours of complaint acknowledgement",
+      "Deployment of adequate warning signage and reflective barricades at the site until permanent repair is executed",
+      "Comprehensive structural condition survey of the entire Varappuzha–North Paravur NH 66 stretch conducted within 7 days",
+      "Permanent full-depth reclamation and resurfacing of all identified failed pavement sections completed within 30 days",
+      "Drainage audit performed to identify and rectify the root cause of sub-surface water ingress contributing to pavement failure",
+      "Written closure report with geo-tagged photographic evidence of completed repairs submitted to the complainant and District Collector's office"
+    ]
+  }
+}
+</example>
 
 <output_format>
 You must output ONLY valid JSON. Do not include any conversational filler, markdown formatting blocks (like \`\`\`json), or preamble. Use the exact structure below:
@@ -119,6 +152,8 @@ export async function processGrievanceAgent(params: {
             if (name === "web_search") resultData = await tavilySearch((input as any).query);
             else if (name === "reverse_geocode") resultData = await reverseGeocode((input as any).lat, (input as any).lng);
 
+            console.log(`[DEBUG] Agent Tool Output (${name}):`, resultData);
+
             toolResultsContent.push({
               toolResult: { toolUseId, content: [{ json: resultData }], status: "success" }
             });
@@ -132,6 +167,7 @@ export async function processGrievanceAgent(params: {
 
       const finalContent = outputMessage.content?.find(c => c.text)?.text;
       if (finalContent) {
+        console.log("[DEBUG] Raw AI Final Text:", finalContent);
         const jsonMatch = finalContent.match(/\{[\s\S]*\}/);
         return jsonMatch ? JSON.parse(jsonMatch[0]) : { error: "No JSON" };
       }
@@ -203,25 +239,52 @@ async function reverseGeocode(lat: number, lng: number) {
     collect(place.Region);
 
     // Heuristic for India mapping: [Locality/Town, District, State]
-    let city: string = place.Locality || (allParts.length >= 1 ? allParts[0] : "");
-    let district: string = (allParts.length >= 2 ? allParts[1] : (typeof place.SubRegion === 'string' ? place.SubRegion : ""));
-    let state: string = (allParts.length >= 3 ? allParts[2] : (place.Region?.Name || ""));
+    // Analyzing typical Amazon Location patterns for Bharat
+    let city = "";
+    let district = "";
+    let state = "";
+
+    // 1. Identify District (usually in SubRegion or sometimes in Locality)
+    const subRegionStr = typeof place.SubRegion === 'string' ? place.SubRegion : place.SubRegion?.Name || "";
+    const localityStr = place.Locality || "";
+    const districtStr = typeof place.District === 'string' ? place.District : "";
+
+    // In Kerala/India, the larger name (Ernakulam, Kollam, etc) is the District.
+    // If Locality and SubRegion both exist and are the same, that's usually the District.
+    if (localityStr && subRegionStr && localityStr === subRegionStr) {
+      district = localityStr;
+      city = districtStr; // The "District" field in Amazon Location often actually contains the Town name
+    } else {
+      city = localityStr || districtStr || (allParts.length >= 1 ? allParts[0] : "");
+      district = subRegionStr || (allParts.length >= 2 ? allParts[1] : "");
+    }
+
+    state = place.Region?.Name || place.Region?.Code || (allParts.length >= 3 ? allParts[2] : "");
 
     // Final scrub: ensure no commas remain in individual fields
-    const scrub = (s: string) => s.split(',')[0].trim();
-
-    const area = (typeof place.District === 'string' ? place.District : "") ||
-      (typeof place.SubRegion === 'string' ? place.SubRegion : "") ||
-      (allParts.length > 0 ? allParts[0] : "");
+    const scrub = (s: string) => String(s || "").split(',')[0].trim();
 
     return {
       landmark: place.Label || "",
-      area: area,
+      area: districtStr || localityStr || "",
       pincode: place.PostalCode || "",
       city: scrub(city),
       district: scrub(district),
       state: scrub(state)
     };
+
+
+    console.log("[DEBUG] Raw Geocode Mapping:", {
+      original: {
+        Locality: place.Locality,
+        SubRegion: place.SubRegion,
+        District: place.District,
+        Region: place.Region?.Name
+      },
+      fused: result
+    });
+
+    return result;
   } catch (e) {
     console.error("[AWS Geo-Places] Error:", e);
     return { error: "Professional map service unavailable", lat, lng };
