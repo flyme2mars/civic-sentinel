@@ -264,7 +264,7 @@ async function reverseGeocode(lat: number, lng: number) {
     // Final scrub: ensure no commas remain in individual fields
     const scrub = (s: string) => String(s || "").split(',')[0].trim();
 
-    return {
+    const result = {
       landmark: place.Label || "",
       area: districtStr || localityStr || "",
       pincode: place.PostalCode || "",
@@ -273,13 +273,12 @@ async function reverseGeocode(lat: number, lng: number) {
       state: scrub(state)
     };
 
-
     console.log("[DEBUG] Raw Geocode Mapping:", {
       original: {
-        Locality: place.Locality,
-        SubRegion: place.SubRegion,
-        District: place.District,
-        Region: place.Region?.Name
+        Locality: place?.Locality,
+        SubRegion: place?.SubRegion,
+        District: place?.District,
+        Region: place?.Region?.Name
       },
       fused: result
     });
