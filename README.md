@@ -20,18 +20,26 @@ Indian citizens often face "complaint fatigue" where local issues (potholes, was
 
 ## 📁 Project Structure
 - `src/app/(citizen)`: Frontend routes for citizens to report issues.
-- `src/app/(govt)`: Dashboard for government officials to track and resolve grievances.
-- `src/components`: Shared UI components.
-- `src/lib/aws`: AWS SDK configurations and service wrappers.
+- `src/app/govt/dashboard`: Secure portal for government officials to manage and resolve grievances.
+- `src/components/govt`: Specialized dashboard components (Sidebar, DetailDrawer, AI Auditor UI).
+- `src/lib/aws`: AWS SDK configurations (Bedrock, S3, DynamoDB) and AI agent logic.
+
+## 🛠️ Key Features (Govt Dashboard)
+- **Secure Official Access:** Token-based authentication portal for authorized personnel.
+- **Dynamic Grievance Pipeline:** Real-time tracking of issues across 'Inbox', 'Active', and 'Resolved' states.
+- **AI Vision Auditor:** Uses Amazon Bedrock (Claude 3.5 Sonnet) to compare "Initial Report" images with "Resolution Evidence" to verify repair quality and prevent fraud.
+- **Automated Workflow:** Official resolution submission triggers S3 uploads and immediate AI verification.
+- **SLA Tracking:** Integrated countdowns for the 48-hour resolution target.
 
 ## 🤝 Collaboration Guide for Team Members
 1. **Clone the Repo:** `git clone <repo-url>`
 2. **Install Dependencies:** `npm install`
-3. **Environment Variables:** Create a `.env.local` based on `.env.example` (coming soon).
+3. **Environment Variables:** Create a `.env.local` based on `.env.example`.
 4. **Development:** Run `npm run dev` to start the local server.
 5. **Route Groups:** 
-   - Public/Citizen: `/`
-   - Government: `/dashboard`
+   - **Public/Citizen:** `/`
+   - **Government Dashboard:** `/govt/dashboard` (Requires Access Token)
+   - **Admin Dashboard:** `/admin/dashboard`
 
 ## 📚 Research Context
 Based on our research:
