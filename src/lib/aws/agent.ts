@@ -19,7 +19,7 @@ const TOOLS = [
   {
     toolSpec: {
       name: "reverse_geocode",
-      description: "Get pinpoint address including sub-locality, area, and city from GPS coordinates using professional maps.",
+      description: "Get pinpoint address components. Use this to distinguish between the specific City/Town and the larger administrative District.",
       inputSchema: {
         json: {
           type: "object",
@@ -152,6 +152,8 @@ export async function processGrievanceAgent(params: {
             if (name === "web_search") resultData = await tavilySearch((input as any).query);
             else if (name === "reverse_geocode") resultData = await reverseGeocode((input as any).lat, (input as any).lng);
 
+            console.log(`[DEBUG] Agent Tool Output (${name}):`, resultData);
+
             toolResultsContent.push({
               toolResult: { toolUseId, content: [{ json: resultData }], status: "success" }
             });
@@ -165,6 +167,7 @@ export async function processGrievanceAgent(params: {
 
       const finalContent = outputMessage.content?.find(c => c.text)?.text;
       if (finalContent) {
+        console.log("[DEBUG] Raw AI Final Text:", finalContent);
         const jsonMatch = finalContent.match(/\{[\s\S]*\}/);
         return jsonMatch ? JSON.parse(jsonMatch[0]) : { error: "No JSON" };
       }
@@ -236,25 +239,52 @@ async function reverseGeocode(lat: number, lng: number) {
     collect(place.Region);
 
     // Heuristic for India mapping: [Locality/Town, District, State]
-    let city: string = place.Locality || (allParts.length >= 1 ? allParts[0] : "");
-    let district: string = (allParts.length >= 2 ? allParts[1] : (typeof place.SubRegion === 'string' ? place.SubRegion : ""));
-    let state: string = (allParts.length >= 3 ? allParts[2] : (place.Region?.Name || ""));
+    // Analyzing typical Amazon Location patterns for Bharat
+    let city = "";
+    let district = "";
+    let state = "";
+
+    // 1. Identify District (usually in SubRegion or sometimes in Locality)
+    const subRegionStr = typeof place.SubRegion === 'string' ? place.SubRegion : place.SubRegion?.Name || "";
+    const localityStr = place.Locality || "";
+    const districtStr = typeof place.District === 'string' ? place.District : "";
+
+    // In Kerala/India, the larger name (Ernakulam, Kollam, etc) is the District.
+    // If Locality and SubRegion both exist and are the same, that's usually the District.
+    if (localityStr && subRegionStr && localityStr === subRegionStr) {
+      district = localityStr;
+      city = districtStr; // The "District" field in Amazon Location often actually contains the Town name
+    } else {
+      city = localityStr || districtStr || (allParts.length >= 1 ? allParts[0] : "");
+      district = subRegionStr || (allParts.length >= 2 ? allParts[1] : "");
+    }
+
+    state = place.Region?.Name || place.Region?.Code || (allParts.length >= 3 ? allParts[2] : "");
 
     // Final scrub: ensure no commas remain in individual fields
-    const scrub = (s: string) => s.split(',')[0].trim();
-
-    const area = (typeof place.District === 'string' ? place.District : "") ||
-      (typeof place.SubRegion === 'string' ? place.SubRegion : "") ||
-      (allParts.length > 0 ? allParts[0] : "");
+    const scrub = (s: string) => String(s || "").split(',')[0].trim();
 
     return {
       landmark: place.Label || "",
-      area: area,
+      area: districtStr || localityStr || "",
       pincode: place.PostalCode || "",
       city: scrub(city),
       district: scrub(district),
       state: scrub(state)
     };
+
+
+    console.log("[DEBUG] Raw Geocode Mapping:", {
+      original: {
+        Locality: place.Locality,
+        SubRegion: place.SubRegion,
+        District: place.District,
+        Region: place.Region?.Name
+      },
+      fused: result
+    });
+
+    return result;
   } catch (e) {
     console.error("[AWS Geo-Places] Error:", e);
     return { error: "Professional map service unavailable", lat, lng };
