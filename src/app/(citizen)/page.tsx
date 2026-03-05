@@ -224,7 +224,13 @@ export default function CitizenPage() {
 
   useEffect(() => {
     const s = authProvider.getSession();
-    setSession(s);
+    // SANITIZE: If session exists but name is missing (stale data), force logout
+    if (s && !s.citizenName) {
+      authProvider.logout();
+      setSession(null);
+    } else {
+      setSession(s);
+    }
     setLoading(false);
   }, []);
 
@@ -397,10 +403,13 @@ export default function CitizenPage() {
           </div>
         </header>
 
-        <GrievanceForm onSuccess={() => {
-          setIsSuccess(true);
-          if (session) fetchMyGrievances(session.citizenId);
-        }} />
+        <GrievanceForm 
+          session={session}
+          onSuccess={() => {
+            setIsSuccess(true);
+            if (session) fetchMyGrievances(session.citizenId);
+          }} 
+        />
 
         {/* Status Preview / Doomsday Clock Panel */}
         <section className="pt-10 space-y-6">
