@@ -22,7 +22,7 @@ export async function GET(request: Request) {
         ":cid": citizenId
       },
       // Use alises for reserved keywords
-      ProjectionExpression: "id, createdAt, title, #st, severity, slaHours, #loc, imageKey, deadline",
+      ProjectionExpression: "id, createdAt, title, #st, severity, slaHours, #loc, evidenceKeys, deadline",
       ExpressionAttributeNames: {
         "#st": "status",
         "#loc": "location"
@@ -32,19 +32,24 @@ export async function GET(request: Request) {
     const rawItems = (data.Items || []) as Record<string, any>[];
     
     const items = await Promise.all(rawItems.map(async (item) => {
-      let imageUrl = null;
-      if (item.imageKey) {
+      const evidenceUrls = await Promise.all((item.evidenceKeys || []).map(async (key: string) => {
         try {
           const command = new GetObjectCommand({
             Bucket: AWS_CONFIG.s3.bucketName,
-            Key: item.imageKey,
+            Key: key,
           });
-          imageUrl = await getSignedUrl(s3Client, command, { expiresIn: 3600 });
+          return await getSignedUrl(s3Client, command, { expiresIn: 3600 });
         } catch (e) {
           console.error("Error signing URL", e);
+          return null;
         }
-      }
-      return { ...item, imageUrl };
+      }));
+
+      return { 
+        ...item, 
+        evidenceUrls: evidenceUrls.filter(url => url !== null),
+        imageUrl: evidenceUrls.length > 0 ? evidenceUrls[0] : null // for backward compatibility
+      };
     }));
 
     // Sort by created date descending
