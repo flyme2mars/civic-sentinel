@@ -20,7 +20,7 @@ export async function GET(request: Request) {
     const data = await dynamoDb.send(new ScanCommand({ 
       TableName: AWS_CONFIG.dynamodb.tableName,
       // 'status' and 'location' can be reserved; use ExpressionAttributeNames
-      ProjectionExpression: "id, createdAt, title, #st, severity, slaHours, #loc, imageKey",
+      ProjectionExpression: "id, createdAt, title, #st, severity, slaHours, #loc, imageKey, fixedImageKey",
       ExpressionAttributeNames: {
         "#st": "status",
         "#loc": "location"
@@ -44,7 +44,20 @@ export async function GET(request: Request) {
           console.error("Error signing URL for", item.imageKey, e);
         }
       }
-      return { ...item, imageUrl };
+
+      let fixedImageUrl = null;
+      if (item.fixedImageKey) {
+        try {
+          const command = new GetObjectCommand({
+            Bucket: AWS_CONFIG.s3.bucketName,
+            Key: item.fixedImageKey,
+          });
+          fixedImageUrl = await getSignedUrl(s3Client, command, { expiresIn: 3600 });
+        } catch (e) {
+          console.error("Error signing URL for", item.fixedImageKey, e);
+        }
+      }
+      return { ...item, imageUrl, fixedImageUrl };
     }));
 
     // Sort by created date descending

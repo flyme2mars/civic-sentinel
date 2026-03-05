@@ -214,44 +214,60 @@ export function DetailDrawer({
           <div>
             <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4 flex items-center gap-2">
               <CheckCircle className="w-3 h-3" />
-              Resolution Upload
+              {issue.status === 'resolved' || issue.status === 'verified' ? 'Resolution Evidence' : 'Resolution Upload'}
             </h3>
             
-            <div 
-              onDragEnter={handleDrag}
-              onDragLeave={handleDrag}
-              onDragOver={handleDrag}
-              onDrop={handleDrop}
-              className={`
-                relative aspect-video rounded-xl border-2 border-dashed transition-all duration-200 flex flex-col items-center justify-center gap-3 p-8
-                ${dragActive ? 'border-blue-500 bg-blue-50' : 'border-gray-200 bg-gray-50 hover:bg-white hover:border-gray-300'}
-                ${resolutionKey ? 'border-green-500 bg-green-50' : ''}
-              `}
-            >
-              {isUploading ? (
-                <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
-              ) : resolutionKey ? (
-                <>
-                  <CheckCircle className="w-10 h-10 text-green-500" />
-                  <p className="text-sm font-semibold text-green-900">Evidence Uploaded</p>
-                  <button onClick={() => { setResolutionKey(null); setVerificationResult(null); }} className="text-[10px] text-red-500 hover:underline">Remove and retry</button>
-                </>
-              ) : (
-                <>
-                  <div className={`w-12 h-12 rounded-full flex items-center justify-center ${dragActive ? 'bg-blue-100' : 'bg-gray-100'}`}>
-                    <Upload className={`w-6 h-6 ${dragActive ? 'text-blue-500' : 'text-gray-400'}`} />
-                  </div>
-                  <div className="text-center">
-                    <p className="text-sm font-semibold text-gray-900">Drag & Drop "Fixed" Image</p>
-                    <p className="text-xs text-gray-500 mt-1">PNG, JPG up to 10MB</p>
-                  </div>
-                  <label className="mt-2 px-4 py-2 bg-white border border-gray-200 rounded-lg text-xs font-bold text-gray-900 hover:shadow-md transition-shadow cursor-pointer">
-                    Browse Files
-                    <input type="file" className="hidden" accept="image/*" onChange={handleFileChange} />
-                  </label>
-                </>
-              )}
-            </div>
+            {issue.status === 'resolved' || issue.status === 'verified' ? (
+              <div className="aspect-video bg-gray-50 rounded-xl border border-gray-200 overflow-hidden group relative">
+                <img 
+                  src={issue.fixedImageUrl || '/placeholder-issue.jpg'} 
+                  alt="Resolved Issue" 
+                  className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500"
+                />
+                <div className="absolute inset-0 bg-gray-900/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                  <button className="bg-white px-4 py-2 rounded-lg text-xs font-bold text-gray-900 flex items-center gap-2 shadow-xl transform translate-y-2 group-hover:translate-y-0 transition-transform">
+                    <Eye className="w-4 h-4" />
+                    View Resolved Image
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div 
+                onDragEnter={handleDrag}
+                onDragLeave={handleDrag}
+                onDragOver={handleDrag}
+                onDrop={handleDrop}
+                className={`
+                  relative aspect-video rounded-xl border-2 border-dashed transition-all duration-200 flex flex-col items-center justify-center gap-3 p-8
+                  ${dragActive ? 'border-blue-500 bg-blue-50' : 'border-gray-200 bg-gray-50 hover:bg-white hover:border-gray-300'}
+                  ${resolutionKey ? 'border-green-500 bg-green-50' : ''}
+                `}
+              >
+                {isUploading ? (
+                  <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
+                ) : resolutionKey ? (
+                  <>
+                    <CheckCircle className="w-10 h-10 text-green-500" />
+                    <p className="text-sm font-semibold text-green-900">Evidence Uploaded</p>
+                    <button onClick={() => { setResolutionKey(null); setVerificationResult(null); }} className="text-[10px] text-red-500 hover:underline">Remove and retry</button>
+                  </>
+                ) : (
+                  <>
+                    <div className={`w-12 h-12 rounded-full flex items-center justify-center ${dragActive ? 'bg-blue-100' : 'bg-gray-100'}`}>
+                      <Upload className={`w-6 h-6 ${dragActive ? 'text-blue-500' : 'text-gray-400'}`} />
+                    </div>
+                    <div className="text-center">
+                      <p className="text-sm font-semibold text-gray-900">Drag & Drop "Fixed" Image</p>
+                      <p className="text-xs text-gray-500 mt-1">PNG, JPG up to 10MB</p>
+                    </div>
+                    <label className="mt-2 px-4 py-2 bg-white border border-gray-200 rounded-lg text-xs font-bold text-gray-900 hover:shadow-md transition-shadow cursor-pointer">
+                      Browse Files
+                      <input type="file" className="hidden" accept="image/*" onChange={handleFileChange} />
+                    </label>
+                  </>
+                )}
+              </div>
+            )}
           </div>
 
           {/* AI Auditor Result Section */}
@@ -281,25 +297,27 @@ export function DetailDrawer({
       </div>
 
       {/* Footer Actions */}
-      <div className="p-6 border-t border-gray-100 bg-gray-50/50 flex items-center gap-3">
-        <button 
-          onClick={handleSubmitResolution}
-          disabled={isVerifying || !resolutionKey}
-          className="flex-1 bg-gray-900 hover:bg-black text-white px-6 py-3 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-gray-200"
-        >
-          {isVerifying ? (
-            <>
-              <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" />
-              Submitting Resolution...
-            </>
-          ) : (
-            <>
-              Submit to Vision Auditor
-              <ArrowRight className="w-4 h-4" />
-            </>
-          )}
-        </button>
-      </div>
+      {issue.status !== 'resolved' && issue.status !== 'verified' && (
+        <div className="p-6 border-t border-gray-100 bg-gray-50/50 flex items-center gap-3">
+          <button 
+            onClick={handleSubmitResolution}
+            disabled={isVerifying || !resolutionKey}
+            className="flex-1 bg-gray-900 hover:bg-black text-white px-6 py-3 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-gray-200"
+          >
+            {isVerifying ? (
+              <>
+                <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+                Submitting Resolution...
+              </>
+            ) : (
+              <>
+                Submit to Vision Auditor
+                <ArrowRight className="w-4 h-4" />
+              </>
+            )}
+          </button>
+        </div>
+      )}
     </div>
   );
 }

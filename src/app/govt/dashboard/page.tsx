@@ -75,6 +75,7 @@ export default function GovtDashboard() {
               slaHours: slaHours,
               aiConfidence: 0.94,
               imageUrl: dbItem.imageUrl,
+              fixedImageUrl: dbItem.fixedImageUrl,
               assignee: dbItem.targetDepartment || "Unassigned",
             };
           });
