@@ -32,7 +32,6 @@ export default function GrievanceForm({ onSuccess }: { onSuccess?: () => void })
   const [agentLogs, setAgentLogs] = useState<{msg: string, type: 'search' | 'map' | 'ai' | 'file'}[]>([]);
   const [investigationStep, setInvestigationStep] = useState('');
   const [evidenceKeys, setEvidenceKeys] = useState<string[]>([]);
-  const [isSuccess, setIsSuccess] = useState(false);
 
   // AUTH STATE
   const [session, setSession] = useState<CitizenSession | null>(null);
@@ -92,9 +91,15 @@ export default function GrievanceForm({ onSuccess }: { onSuccess?: () => void })
   };
 
   const addEvidence = (file: File) => {
-    const type = file.type.startsWith('video') ? 'video' : 'image';
-    const preview = URL.createObjectURL(file);
-    setEvidence(prev => [...prev, { file, type, preview }]);
+    setEvidence(prev => {
+      if (prev.length >= 4) {
+        alert("Maximum 4 evidence items allowed per report.");
+        return prev;
+      }
+      const type = file.type.startsWith('video') ? 'video' : 'image';
+      const preview = URL.createObjectURL(file);
+      return [...prev, { file, type, preview }];
+    });
   };
 
   const removeEvidence = (index: number) => {
@@ -248,7 +253,6 @@ export default function GrievanceForm({ onSuccess }: { onSuccess?: () => void })
       });
       const result = await res.json();
       if (result.success) {
-        setIsSuccess(true);
         if (onSuccess) onSuccess();
         window.scrollTo({ top: 0, behavior: 'smooth' });
       }
@@ -320,7 +324,6 @@ export default function GrievanceForm({ onSuccess }: { onSuccess?: () => void })
     );
   }
 
-  if (isSuccess) return null;
 
   return (
     <div className="max-w-4xl mx-auto space-y-12 pb-20">
@@ -414,7 +417,7 @@ export default function GrievanceForm({ onSuccess }: { onSuccess?: () => void })
           </CardContent>
           <CardFooter className="pb-10">
             <div className="w-full space-y-4">
-              <Button type="submit" disabled={isDrafting || evidence.length === 0} className="w-full h-14 bg-slate-900 text-white rounded-2xl font-black text-xs uppercase tracking-[0.2em] relative overflow-hidden group shadow-xl shadow-slate-200">
+              <Button type="submit" disabled={isDrafting || evidence.length === 0 || !evidence.some(e => e.type === 'image')} className="w-full h-14 bg-slate-900 text-white rounded-2xl font-black text-xs uppercase tracking-[0.2em] relative overflow-hidden group shadow-xl shadow-slate-200">
                 {isDrafting ? (
                   <div className="flex items-center gap-2 animate-in fade-in duration-300">
                     <Loader2 className="w-4 h-4 animate-spin" />
