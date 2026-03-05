@@ -6,11 +6,11 @@ import { authProvider, CitizenSession } from '@/lib/aws/auth';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { ShieldCheck, Loader2, CheckCircle2, Clock, MapPin, ChevronRight } from 'lucide-react';
+import { ShieldCheck, Loader2, CheckCircle2, Clock, MapPin, ChevronRight, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import RtiButton from '@/components/citizen/RtiButton'; // Adjust path if needed
+import RtiButton from '@/components/citizen/RtiButton';
 
-function DoomsdayClock({ deadline, onExpire }: { deadline: string, onExpire?: () => void }) {
+function DoomsdayClock({ deadline, large, onExpire }: { deadline: string, large?: boolean, onExpire?: () => void }) {
   const [timeLeft, setTimeLeft] = useState('');
   const [isExpired, setIsExpired] = useState(false);
 
@@ -36,15 +36,174 @@ function DoomsdayClock({ deadline, onExpire }: { deadline: string, onExpire?: ()
       setTimeLeft(`${hours}h ${minutes}m ${seconds}s`);
     }, 1000);
     return () => clearInterval(timer);
-  }, [deadline]);
+  }, [deadline, isExpired, onExpire]);
 
   return (
     <div className={cn(
-      "flex items-center gap-2 px-4 py-2 rounded-xl text-[11px] font-black tracking-widest uppercase transition-all duration-500 shadow-sm whitespace-nowrap shrink-0",
+      "flex items-center gap-2 rounded-xl font-black tracking-widest uppercase transition-all duration-500 whitespace-nowrap shrink-0",
+      large ? "px-6 py-4 text-sm shadow-xl min-w-[180px] justify-center" : "px-4 py-2 text-[10px] shadow-sm min-w-[120px] justify-center",
       isExpired ? "bg-red-50 text-red-600 animate-pulse border border-red-100" : "bg-slate-900 text-white shadow-slate-200"
     )}>
-      <Clock className="w-3.5 h-3.5" />
-      <span className="font-mono tabular-nums tracking-tighter">{timeLeft}</span>
+      <Clock className={large ? "w-5 h-5" : "w-3 h-3"} />
+      <span className="font-mono tabular-nums tracking-tighter leading-none">{timeLeft}</span>
+    </div>
+  );
+}
+
+function GrievanceDetailModal({ g, onClose, session, onExpire, expiredIds }: { g: any, onClose: () => void, session: any, onExpire: () => void, expiredIds: Set<string> }) {
+  const [activeIndex, setActiveIndex] = useState(0);
+  const media = g.evidenceUrls || [];
+  const isAlreadyExpired = new Date().getTime() > new Date(g.deadline).getTime();
+  const showRtiButton = isAlreadyExpired || expiredIds.has(g.id);
+
+  return (
+    <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-md z-[150] flex items-center justify-center p-4 lg:p-10 overflow-y-auto">
+      <div className="w-full max-w-5xl bg-white rounded-[2.5rem] shadow-2xl border border-slate-100 overflow-hidden flex flex-col lg:flex-row animate-in zoom-in-95 duration-500 h-full max-h-[90vh]">
+        
+        {/* LEFT: MEDIA & STATUS */}
+        <div className="w-full lg:w-3/5 bg-white border-r border-slate-100 flex flex-col relative group">
+          {/* MAIN MEDIA VIEWPORT */}
+          <div className="flex-1 relative flex items-center justify-center overflow-hidden p-4 bg-slate-50/50">
+            {media.length > 0 ? (
+              <img 
+                src={media[activeIndex]} 
+                className="max-w-full max-h-full object-contain shadow-2xl rounded-lg animate-in fade-in zoom-in-95 duration-500" 
+                alt="Evidence" 
+              />
+            ) : (
+              <div className="text-slate-300 uppercase font-black tracking-widest text-[10px]">No visual evidence</div>
+            )}
+            
+            {media.length > 1 && (
+              <div className="absolute inset-x-4 flex justify-between items-center opacity-0 group-hover:opacity-100 transition-opacity">
+                <button 
+                  onClick={() => setActiveIndex(prev => (prev > 0 ? prev - 1 : media.length - 1))}
+                  className="w-10 h-10 bg-white/80 hover:bg-white text-slate-900 shadow-xl rounded-full flex items-center justify-center backdrop-blur-md border border-slate-100 transition-all"
+                >
+                  <ChevronRight className="w-5 h-5 rotate-180" />
+                </button>
+                <button 
+                  onClick={() => setActiveIndex(prev => (prev < media.length - 1 ? prev + 1 : 0))}
+                  className="w-10 h-10 bg-white/80 hover:bg-white text-slate-900 shadow-xl rounded-full flex items-center justify-center backdrop-blur-md border border-slate-100 transition-all"
+                >
+                  <ChevronRight className="w-5 h-5" />
+                </button>
+              </div>
+            )}
+
+            <button onClick={onClose} className="absolute top-6 left-6 w-10 h-10 bg-white/80 hover:bg-white text-slate-900 shadow-xl rounded-full flex items-center justify-center backdrop-blur-md border border-slate-100 transition-all z-20">
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+
+          {/* THUMBNAIL STRIP */}
+          {media.length > 1 && (
+            <div className="p-4 flex gap-2 justify-center bg-white border-t border-slate-50">
+              {media.map((url: string, i: number) => (
+                <button 
+                  key={i} 
+                  onClick={() => setActiveIndex(i)}
+                  className={cn(
+                    "w-12 h-12 rounded-lg overflow-hidden border-2 transition-all",
+                    activeIndex === i ? "border-slate-900 scale-110 shadow-lg" : "border-transparent opacity-40 hover:opacity-100"
+                  )}
+                >
+                  <img src={url} className="w-full h-full object-cover" alt="Thumb" />
+                </button>
+              ))}
+            </div>
+          )}
+          
+          <div className="p-8 bg-white space-y-6 hidden lg:block">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">Current Timeline</span>
+              <div className="flex gap-1">
+                {[1,2,3,4].map(i => <div key={i} className={cn("w-8 h-1 rounded-full", i === 1 ? "bg-slate-900" : "bg-slate-200")} />)}
+              </div>
+            </div>
+            
+            <div className="space-y-4">
+              <div className="flex gap-4">
+                <div className="w-8 flex flex-col items-center gap-1">
+                  <div className="w-2 h-2 rounded-full bg-slate-900 ring-4 ring-slate-100" />
+                  <div className="w-px flex-1 bg-slate-200" />
+                </div>
+                <div className="pb-4">
+                  <p className="text-[10px] font-black text-slate-900 uppercase tracking-widest">Grievance Lodged</p>
+                  <p className="text-[10px] text-slate-400 font-medium">{new Date(g.createdAt).toLocaleString()}</p>
+                </div>
+              </div>
+              <div className="flex gap-4">
+                <div className="w-8 flex flex-col items-center gap-1">
+                  <div className="w-2 h-2 rounded-full bg-slate-200" />
+                </div>
+                <div>
+                  <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest">Pending Review</p>
+                  <p className="text-[10px] text-slate-300 font-medium italic">Standard municipal delay...</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* RIGHT: DETAILS */}
+        <div className="flex-1 p-10 lg:p-14 overflow-y-auto space-y-10 custom-scrollbar">
+          <div className="space-y-4">
+            <div className="flex flex-wrap items-center gap-3">
+              <span className="bg-slate-900 text-white px-3 py-1 rounded-md text-[9px] font-black tracking-widest uppercase">{g.status}</span>
+              <span className="text-slate-300 font-mono text-xs uppercase tracking-widest">{g.id.split('-')[0]}</span>
+            </div>
+            <h2 className="text-3xl font-black text-slate-900 tracking-tighter leading-tight">{g.title}</h2>
+          </div>
+
+          <div className="flex items-center gap-10 border-y border-slate-50 py-8">
+            <div className="space-y-1">
+              <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Time Remaining</p>
+              <DoomsdayClock deadline={g.deadline} large onExpire={onExpire} />
+            </div>
+            <div className="space-y-1">
+              <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Severity</p>
+              <p className="text-sm font-black text-slate-900 uppercase italic tracking-widest">{g.severity}</p>
+            </div>
+          </div>
+
+          {showRtiButton && session && (
+            <div className="p-6 bg-red-50 rounded-[2rem] border border-red-100 space-y-4 animate-in fade-in duration-700">
+              <div className="flex items-center gap-2 text-red-600">
+                <ShieldCheck className="w-5 h-5" />
+                <span className="text-[10px] font-black uppercase tracking-widest">SLA Breach Detected</span>
+              </div>
+              <p className="text-xs text-red-900/60 font-medium leading-relaxed">The government has failed to address this issue within the legal timeframe. You are now authorized to generate a formal RTI application.</p>
+              <RtiButton grievanceId={g.id} citizenId={session.citizenId} />
+            </div>
+          )}
+
+          <div className="space-y-4">
+            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Oversight Summary</p>
+            <p className="text-sm text-slate-600 font-medium leading-relaxed">{g.summary || "No summary generated yet."}</p>
+          </div>
+
+          <div className="grid grid-cols-2 gap-8">
+            <div className="space-y-2">
+              <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Municipal Ward</p>
+              <div className="flex items-center gap-2">
+                <MapPin className="w-4 h-4 text-slate-900" />
+                <p className="text-xs font-bold text-slate-900">{g.location?.area || "Unspecified"}</p>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Assigned City</p>
+              <p className="text-xs font-bold text-slate-900">{g.location?.city || "Unspecified"}</p>
+            </div>
+          </div>
+
+          <div className="pt-6">
+            <Button onClick={onClose} variant="outline" className="w-full h-14 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] border-slate-200">
+              Close Oversight Brief
+            </Button>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
@@ -53,14 +212,15 @@ export default function CitizenPage() {
   const [session, setSession] = useState<CitizenSession | null>(null);
   const [loading, setLoading] = useState(true);
   const [phoneNumber, setPhoneNumber] = useState('');
+  const [citizenName, setCitizenName] = useState('');
   const [otp, setOtp] = useState('');
   const [authStage, setAuthStage] = useState<'phone' | 'otp'>('phone');
   const [authLoading, setAuthLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [myGrievances, setMyGrievances] = useState<any[]>([]);
   const [fetchingGrievances, setFetchingGrievances] = useState(false);
+  const [selectedGrievance, setSelectedGrievance] = useState<any | null>(null);
   const [expiredIds, setExpiredIds] = useState<Set<string>>(new Set());
-
 
   useEffect(() => {
     const s = authProvider.getSession();
@@ -83,6 +243,7 @@ export default function CitizenPage() {
   }, [session]);
 
   const handleStart = async () => {
+    if (!citizenName || !phoneNumber) return;
     setAuthLoading(true);
     try {
       await authProvider.signIn(phoneNumber);
@@ -94,7 +255,7 @@ export default function CitizenPage() {
   const handleVerify = async () => {
     setAuthLoading(true);
     try {
-      const s = await authProvider.verifyOtp(phoneNumber, otp, "session");
+      const s = await authProvider.verifyOtp(phoneNumber, otp, "session", citizenName);
       setSession(s);
     } catch (e: any) { alert(e.message); }
     finally { setAuthLoading(false); }
@@ -107,7 +268,7 @@ export default function CitizenPage() {
       setOtp('123456');
       const { sessionId } = await authProvider.signIn('+911234567890');
       await new Promise(r => setTimeout(r, 800));
-      const s = await authProvider.verifyOtp('+911234567890', '123456', sessionId);
+      const s = await authProvider.verifyOtp('+911234567890', '123456', sessionId, "Judge Evaluation");
       setSession(s);
     } catch (e: any) { alert(e.message); }
     finally { setAuthLoading(false); }
@@ -151,25 +312,32 @@ export default function CitizenPage() {
           <div className="space-y-8">
             {authStage === 'phone' ? (
               <div className="space-y-4">
-                <div className="relative group">
-                  <Input
-                    type="tel"
-                    placeholder="Mobile Number"
-                    value={phoneNumber}
+                <div className="space-y-4">
+                  <Input 
+                    type="text" 
+                    placeholder="Full Name" 
+                    value={citizenName} 
+                    onChange={(e) => setCitizenName(e.target.value)}
+                    className="h-14 text-center text-lg font-bold tracking-tight bg-white border-slate-100 rounded-2xl shadow-sm focus-visible:ring-slate-900 transition-all"
+                  />
+                  <Input 
+                    type="tel" 
+                    placeholder="Mobile Number" 
+                    value={phoneNumber} 
                     onChange={(e) => setPhoneNumber(e.target.value)}
                     className="h-14 text-center text-lg font-bold tracking-tight bg-white border-slate-100 rounded-2xl shadow-sm focus-visible:ring-slate-900 transition-all"
                   />
                 </div>
-                <Button onClick={handleStart} disabled={authLoading || !phoneNumber} className="w-full h-14 bg-slate-900 text-white rounded-2xl font-black text-xs uppercase tracking-[0.2em] hover:bg-slate-800 transition-all shadow-lg shadow-slate-200">
+                <Button onClick={handleStart} disabled={authLoading || !phoneNumber || !citizenName} className="w-full h-14 bg-slate-900 text-white rounded-2xl font-black text-xs uppercase tracking-[0.2em] hover:bg-slate-800 transition-all shadow-lg shadow-slate-200">
                   {authLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Request Access"}
                 </Button>
-
+                
                 <div className="pt-8 flex flex-col items-center gap-4">
                   <div className="w-full h-px bg-slate-200 flex items-center justify-center">
                     <span className="bg-white px-4 text-[9px] font-black text-slate-400 uppercase tracking-[0.3em]">Evaluation Mode</span>
                   </div>
-                  <button
-                    onClick={handleDemoAccess}
+                  <button 
+                    onClick={handleDemoAccess} 
                     disabled={authLoading}
                     className="group flex items-center gap-3 px-8 py-4 rounded-2xl bg-slate-100 border-2 border-slate-200 hover:bg-slate-900 hover:border-slate-900 transition-all duration-300 w-full justify-center shadow-sm"
                   >
@@ -182,11 +350,11 @@ export default function CitizenPage() {
             ) : (
               <div className="space-y-6">
                 <div className="space-y-2 text-center">
-                  <Input
-                    type="text"
+                  <Input 
+                    type="text" 
                     maxLength={6}
-                    placeholder="000000"
-                    value={otp}
+                    placeholder="000000" 
+                    value={otp} 
                     onChange={(e) => setOtp(e.target.value)}
                     className="h-20 text-center text-4xl font-black tracking-[0.4em] bg-white border-slate-100 rounded-2xl shadow-sm focus-visible:ring-slate-900"
                   />
@@ -264,15 +432,17 @@ export default function CitizenPage() {
               </div>
             ) : (
               myGrievances.map((g) => {
-                // 1. Calculate if this specific grievance is expired BEFORE returning the UI
                 const isAlreadyExpired = new Date().getTime() > new Date(g.deadline).getTime();
                 const showRtiButton = isAlreadyExpired || expiredIds.has(g.id);
 
-                // 2. Explicitly return the UI block
                 return (
-                  <div key={g.id} className="group bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm hover:shadow-2xl hover:shadow-slate-200/60 transition-all duration-500 space-y-6 relative overflow-hidden">
+                  <div 
+                    key={g.id} 
+                    onClick={() => setSelectedGrievance(g)}
+                    className="group bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm hover:shadow-2xl hover:shadow-slate-200/60 transition-all duration-500 space-y-6 relative overflow-hidden cursor-pointer active:scale-[0.98]"
+                  >
                     <div className="flex justify-between items-start relative z-10">
-                      <div className="space-y-1.5 flex-1">
+                      <div className="space-y-1.5 flex-1 pr-4">
                         <div className="flex items-center gap-2">
                           <span className={cn(
                             "px-2 py-0.5 rounded-md text-[8px] font-black uppercase tracking-widest",
@@ -282,19 +452,16 @@ export default function CitizenPage() {
                           </span>
                           <span className="text-[10px] text-slate-300 font-medium font-mono">{g.id.split('-')[0]}</span>
                         </div>
-                        <h4 className="text-base font-black text-slate-900 tracking-tight leading-tight group-hover:text-slate-600 transition-colors pr-4">{g.title}</h4>
+                        <h4 className="text-base font-black text-slate-900 tracking-tight leading-tight group-hover:text-slate-600 transition-colors">{g.title}</h4>
                       </div>
-
-                      {/* Clocks and Buttons */}
+                      
                       <div className="flex flex-col items-end gap-3 shrink-0">
-                        <DoomsdayClock
-                          deadline={g.deadline}
+                        <DoomsdayClock 
+                          deadline={g.deadline} 
                           onExpire={() => setExpiredIds(prev => new Set(prev).add(g.id))}
                         />
-
-                        {/* Conditional RTI Button */}
                         {showRtiButton && session && (
-                          <div className="animate-in fade-in slide-in-from-top-2 duration-500">
+                          <div className="animate-in fade-in slide-in-from-top-2 duration-500" onClick={(e) => e.stopPropagation()}>
                             <RtiButton grievanceId={g.id} citizenId={session.citizenId} />
                           </div>
                         )}
@@ -327,6 +494,17 @@ export default function CitizenPage() {
           </div>
         </section>
       </div>
+
+      {/* DETAIL MODAL */}
+      {selectedGrievance && (
+        <GrievanceDetailModal 
+          g={selectedGrievance} 
+          onClose={() => setSelectedGrievance(null)} 
+          session={session}
+          expiredIds={expiredIds}
+          onExpire={() => setExpiredIds(prev => new Set(prev).add(selectedGrievance.id))}
+        />
+      )}
     </main>
   );
 }

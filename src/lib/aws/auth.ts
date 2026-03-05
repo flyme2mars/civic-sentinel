@@ -6,18 +6,19 @@
 export interface CitizenSession {
   phoneNumber: string;
   citizenId: string;
+  citizenName: string;
   isDemo?: boolean;
 }
 
 const MAGIC_OTP = "123456";
 
 // Test Pool: Different numbers represent different citizen profiles for the demo
-const TEST_USERS: Record<string, string> = {
-  "+911234567890": "SENTINEL_JUDGE_BETA",
-  "+910000000001": "CITIZEN_RURAL_01",
-  "+910000000002": "CITIZEN_URBAN_02",
-  "+910000000003": "CITIZEN_LEAD_USER",
-  "+910000000004": "CITIZEN_VETERAN",
+const TEST_USERS: Record<string, { id: string, name: string }> = {
+  "+911234567890": { id: "SENTINEL_JUDGE_BETA", name: "Judge Evaluation" },
+  "+910000000001": { id: "CITIZEN_RURAL_01", name: "Akshai Krishna S" },
+  "+910000000002": { id: "CITIZEN_URBAN_02", name: "Abhinand" },
+  "+910000000003": { id: "CITIZEN_LEAD_USER", name: "Jishnu PN" },
+  "+910000000004": { id: "CITIZEN_VETERAN", name: "Sreeram J Menon" },
 };
 
 export const authProvider = {
@@ -39,16 +40,20 @@ export const authProvider = {
   /**
    * Step 2: Verify the OTP
    */
-  async verifyOtp(phoneNumber: string, otp: string, sessionId: string): Promise<CitizenSession> {
+  async verifyOtp(phoneNumber: string, otp: string, sessionId: string, customName?: string): Promise<CitizenSession> {
     console.log(`[Sentinel Auth] Verifying OTP: ${otp} for ${phoneNumber}`);
 
     // DEMO FLOW: Magic OTP works for all test numbers
     if (otp === MAGIC_OTP) {
-      const citizenId = TEST_USERS[phoneNumber] || ("USER_" + phoneNumber.replace('+', ''));
+      const testUser = TEST_USERS[phoneNumber];
+      const citizenId = testUser ? testUser.id : ("USER_" + phoneNumber.replace('+', ''));
+      const citizenName = testUser ? testUser.name : (customName || "Citizen User");
+      
       const session = { 
         phoneNumber, 
         citizenId,
-        isDemo: !!TEST_USERS[phoneNumber]
+        citizenName,
+        isDemo: !!testUser
       };
       this.saveSession(session);
       return session;
