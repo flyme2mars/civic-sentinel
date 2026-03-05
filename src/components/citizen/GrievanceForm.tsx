@@ -18,7 +18,7 @@ interface Evidence {
   preview: string;
 }
 
-export default function GrievanceForm({ onSuccess }: { onSuccess?: () => void }) {
+export default function GrievanceForm({ onSuccess, session: externalSession }: { onSuccess?: () => void, session?: CitizenSession | null }) {
   const [evidence, setEvidence] = useState<Evidence[]>([]);
   const [isCameraOpen, setIsCameraOpen] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
@@ -34,7 +34,7 @@ export default function GrievanceForm({ onSuccess }: { onSuccess?: () => void })
   const [evidenceKeys, setEvidenceKeys] = useState<string[]>([]);
 
   // AUTH STATE
-  const [session, setSession] = useState<CitizenSession | null>(null);
+  const [session, setSession] = useState<CitizenSession | null>(externalSession || null);
   const [authStage, setAuthStage] = useState<'idle' | 'phone' | 'otp'>('idle');
   const [phoneNumber, setPhoneNumber] = useState('');
   const [otp, setOtp] = useState('');
@@ -46,9 +46,13 @@ export default function GrievanceForm({ onSuccess }: { onSuccess?: () => void })
   const audioChunksRef = useRef<Blob[]>([]);
 
   useEffect(() => {
-    setSession(authProvider.getSession());
+    if (externalSession) {
+      setSession(externalSession);
+    } else {
+      setSession(authProvider.getSession());
+    }
     getGeoLocation();
-  }, []);
+  }, [externalSession]);
 
   const getGeoLocation = () => {
     if (typeof window !== "undefined" && navigator.geolocation) {
@@ -248,6 +252,7 @@ export default function GrievanceForm({ onSuccess }: { onSuccess?: () => void })
           location, 
           originalDescription: description,
           citizenId: session.citizenId,
+          citizenName: session.citizenName,
           phoneNumber: session.phoneNumber
         }),
       });
