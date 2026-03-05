@@ -28,7 +28,7 @@ export async function POST(request: Request) {
         const pdfs = await buildRTIPdfs(grievance, rtiQuestions);
 
         if (pdfs.length === 1) {
-            return new NextResponse(pdfs[0].bytes, {
+            return new NextResponse(Buffer.from(pdfs[0].bytes) as any, {
                 headers: {
                     'Content-Type': 'application/pdf',
                     'Content-Disposition': `attachment; filename="${pdfs[0].name}"`,
@@ -40,7 +40,7 @@ export async function POST(request: Request) {
         pdfs.forEach(pdf => zip.file(pdf.name, pdf.bytes));
         const zipBuffer = await zip.generateAsync({ type: 'nodebuffer' });
 
-        return new NextResponse(zipBuffer, {
+        return new NextResponse(zipBuffer as any, {
             headers: {
                 'Content-Type': 'application/zip',
                 'Content-Disposition': `attachment; filename="RTI_Applications_${grievanceId}.zip"`,
