@@ -94,11 +94,10 @@ export default function GovtDashboard() {
   const filteredIssues = useMemo(() => {
     return grievances.filter(issue => {
       if (activeTab === 'inbox') return issue.status === 'pending' || issue.status === 'in-progress' || issue.status === 'escalated';
-      if (activeTab === 'active') return issue.status !== 'resolved' && issue.status !== 'verified';
       if (activeTab === 'resolved') return issue.status === 'resolved' || issue.status === 'verified';
       return true;
     })
-.filter(issue => 
+    .filter(issue => 
       issue.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
       issue.id.toLowerCase().includes(searchQuery.toLowerCase())
     );

@@ -274,7 +274,7 @@ export function DetailDrawer({
                       <Upload className={`w-6 h-6 ${dragActive ? 'text-blue-500' : 'text-gray-400'}`} />
                     </div>
                     <div className="text-center">
-                      <p className="text-sm font-semibold text-gray-900">Drag & Drop "Fixed" Image</p>
+                      <p className="text-sm font-semibold text-gray-900">Drag &amp; Drop &quot;Fixed&quot; Image</p>
                       <p className="text-xs text-gray-500 mt-1">PNG, JPG up to 10MB</p>
                     </div>
                     <label className="mt-2 px-4 py-2 bg-white border border-gray-200 rounded-lg text-xs font-bold text-gray-900 hover:shadow-md transition-shadow cursor-pointer">

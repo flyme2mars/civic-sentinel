@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { X, ZoomIn, ZoomOut, Maximize2, Minimize2 } from 'lucide-react';
+import { X, ZoomIn, ZoomOut } from 'lucide-react';
 
 interface ImageModalProps {
   isOpen: boolean;
@@ -12,10 +12,8 @@ interface ImageModalProps {
 
 export function ImageModal({ isOpen, onClose, imageSrc, altText = "Image Evidence" }: ImageModalProps) {
   const [isZoomed, setIsZoomed] = useState(false);
-  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    setMounted(true);
     if (isOpen) {
       document.body.style.overflow = 'hidden';
     } else {
@@ -26,7 +24,7 @@ export function ImageModal({ isOpen, onClose, imageSrc, altText = "Image Evidenc
     };
   }, [isOpen]);
 
-  if (!mounted || !isOpen) return null;
+  if (!isOpen) return null;
 
   return (
     <div 

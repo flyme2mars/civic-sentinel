@@ -3,10 +3,6 @@
 import React, { useMemo } from 'react';
 import { CivicIssue } from '@/lib/types';
 import { 
-  BarChart3, 
-  ArrowUpRight, 
-  Clock, 
-  CheckCircle2, 
   Calendar,
   Activity,
   ArrowRight
@@ -53,6 +49,7 @@ export function AnalyticsView({ grievances }: { grievances: CivicIssue[] }) {
     const escalated = grievances.filter(g => g.status === 'escalated').length;
 
     // Time Series: Grievances per day (last 7 days)
+    // eslint-disable-next-line react-hooks/purity
     const now = Date.now();
     const dayMs = 86400000;
     const dailyData = Array.from({ length: 7 }).map((_, i) => {
