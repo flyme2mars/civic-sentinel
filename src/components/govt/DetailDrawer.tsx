@@ -19,9 +19,11 @@ import { ImageModal } from '../ui/ImageModal';
 
 export function DetailDrawer({ 
   issue, 
+  authToken,
   onClose 
 }: { 
   issue: CivicIssue, 
+  authToken: string | null,
   onClose: () => void 
 }) {
   const [dragActive, setDragActive] = useState(false);
@@ -103,7 +105,10 @@ export function DetailDrawer({
       // 1. Submit the resolution to the database
       const res = await fetch('/api/grievance/resolve', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'x-govt-token': authToken || ''
+        },
         body: JSON.stringify({
           id: targetId,
           resolvedImageKey: resolutionKey,
@@ -116,7 +121,10 @@ export function DetailDrawer({
         // 2. Trigger the AI Vision Auditor
         const verifyRes = await fetch('/api/grievance/verify', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 
+            'Content-Type': 'application/json',
+            'x-govt-token': authToken || ''
+          },
           body: JSON.stringify({ id: targetId })
         });
         const verifyData = await verifyRes.json();
@@ -124,9 +132,9 @@ export function DetailDrawer({
       } else {
         setVerificationResult({ success: false, error: data.error || "Failed to mark as fixed." });
       }
-    } catch (e: any) {
+    } catch (e: unknown) {
       console.error("Resolution submit failed", e);
-      setVerificationResult({ success: false, error: e.message || "An unexpected error occurred." });
+      setVerificationResult({ success: false, error: (e as Error).message || "An unexpected error occurred." });
     } finally {
       setIsVerifying(false);
     }

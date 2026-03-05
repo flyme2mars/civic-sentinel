@@ -188,6 +188,7 @@ export default function GovtDashboard() {
           />
           <DetailDrawer 
             issue={selectedIssue} 
+            authToken={authToken}
             onClose={() => setSelectedIssue(null)} 
           />
         </>
