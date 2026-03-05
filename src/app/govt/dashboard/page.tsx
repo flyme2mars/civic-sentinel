@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Sidebar } from '@/components/govt/Sidebar';
 import { GrievancesView } from '@/components/govt/views/GrievancesView';
+import { AnalyticsView } from '@/components/govt/views/AnalyticsView';
 import { DetailDrawer } from '@/components/govt/DetailDrawer';
 import { CivicIssue } from '@/lib/types';
 import { Search } from 'lucide-react';
@@ -168,10 +169,14 @@ export default function GovtDashboard() {
 
         {/* Main Content Area */}
         <main className="flex-1 overflow-hidden flex flex-col">
-          <GrievancesView 
-            issues={filteredIssues} 
-            onSelect={setSelectedIssue} 
-          />
+          {activeTab === 'analytics' ? (
+            <AnalyticsView grievances={grievances} />
+          ) : (
+            <GrievancesView 
+              issues={filteredIssues} 
+              onSelect={setSelectedIssue} 
+            />
+          )}
         </main>
       </div>
 
