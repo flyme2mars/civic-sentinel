@@ -20,9 +20,13 @@ export const AWS_CONFIG = {
     tableName: process.env.DYNAMODB_TABLE_NAME || 'CivicGrievances',
   }
 
-};
+  };
 
-const accessKeyId = process.env.MY_AWS_ACCESS_KEY_ID || process.env.AWS_ACCESS_KEY_ID || '';
+  if (process.env.NODE_ENV === 'development') {
+    console.log(`[AWS Config] Connecting to DynamoDB Table: "${AWS_CONFIG.dynamodb.tableName}" in Region: "${AWS_CONFIG.region}"`);
+  }
+
+  const accessKeyId = process.env.MY_AWS_ACCESS_KEY_ID || process.env.AWS_ACCESS_KEY_ID || '';
 const secretAccessKey = process.env.MY_AWS_SECRET_ACCESS_KEY || process.env.AWS_SECRET_ACCESS_KEY || '';
 
 if (!accessKeyId) {
@@ -44,5 +48,5 @@ export const geoPlacesClient = new GeoPlacesClient({ region: AWS_CONFIG.region, 
 export const geoMapsClient = new GeoMapsClient({ region: AWS_CONFIG.region, credentials });
 export const geoRoutesClient = new GeoRoutesClient({ region: AWS_CONFIG.region, credentials });
 
-const ddbClient = new DynamoDBClient({ region: AWS_CONFIG.region, credentials });
+export const ddbClient = new DynamoDBClient({ region: AWS_CONFIG.region, credentials });
 export const dynamoDb = DynamoDBDocumentClient.from(ddbClient);

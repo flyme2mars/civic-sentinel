@@ -13,7 +13,7 @@ export function GrievanceCard({ g, dark, onClick, index }: { g: GrievanceType; d
   const border = dark ? (hovered ? "rgba(99,102,241,0.4)" : "rgba(255,255,255,0.07)") : (hovered ? "rgba(99,102,241,0.3)" : "rgba(0,0,0,0.07)");
   const textPrimary = dark ? "#F9FAFB" : "#111827";
   const textSecondary = dark ? "#6B7280" : "#9CA3AF";
-  const breached = g.elapsedHours > g.slaHours;
+  const breached = (g.elapsedHours ?? 0) > g.slaHours;
 
   return (
     <div

@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
-import { dynamoDb, s3Client, AWS_CONFIG } from '@/lib/aws/config';
+import { dynamoDb, s3Client, AWS_CONFIG, ddbClient } from '@/lib/aws/config';
 import { ScanCommand } from '@aws-sdk/lib-dynamodb';
 import { GetObjectCommand } from '@aws-sdk/client-s3';
+import { ListTablesCommand } from '@aws-sdk/client-dynamodb';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 
 export const dynamic = 'force-dynamic';
@@ -19,7 +20,7 @@ export async function GET(request: Request) {
     const data = await dynamoDb.send(new ScanCommand({ 
       TableName: AWS_CONFIG.dynamodb.tableName,
       // 'status' and 'location' can be reserved; use ExpressionAttributeNames
-      ProjectionExpression: "id, createdAt, title, #st, severity, slaHours, #loc, imageKey",
+      ProjectionExpression: "id, createdAt, title, #st, severity, slaHours, #loc, imageKey, fixedImageKey",
       ExpressionAttributeNames: {
         "#st": "status",
         "#loc": "location"
@@ -43,7 +44,20 @@ export async function GET(request: Request) {
           console.error("Error signing URL for", item.imageKey, e);
         }
       }
-      return { ...item, imageUrl };
+
+      let fixedImageUrl = null;
+      if (item.fixedImageKey) {
+        try {
+          const command = new GetObjectCommand({
+            Bucket: AWS_CONFIG.s3.bucketName,
+            Key: item.fixedImageKey,
+          });
+          fixedImageUrl = await getSignedUrl(s3Client, command, { expiresIn: 3600 });
+        } catch (e) {
+          console.error("Error signing URL for", item.fixedImageKey, e);
+        }
+      }
+      return { ...item, imageUrl, fixedImageUrl };
     }));
 
     // Sort by created date descending
@@ -52,6 +66,14 @@ export async function GET(request: Request) {
     return NextResponse.json({ success: true, grievances: items });
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (error: any) {
+    if (error.name === 'ResourceNotFoundException') {
+      try {
+        const tables = await ddbClient.send(new ListTablesCommand({}));
+        console.error(`[DYNAMODB DIAGNOSIS] Table "${AWS_CONFIG.dynamodb.tableName}" NOT FOUND. Available tables in ${AWS_CONFIG.region}:`, tables.TableNames);
+      } catch (listErr) {
+        console.error("[DYNAMODB DIAGNOSIS] Failed to list tables:", listErr);
+      }
+    }
     console.error('[Grievance List API] Error:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
