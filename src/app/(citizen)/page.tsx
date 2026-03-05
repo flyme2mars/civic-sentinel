@@ -8,8 +8,9 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/com
 import { Input } from '@/components/ui/input';
 import { ShieldCheck, Loader2, CheckCircle2, Clock, MapPin, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import RtiButton from '@/components/citizen/RtiButton'; // Adjust path if needed
 
-function DoomsdayClock({ deadline }: { deadline: string }) {
+function DoomsdayClock({ deadline, onExpire }: { deadline: string, onExpire?: () => void }) {
   const [timeLeft, setTimeLeft] = useState('');
   const [isExpired, setIsExpired] = useState(false);
 
@@ -21,7 +22,10 @@ function DoomsdayClock({ deadline }: { deadline: string }) {
 
       if (diff <= 0) {
         setTimeLeft('SLA BREACHED');
-        setIsExpired(true);
+        if (!isExpired) {
+          setIsExpired(true);
+          if (onExpire) onExpire();
+        }
         clearInterval(timer);
         return;
       }
@@ -55,6 +59,8 @@ export default function CitizenPage() {
   const [isSuccess, setIsSuccess] = useState(false);
   const [myGrievances, setMyGrievances] = useState<any[]>([]);
   const [fetchingGrievances, setFetchingGrievances] = useState(false);
+  const [expiredIds, setExpiredIds] = useState<Set<string>>(new Set());
+
 
   useEffect(() => {
     const s = authProvider.getSession();
@@ -146,10 +152,10 @@ export default function CitizenPage() {
             {authStage === 'phone' ? (
               <div className="space-y-4">
                 <div className="relative group">
-                  <Input 
-                    type="tel" 
-                    placeholder="Mobile Number" 
-                    value={phoneNumber} 
+                  <Input
+                    type="tel"
+                    placeholder="Mobile Number"
+                    value={phoneNumber}
                     onChange={(e) => setPhoneNumber(e.target.value)}
                     className="h-14 text-center text-lg font-bold tracking-tight bg-white border-slate-100 rounded-2xl shadow-sm focus-visible:ring-slate-900 transition-all"
                   />
@@ -157,13 +163,13 @@ export default function CitizenPage() {
                 <Button onClick={handleStart} disabled={authLoading || !phoneNumber} className="w-full h-14 bg-slate-900 text-white rounded-2xl font-black text-xs uppercase tracking-[0.2em] hover:bg-slate-800 transition-all shadow-lg shadow-slate-200">
                   {authLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Request Access"}
                 </Button>
-                
+
                 <div className="pt-8 flex flex-col items-center gap-4">
                   <div className="w-full h-px bg-slate-200 flex items-center justify-center">
                     <span className="bg-white px-4 text-[9px] font-black text-slate-400 uppercase tracking-[0.3em]">Evaluation Mode</span>
                   </div>
-                  <button 
-                    onClick={handleDemoAccess} 
+                  <button
+                    onClick={handleDemoAccess}
                     disabled={authLoading}
                     className="group flex items-center gap-3 px-8 py-4 rounded-2xl bg-slate-100 border-2 border-slate-200 hover:bg-slate-900 hover:border-slate-900 transition-all duration-300 w-full justify-center shadow-sm"
                   >
@@ -176,11 +182,11 @@ export default function CitizenPage() {
             ) : (
               <div className="space-y-6">
                 <div className="space-y-2 text-center">
-                  <Input 
-                    type="text" 
+                  <Input
+                    type="text"
                     maxLength={6}
-                    placeholder="000000" 
-                    value={otp} 
+                    placeholder="000000"
+                    value={otp}
                     onChange={(e) => setOtp(e.target.value)}
                     className="h-20 text-center text-4xl font-black tracking-[0.4em] bg-white border-slate-100 rounded-2xl shadow-sm focus-visible:ring-slate-900"
                   />
@@ -211,7 +217,7 @@ export default function CitizenPage() {
               <div className="w-2 h-2 bg-green-500 rounded-full" />
               <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">Verified Citizen</span>
             </div>
-            <button onClick={() => {authProvider.logout(); window.location.reload();}} className="text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-red-500 transition-colors">Logout</button>
+            <button onClick={() => { authProvider.logout(); window.location.reload(); }} className="text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-red-500 transition-colors">Logout</button>
           </div>
           <div className="space-y-2">
             <h1 className="text-5xl font-black text-slate-900 tracking-tight uppercase italic">
@@ -257,45 +263,66 @@ export default function CitizenPage() {
                 </div>
               </div>
             ) : (
-              myGrievances.map((g) => (
-                <div key={g.id} className="group bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm hover:shadow-2xl hover:shadow-slate-200/60 transition-all duration-500 space-y-6 relative overflow-hidden">
-                  <div className="flex justify-between items-start relative z-10">
-                    <div className="space-y-1.5">
-                      <div className="flex items-center gap-2">
-                        <span className={cn(
-                          "px-2 py-0.5 rounded-md text-[8px] font-black uppercase tracking-widest",
-                          g.status === 'OPEN' ? "bg-amber-50 text-amber-600" : "bg-emerald-50 text-emerald-600"
-                        )}>
-                          {g.status}
-                        </span>
-                        <span className="text-[10px] text-slate-300 font-medium font-mono">{g.id.split('-')[0]}</span>
-                      </div>
-                      <h4 className="text-base font-black text-slate-900 tracking-tight leading-tight group-hover:text-slate-600 transition-colors">{g.title}</h4>
-                    </div>
-                    <DoomsdayClock deadline={g.deadline} />
-                  </div>
+              myGrievances.map((g) => {
+                // 1. Calculate if this specific grievance is expired BEFORE returning the UI
+                const isAlreadyExpired = new Date().getTime() > new Date(g.deadline).getTime();
+                const showRtiButton = isAlreadyExpired || expiredIds.has(g.id);
 
-                  <div className="flex items-center justify-between pt-2 border-t border-slate-50 group-hover:border-slate-100 transition-colors">
-                    <div className="flex items-center gap-4">
-                      {g.imageUrl && (
-                        <div className="w-10 h-10 rounded-xl overflow-hidden shadow-sm border border-slate-100 ring-4 ring-slate-50 transition-all group-hover:scale-110 group-hover:ring-slate-100 duration-500">
-                          <img src={g.imageUrl} alt="Evidence" className="w-full h-full object-cover" />
+                // 2. Explicitly return the UI block
+                return (
+                  <div key={g.id} className="group bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm hover:shadow-2xl hover:shadow-slate-200/60 transition-all duration-500 space-y-6 relative overflow-hidden">
+                    <div className="flex justify-between items-start relative z-10">
+                      <div className="space-y-1.5 flex-1">
+                        <div className="flex items-center gap-2">
+                          <span className={cn(
+                            "px-2 py-0.5 rounded-md text-[8px] font-black uppercase tracking-widest",
+                            g.status === 'OPEN' ? "bg-amber-50 text-amber-600" : "bg-emerald-50 text-emerald-600"
+                          )}>
+                            {g.status}
+                          </span>
+                          <span className="text-[10px] text-slate-300 font-medium font-mono">{g.id.split('-')[0]}</span>
                         </div>
-                      )}
-                      <div className="space-y-0.5">
-                        <div className="flex items-center gap-1 text-slate-400">
-                          <MapPin className="w-3 h-3" />
-                          <span className="text-[10px] font-bold uppercase tracking-tight text-slate-500">{g.location?.city || "Unknown Location"}</span>
-                        </div>
-                        <p className="text-[10px] text-slate-400 font-medium">{new Date(g.createdAt).toLocaleDateString()}</p>
+                        <h4 className="text-base font-black text-slate-900 tracking-tight leading-tight group-hover:text-slate-600 transition-colors pr-4">{g.title}</h4>
+                      </div>
+
+                      {/* Clocks and Buttons */}
+                      <div className="flex flex-col items-end gap-3 shrink-0">
+                        <DoomsdayClock
+                          deadline={g.deadline}
+                          onExpire={() => setExpiredIds(prev => new Set(prev).add(g.id))}
+                        />
+
+                        {/* Conditional RTI Button */}
+                        {showRtiButton && session && (
+                          <div className="animate-in fade-in slide-in-from-top-2 duration-500">
+                            <RtiButton grievanceId={g.id} citizenId={session.citizenId} />
+                          </div>
+                        )}
                       </div>
                     </div>
-                    <Button variant="ghost" size="icon" className="rounded-full hover:bg-slate-900 hover:text-white text-slate-300 transition-all duration-500">
-                      <ChevronRight className="w-4 h-4" />
-                    </Button>
+
+                    <div className="flex items-center justify-between pt-2 border-t border-slate-50 group-hover:border-slate-100 transition-colors">
+                      <div className="flex items-center gap-4">
+                        {g.imageUrl && (
+                          <div className="w-10 h-10 rounded-xl overflow-hidden shadow-sm border border-slate-100 ring-4 ring-slate-50 transition-all group-hover:scale-110 group-hover:ring-slate-100 duration-500">
+                            <img src={g.imageUrl} alt="Evidence" className="w-full h-full object-cover" />
+                          </div>
+                        )}
+                        <div className="space-y-0.5">
+                          <div className="flex items-center gap-1 text-slate-400">
+                            <MapPin className="w-3 h-3" />
+                            <span className="text-[10px] font-bold uppercase tracking-tight text-slate-500">{g.location?.city || "Unknown Location"}</span>
+                          </div>
+                          <p className="text-[10px] text-slate-400 font-medium">{new Date(g.createdAt).toLocaleDateString()}</p>
+                        </div>
+                      </div>
+                      <Button variant="ghost" size="icon" className="rounded-full hover:bg-slate-900 hover:text-white text-slate-300 transition-all duration-500">
+                        <ChevronRight className="w-4 h-4" />
+                      </Button>
+                    </div>
                   </div>
-                </div>
-              ))
+                );
+              })
             )}
           </div>
         </section>
