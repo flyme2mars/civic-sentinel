@@ -66,8 +66,9 @@ export function AnalyticsView({ grievances }: { grievances: CivicIssue[] }) {
       return { count, label };
     });
 
-    const categories = grievances.reduce((acc, g) => {
-      acc[g.category] = (acc[g.category] || 0) + 1;
+    const priorities = grievances.reduce((acc, g) => {
+      const p = g.priority.toLowerCase();
+      acc[p] = (acc[p] || 0) + 1;
       return acc;
     }, {} as Record<string, number>);
 
@@ -76,13 +77,15 @@ export function AnalyticsView({ grievances }: { grievances: CivicIssue[] }) {
       return acc;
     }, {} as Record<string, number>);
 
+    const priorityOrder = ['critical', 'high', 'medium', 'low'];
+
     return {
       total,
       resolved,
       escalated,
       resolutionRate: total > 0 ? ((resolved / total) * 100).toFixed(0) : 0,
       dailyData,
-      categories: Object.entries(categories).sort((a, b) => b[1] - a[1]),
+      priorities: priorityOrder.map(p => [p, priorities[p] || 0]),
       statuses: Object.entries(statuses)
     };
   }, [grievances]);
@@ -181,19 +184,19 @@ export function AnalyticsView({ grievances }: { grievances: CivicIssue[] }) {
              </button>
           </div>
 
-          {/* Bottom Row: Category & Status */}
+          {/* Bottom Row: Priority & Status */}
           <div className="col-span-12 lg:col-span-6 space-y-6">
-            <h3 className="text-xs font-bold text-gray-900 uppercase tracking-widest">Distribution by Category</h3>
+            <h3 className="text-xs font-bold text-gray-900 uppercase tracking-widest">Distribution by Priority</h3>
             <div className="space-y-3">
-              {stats.categories.map(([name, count]) => (
-                <div key={name} className="flex items-center gap-4 group">
-                  <span className="w-24 text-[10px] font-bold text-gray-400 uppercase truncate">{name}</span>
+              {stats.priorities.map(([name, count]) => (
+                <div key={name as string} className="flex items-center gap-4 group">
+                  <span className="w-24 text-[10px] font-bold text-gray-400 uppercase truncate">{name as string}</span>
                   <div className="flex-1 h-8 bg-gray-50 rounded flex items-center px-3 relative overflow-hidden group-hover:bg-gray-100 transition-colors">
                     <div 
-                      className="absolute inset-y-0 left-0 bg-gray-100 group-hover:bg-gray-200 transition-colors" 
-                      style={{ width: `${(count / stats.total) * 100}%` }}
+                      className={`absolute inset-y-0 left-0 transition-colors ${name === 'critical' ? 'bg-red-100 group-hover:bg-red-200' : 'bg-gray-100 group-hover:bg-gray-200'}`} 
+                      style={{ width: `${((count as number) / stats.total) * 100}%` }}
                     />
-                    <span className="relative text-[11px] font-mono font-bold text-gray-900">{count}</span>
+                    <span className="relative text-[11px] font-mono font-bold text-gray-900">{count as number}</span>
                   </div>
                 </div>
               ))}

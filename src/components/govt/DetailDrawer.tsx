@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { StatusIcon, PriorityIcon } from './Atoms';
 import { formatDate } from '@/lib/utils';
+import { ImageModal } from '../ui/ImageModal';
 
 export function DetailDrawer({ 
   issue, 
@@ -33,6 +34,16 @@ export function DetailDrawer({
     reasoning?: string;
     error?: string;
   } | null>(null);
+
+  const [modalState, setModalState] = useState<{ isOpen: boolean; src: string; alt: string }>({
+    isOpen: false,
+    src: '',
+    alt: ''
+  });
+
+  const openModal = (src: string, alt: string) => {
+    setModalState({ isOpen: true, src, alt });
+  };
 
   const handleFileUpload = async (file: File) => {
     setIsUploading(true);
@@ -202,7 +213,10 @@ export function DetailDrawer({
                 className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500"
               />
               <div className="absolute inset-0 bg-gray-900/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                <button className="bg-white px-4 py-2 rounded-lg text-xs font-bold text-gray-900 flex items-center gap-2 shadow-xl transform translate-y-2 group-hover:translate-y-0 transition-transform">
+                <button 
+                  onClick={() => openModal(issue.imageUrl || '/placeholder-issue.jpg', "Initial Report Evidence")}
+                  className="bg-white px-4 py-2 rounded-lg text-xs font-bold text-gray-900 flex items-center gap-2 shadow-xl transform translate-y-2 group-hover:translate-y-0 transition-transform hover:bg-gray-50"
+                >
                   <Eye className="w-4 h-4" />
                   View Original Image
                 </button>
@@ -225,7 +239,10 @@ export function DetailDrawer({
                   className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500"
                 />
                 <div className="absolute inset-0 bg-gray-900/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                  <button className="bg-white px-4 py-2 rounded-lg text-xs font-bold text-gray-900 flex items-center gap-2 shadow-xl transform translate-y-2 group-hover:translate-y-0 transition-transform">
+                  <button 
+                    onClick={() => openModal(issue.fixedImageUrl || '/placeholder-issue.jpg', "Resolution Evidence")}
+                    className="bg-white px-4 py-2 rounded-lg text-xs font-bold text-gray-900 flex items-center gap-2 shadow-xl transform translate-y-2 group-hover:translate-y-0 transition-transform hover:bg-gray-50"
+                  >
                     <Eye className="w-4 h-4" />
                     View Resolved Image
                   </button>
@@ -318,6 +335,13 @@ export function DetailDrawer({
           </button>
         </div>
       )}
+
+      <ImageModal 
+        isOpen={modalState.isOpen}
+        onClose={() => setModalState(prev => ({ ...prev, isOpen: false }))}
+        imageSrc={modalState.src}
+        altText={modalState.alt}
+      />
     </div>
   );
 }

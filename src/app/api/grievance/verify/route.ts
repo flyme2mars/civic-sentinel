@@ -64,7 +64,8 @@ export async function POST(request: Request) {
         "verified": boolean,
         "status": "VERIFIED" | "REJECTED",
         "confidence": number (0-1),
-        "reasoning": "Clear explanation of why it was verified or rejected"
+        "reasoning": "Technical explanation of why it was verified or rejected for the admin.",
+        "resolutionSummary": "A concise, user-friendly summary of the repair work for the citizen (e.g., 'The pothole at MG Road has been filled and leveled.')"
       }
     `;
 

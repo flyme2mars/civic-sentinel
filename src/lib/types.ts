@@ -33,6 +33,13 @@ export interface CivicIssue {
   score?: number;
   socialShared?: boolean;
   twitterLikes?: number;
+  aiVerificationResult?: {
+    verified: boolean;
+    status: 'VERIFIED' | 'REJECTED';
+    confidence: number;
+    reasoning: string;
+    resolutionSummary?: string;
+  };
 }
 
 export interface Department {
