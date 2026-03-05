@@ -22,7 +22,9 @@ export const AWS_CONFIG = {
 
   };
 
-  console.log(`[AWS Config] Connecting to DynamoDB Table: "${AWS_CONFIG.dynamodb.tableName}" in Region: "${AWS_CONFIG.region}"`);
+  if (process.env.NODE_ENV === 'development') {
+    console.log(`[AWS Config] Connecting to DynamoDB Table: "${AWS_CONFIG.dynamodb.tableName}" in Region: "${AWS_CONFIG.region}"`);
+  }
 
   const accessKeyId = process.env.MY_AWS_ACCESS_KEY_ID || process.env.AWS_ACCESS_KEY_ID || '';
 const secretAccessKey = process.env.MY_AWS_SECRET_ACCESS_KEY || process.env.AWS_SECRET_ACCESS_KEY || '';

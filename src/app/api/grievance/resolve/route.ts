@@ -9,14 +9,21 @@ import { UpdateCommand } from '@aws-sdk/lib-dynamodb';
  */
 export async function POST(request: Request) {
   try {
+    // SECURITY: Basic Token-based Authorization
+    const token = request.headers.get('x-govt-token');
+    if (token !== process.env.GOVT_API_TOKEN) {
+      return NextResponse.json({ error: 'Unauthorized Access Denied' }, { status: 401 });
+    }
+
     const body = await request.json();
     const { id, resolvedImageKey, note } = body;
 
-    console.log("[Resolve API] Received Payload:", body);
+    if (process.env.NODE_ENV === 'development') {
+      console.log("[Resolve API] Received Payload:", body);
+    }
 
     if (!id || !resolvedImageKey) {
-      console.error("[Resolve API] Missing required fields:", { id, resolvedImageKey });
-      return NextResponse.json({ error: `Grievance ID and resolvedImageKey are required. Received: ID=${id}, Key=${resolvedImageKey}` }, { status: 400 });
+      return NextResponse.json({ error: 'Grievance ID and resolvedImageKey are required.' }, { status: 400 });
     }
 
     const timestamp = new Date().toISOString();
@@ -24,7 +31,7 @@ export async function POST(request: Request) {
     const command = new UpdateCommand({
       TableName: AWS_CONFIG.dynamodb.tableName,
       Key: { id },
-      // Update status, add the fixed image key, and append to history (handling if history doesn't exist)
+      // Update status, add the fixed image key, and append to history
       UpdateExpression: "SET #st = :status, fixedImageKey = :img, updatedAt = :time, history = list_append(if_not_exists(history, :empty_list), :historyEntry)",
       ExpressionAttributeNames: {
         "#st": "status"
@@ -45,19 +52,39 @@ export async function POST(request: Request) {
       ReturnValues: "ALL_NEW"
     });
 
-    const result = await dynamoDb.send(command);
+    await dynamoDb.send(command);
 
-    console.log(`[DynamoDB] Grievance ${id} marked as FIXED by official.`);
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`[DynamoDB] Grievance ${id} marked as FIXED by official.`);
+    }
+
+    // TRIGGER VERIFICATION AUTOMATICALLY
+    // In a real production app, this might be a background job or Lambda trigger.
+    // For this prototype, we'll trigger it here to simplify the frontend flow.
+    try {
+      const verifyUrl = new URL('/api/grievance/verify', request.url).toString();
+      fetch(verifyUrl, {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'x-govt-token': process.env.GOVT_API_TOKEN || ''
+        },
+        body: JSON.stringify({ id })
+      }).catch(err => console.error("[Resolve API] Async Verify Trigger Failed:", err));
+    } catch (e) {
+      console.error("[Resolve API] Failed to trigger verification:", e);
+    }
 
     return NextResponse.json({ 
       success: true, 
       id,
       updatedStatus: 'FIXED',
-      message: 'Resolution submitted. Initiating AI Vision Auditor verification.'
+      message: 'Resolution submitted. AI Vision Auditor verification initiated in background.'
     });
 
   } catch (error: any) {
     console.error('[Grievance Resolve API] Error:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    // Generic error message for security
+    return NextResponse.json({ error: 'An internal server error occurred while resolving the grievance.' }, { status: 500 });
   }
 }

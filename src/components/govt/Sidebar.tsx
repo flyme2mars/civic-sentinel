@@ -8,9 +8,7 @@ import {
   BarChart3, 
   ChevronDown,
   Building2,
-  Search,
-  Settings,
-  Plus
+  Search
 } from 'lucide-react';
 
 const NAV_ITEMS = [
@@ -29,7 +27,7 @@ export function Sidebar({ activeTab, setActiveTab }: { activeTab: string, setAct
   return (
     <aside className="w-64 h-screen border-r border-gray-100 flex flex-col bg-white select-none">
       {/* Department Switcher */}
-      <div className="p-4 border-bottom border-gray-100">
+      <div className="p-4 border-b border-gray-100">
         <button className="w-full flex items-center justify-between p-2 rounded-lg hover:bg-gray-50 transition-colors border border-transparent hover:border-gray-200 group">
           <div className="flex items-center gap-3 overflow-hidden">
             <div className="w-8 h-8 rounded-md bg-gray-900 flex items-center justify-center flex-shrink-0">
@@ -66,23 +64,6 @@ export function Sidebar({ activeTab, setActiveTab }: { activeTab: string, setAct
           ))}
         </div>
 
-        <div className="mt-8">
-          <button className="w-full flex items-center justify-between px-3 py-1.5 text-xs font-medium text-gray-400 uppercase tracking-wider mb-2 group">
-            Favorite Wards
-            <Plus className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer" />
-          </button>
-          <div className="space-y-1">
-            {['Ward 12', 'Ward 08', 'Ward 15'].map((ward) => (
-              <button
-                key={ward}
-                className="w-full flex items-center gap-3 px-3 py-1.5 text-sm text-gray-500 hover:text-gray-900 hover:bg-gray-50 rounded-md transition-colors"
-              >
-                <div className="w-1.5 h-1.5 rounded-full bg-gray-300" />
-                {ward}
-              </button>
-            ))}
-          </div>
-        </div>
       </nav>
 
       {/* User / Bottom */}
@@ -90,10 +71,6 @@ export function Sidebar({ activeTab, setActiveTab }: { activeTab: string, setAct
         <button className="w-full flex items-center gap-3 px-3 py-2 text-sm text-gray-500 hover:text-gray-900 hover:bg-gray-50 rounded-md transition-colors">
           <Search className="w-4 h-4 text-gray-400" />
           Quick Search
-        </button>
-        <button className="w-full flex items-center gap-3 px-3 py-2 text-sm text-gray-500 hover:text-gray-900 hover:bg-gray-50 rounded-md transition-colors">
-          <Settings className="w-4 h-4 text-gray-400" />
-          Settings
         </button>
       </div>
     </aside>

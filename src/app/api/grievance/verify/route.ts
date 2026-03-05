@@ -10,6 +10,12 @@ import { ConverseCommand } from '@aws-sdk/client-bedrock-runtime';
  */
 export async function POST(request: Request) {
   try {
+    // SECURITY: Basic Token-based Authorization
+    const token = request.headers.get('x-govt-token');
+    if (token !== process.env.GOVT_API_TOKEN) {
+      return NextResponse.json({ error: 'Unauthorized Access Denied' }, { status: 401 });
+    }
+
     const { id } = await request.json();
 
     if (!id) {
@@ -84,9 +90,26 @@ export async function POST(request: Request) {
     
     if (!finalContent) throw new Error("AI failed to generate a response");
     
-    // Parse AI Response
-    const jsonMatch = finalContent.match(/\{[\s\S]*\}/);
-    const result = jsonMatch ? JSON.parse(jsonMatch[0]) : { verified: false, status: "REJECTED", reasoning: "AI Error during analysis." };
+    // Parse AI Response - Improved parsing to handle markdown code fences
+    let result;
+    try {
+      // Clean content from potential markdown markers
+      const cleanContent = finalContent.replace(/```json\s?|```/g, '').trim();
+      const jsonMatch = cleanContent.match(/\{[\s\S]*\}/);
+      result = jsonMatch ? JSON.parse(jsonMatch[0]) : null;
+    } catch (e) {
+      console.error("[Vision Auditor] JSON Parse Error:", e, "Content:", finalContent);
+    }
+
+    if (!result) {
+       result = { verified: false, status: "REJECTED", reasoning: "AI Error during analysis output parsing." };
+    }
+
+    // Status Coercion & Validation
+    const validStatuses = ['VERIFIED', 'REJECTED'];
+    if (!validStatuses.includes(result.status)) {
+       result.status = result.verified ? 'VERIFIED' : 'REJECTED';
+    }
 
     const timestamp = new Date().toISOString();
 
@@ -122,7 +145,8 @@ export async function POST(request: Request) {
 
   } catch (error: any) {
     console.error('[Vision Auditor API] Error:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    // Generic error message for security
+    return NextResponse.json({ error: 'An error occurred during vision verification.' }, { status: 500 });
   }
 }
 

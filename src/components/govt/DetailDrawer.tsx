@@ -7,14 +7,13 @@ import {
   MapPin, 
   Clock, 
   User, 
-  Phone, 
   Image as ImageIcon,
   Upload,
   CheckCircle,
   Eye,
   ArrowRight
 } from 'lucide-react';
-import { StatusIcon, PriorityIcon, Badge } from './Atoms';
+import { StatusIcon, PriorityIcon } from './Atoms';
 import { formatDate } from '@/lib/utils';
 
 export function DetailDrawer({ 

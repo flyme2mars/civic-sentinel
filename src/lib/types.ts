@@ -23,6 +23,16 @@ export interface CivicIssue {
   fixedImageUrl?: string;
   assignee?: string;
   verifiedAt?: number;
+  
+  // Extended properties for Admin Dashboard
+  elapsedHours?: number;
+  aiSimilar?: number;
+  urgency?: number;
+  rtiGenerated?: boolean;
+  hasAfter?: boolean;
+  score?: number;
+  socialShared?: boolean;
+  twitterLikes?: number;
 }
 
 export interface Department {

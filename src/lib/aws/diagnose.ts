@@ -1,7 +1,7 @@
 import { DynamoDBClient, ListTablesCommand, DescribeTableCommand } from "@aws-sdk/client-dynamodb";
 import { AWS_CONFIG } from "./config";
 
-async function diagnose() {
+export async function diagnose() {
   console.log("--- AWS Configuration Diagnosis ---");
   console.log("Region:", AWS_CONFIG.region);
   console.log("Target Table:", AWS_CONFIG.dynamodb.tableName);
@@ -34,5 +34,3 @@ async function diagnose() {
     console.error("DIAGNOSIS FAILED:", err.name, "-", err.message);
   }
 }
-
-diagnose();

@@ -7,6 +7,7 @@ const hour = 3600000;
 export const GRIEVANCES: CivicIssue[] = [
   { 
     id: "GRV-2024-001", 
+    rawId: "7c8b2a1e-1d5b-4c8d-9e2a-3b4c5d6e7f8a",
     title: "Major pothole on MG Road", 
     description: "Deep pothole near City Mall, caused 2 bike accidents today", 
     category: "roads", 
@@ -22,10 +23,16 @@ export const GRIEVANCES: CivicIssue[] = [
     slaHours: 48, 
     isEscalated: false,
     aiConfidence: 0.95, 
-    imageUrl: "/placeholder-pothole.jpg"
+    imageUrl: "/placeholder-pothole.jpg",
+    elapsedHours: 12,
+    aiSimilar: 3,
+    urgency: 0.9,
+    rtiGenerated: false,
+    hasAfter: false
   },
   { 
     id: "GRV-2024-002", 
+    rawId: "8d9c3b2f-2e6c-5d9e-0f3b-4c5d6e7f8a9b",
     title: "Broken sewage line flooding street", 
     description: "Sewage burst, waterlogged for 3 days, health hazard for residents", 
     category: "sanitation", 
@@ -41,10 +48,16 @@ export const GRIEVANCES: CivicIssue[] = [
     slaHours: 48, 
     isEscalated: false,
     aiConfidence: 0.88, 
-    assignee: "Suresh Patel" 
+    assignee: "Suresh Patel",
+    elapsedHours: 28,
+    aiSimilar: 1,
+    urgency: 0.7,
+    rtiGenerated: false,
+    hasAfter: false
   },
   { 
     id: "GRV-2024-003", 
+    rawId: "9e0d4c3a-3f7d-6e0f-1a4c-5d6e7f8a9b0c",
     title: "Street lights out for 2 weeks", 
     description: "Complete darkness on main road, safety concern especially for women", 
     category: "electricity", 
@@ -60,10 +73,16 @@ export const GRIEVANCES: CivicIssue[] = [
     slaHours: 48, 
     isEscalated: true,
     aiConfidence: 0.92, 
-    assignee: "Amit Verma"
+    assignee: "Amit Verma",
+    elapsedHours: 72,
+    aiSimilar: 5,
+    urgency: 0.95,
+    rtiGenerated: true,
+    hasAfter: false
   },
   { 
     id: "GRV-2024-004", 
+    rawId: "0f1e5d4b-4a8e-7f1a-2b5d-6e7f8a9b0c1d",
     title: "Garbage dump not cleared", 
     description: "Month-old pile attracting stray animals, severe smell for residents", 
     category: "waste", 
@@ -79,10 +98,17 @@ export const GRIEVANCES: CivicIssue[] = [
     slaHours: 48, 
     isEscalated: false,
     aiConfidence: 0.96, 
-    assignee: "Vikram Singh" 
+    assignee: "Vikram Singh",
+    elapsedHours: 48,
+    aiSimilar: 0,
+    urgency: 0.4,
+    rtiGenerated: false,
+    hasAfter: true,
+    score: 85
   },
   { 
     id: "GRV-2024-005", 
+    rawId: "1a2f6e5c-5b9f-8a2b-3c6e-7f8a9b0c1d2e",
     title: "Water pipeline leak", 
     description: "Potable water being wasted, road surface deteriorating rapidly", 
     category: "water", 
@@ -97,10 +123,16 @@ export const GRIEVANCES: CivicIssue[] = [
     deadline: now + 42 * hour,
     slaHours: 48, 
     isEscalated: false,
-    aiConfidence: 0.91 
+    aiConfidence: 0.91,
+    elapsedHours: 6,
+    aiSimilar: 2,
+    urgency: 0.6,
+    rtiGenerated: false,
+    hasAfter: false
   },
   { 
     id: "GRV-2024-006", 
+    rawId: "2b3a7f6d-6c0a-9b3c-4d7f-8a9b0c1d2e3f",
     title: "Broken footpath tiles", 
     description: "Cracked tiles causing falls, elderly residents at risk near market", 
     category: "infrastructure", 
@@ -115,7 +147,12 @@ export const GRIEVANCES: CivicIssue[] = [
     deadline: now + 45 * hour,
     slaHours: 48, 
     isEscalated: false,
-    aiConfidence: 0.89 
+    aiConfidence: 0.89,
+    elapsedHours: 3,
+    aiSimilar: 1,
+    urgency: 0.3,
+    rtiGenerated: false,
+    hasAfter: false
   },
 ];
 

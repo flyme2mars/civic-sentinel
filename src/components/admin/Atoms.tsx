@@ -7,8 +7,13 @@ import { STATUS_MAP, PRIORITY_MAP } from '@/lib/mock-data';
 export function Pill({ status, dark }: { status: keyof typeof STATUS_MAP, dark: boolean }) {
   const cfg = STATUS_MAP[status] || STATUS_MAP.pending;
   const c = dark ? cfg.dark : cfg.light;
+  
+  // Refactored to Tailwind where possible, but keeping the dynamic colors from STATUS_MAP
   return (
-    <span style={{ background: c.bg, color: c.text, border: `1px solid ${c.border}`, padding: "3px 10px", borderRadius: 999, fontSize: 11, fontWeight: 700, fontFamily: "'DM Mono', monospace", letterSpacing: "0.04em", whiteSpace: "nowrap" }}>
+    <span 
+      className="px-[10px] py-[3px] rounded-full text-[11px] font-bold font-mono tracking-wider whitespace-nowrap border"
+      style={{ background: c.bg, color: c.text, borderColor: c.border }}
+    >
       {cfg.label}
     </span>
   );
@@ -16,7 +21,12 @@ export function Pill({ status, dark }: { status: keyof typeof STATUS_MAP, dark: 
 
 export function PriorityDot({ priority, dark }: { priority: keyof typeof PRIORITY_MAP, dark: boolean }) {
   const color = dark ? PRIORITY_MAP[priority]?.dark : PRIORITY_MAP[priority]?.light;
-  return <span style={{ display: "inline-block", width: 7, height: 7, borderRadius: "50%", background: color, boxShadow: priority === "critical" ? `0 0 6px ${color}` : "none", flexShrink: 0 }} />;
+  return (
+    <span 
+      className={`inline-block w-[7px] h-[7px] rounded-full flex-shrink-0 ${priority === 'critical' ? 'shadow-[0_0_6px_var(--dot-color)]' : ''}`}
+      style={{ background: color, '--dot-color': color } as React.CSSProperties} 
+    />
+  );
 }
 
 export function SLABar({ reportedAt, slaHours, compact, dark }: { reportedAt: number, slaHours: number, compact?: boolean, dark: boolean }) {
@@ -26,30 +36,36 @@ export function SLABar({ reportedAt, slaHours, compact, dark }: { reportedAt: nu
 
   if (compact) {
     return (
-      <span style={{ color: textColor, fontFamily: "'DM Mono', monospace", fontSize: 11, fontWeight: 700 }}>
+      <span className="font-mono text-[11px] font-bold" style={{ color: textColor }}>
         {breached ? `+${h}h overdue` : `${h}h ${m}m`}
       </span>
     );
   }
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <span style={{ fontSize: 10, color: dark ? "#6B7280" : "#9CA3AF", fontFamily: "'DM Mono', monospace", letterSpacing: "0.08em" }}>
+    <div className="flex flex-col gap-[5px]">
+      <div className="flex justify-between items-center">
+        <span className="text-[10px] font-mono tracking-widest" style={{ color: dark ? "#6B7280" : "#9CA3AF" }}>
           {breached ? "SLA BREACHED" : "SLA DEADLINE"}
         </span>
-        <span style={{ color: textColor, fontFamily: "'DM Mono', monospace", fontSize: 13, fontWeight: 700 }}>
+        <span className="font-mono text-[13px] font-bold" style={{ color: textColor }}>
           {breached ? `+${h}h ${m}m` : `${h}h ${m}m`}
         </span>
       </div>
-      <div style={{ height: 5, borderRadius: 3, background: dark ? "rgba(255,255,255,0.07)" : "rgba(0,0,0,0.07)", overflow: "hidden", position: "relative" }}>
-        <div style={{
-          height: "100%", width: `${pct}%`, background: barColor, borderRadius: 3,
-          transition: "width 1s linear",
-          boxShadow: `0 0 8px ${barColor}50`
-        }} />
+      <div className="h-[5px] rounded-[3px] overflow-hidden relative" style={{ background: dark ? "rgba(255,255,255,0.07)" : "rgba(0,0,0,0.07)" }}>
+        <div 
+          className="h-full rounded-[3px] transition-all duration-1000 linear"
+          style={{ 
+            width: `${Math.max(0, Math.min(100, pct))}%`, 
+            background: barColor,
+            boxShadow: `0 0 8px ${barColor}50`
+          }} 
+        />
         {(urgent || breached) && (
-          <div style={{ position: "absolute", inset: 0, background: `linear-gradient(90deg, transparent 60%, ${barColor}30)`, animation: "pulse 2s infinite" }} />
+          <div 
+            className="absolute inset-0 animate-pulse" 
+            style={{ background: `linear-gradient(90deg, transparent 60%, ${barColor}30)` }} 
+          />
         )}
       </div>
     </div>
@@ -65,30 +81,29 @@ export function SLARing({ reportedAt, slaHours, dark, size = 52 }: { reportedAt:
   const dash = (pct / 100) * circ;
 
   return (
-    <div style={{ position: "relative", width: size, height: size, flexShrink: 0 }}>
-      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{ display: "block" }}>
+    <div className="relative flex-shrink-0" style={{ width: size, height: size }}>
+      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="block">
         {/* Track */}
         <circle cx={cx} cy={cy} r={r} fill="none" stroke={trackColor} strokeWidth="4" />
         {/* Progress */}
         <circle cx={cx} cy={cy} r={r} fill="none" stroke={color} strokeWidth="4"
           strokeDasharray={`${dash} ${circ}`} strokeLinecap="round"
-          style={{ transformOrigin: "center", transform: "rotate(-90deg)", transition: "stroke-dasharray 1s linear" }} />
+          className="transition-all duration-1000 linear"
+          style={{ transformOrigin: "center", transform: "rotate(-90deg)" }} />
         {/* Glow when urgent/breached */}
         {(urgent || breached) && (
           <circle cx={cx} cy={cy} r={r} fill="none" stroke={color} strokeWidth="4" opacity="0.2"
             strokeDasharray={`${dash} ${circ}`} strokeLinecap="round"
-            style={{ transformOrigin: "center", transform: "rotate(-90deg)", filter: "blur(3px)" }} />
+            className="blur-[3px]"
+            style={{ transformOrigin: "center", transform: "rotate(-90deg)" }} />
         )}
       </svg>
       {/* Center text */}
-      <div style={{
-        position: "absolute", inset: 0, display: "flex", flexDirection: "column",
-        alignItems: "center", justifyContent: "center", gap: 0
-      }}>
-        <span style={{ fontSize: size < 60 ? 9 : 11, fontFamily: "'DM Mono', monospace", fontWeight: 700, color, lineHeight: 1 }}>
+      <div className="absolute inset-0 flex flex-col items-center justify-center gap-0">
+        <span className="font-mono font-bold leading-none" style={{ fontSize: size < 60 ? 9 : 11, color }}>
           {breached ? `+${h}h` : `${h}h`}
         </span>
-        <span style={{ fontSize: size < 60 ? 7 : 9, fontFamily: "'DM Mono', monospace", color: dark ? "#6B7280" : "#9CA3AF", lineHeight: 1, marginTop: 1 }}>
+        <span className="font-mono leading-none mt-[1px]" style={{ fontSize: size < 60 ? 7 : 9, color: dark ? "#6B7280" : "#9CA3AF" }}>
           {breached ? "over" : `${m}m`}
         </span>
       </div>
@@ -105,8 +120,9 @@ export function ScoreRing({ score, dark, size = 44 }: { score: number, dark: boo
       <circle cx="20" cy="20" r={r} fill="none" stroke={dark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.06)"} strokeWidth="4" />
       <circle cx="20" cy="20" r={r} fill="none" stroke={color} strokeWidth="4"
         strokeDasharray={`${dash} ${circ}`} strokeLinecap="round"
-        style={{ transformOrigin: "center", transform: "rotate(-90deg)", transition: "stroke-dasharray 0.6s ease" }} />
-      <text x="20" y="24" textAnchor="middle" fill={color} fontSize="9" fontFamily="'DM Mono', monospace" fontWeight="700">{score}</text>
+        className="transition-all duration-600 ease-in-out"
+        style={{ transformOrigin: "center", transform: "rotate(-90deg)" }} />
+      <text x="20" y="24" textAnchor="middle" fill={color} fontSize="9" className="font-mono font-bold">{score}</text>
     </svg>
   );
 }

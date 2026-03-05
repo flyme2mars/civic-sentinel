@@ -106,7 +106,11 @@ export default function GovernmentDashboard() {
       const matchStatus = filterStatus === "all" || g.status === filterStatus;
       return matchSearch && matchStatus;
     }).sort((a, b) => {
-      if (sortBy === "urgency") return (b.elapsedHours / b.slaHours) - (a.elapsedHours / a.slaHours);
+      if (sortBy === "urgency") {
+        const aUrgency = (a.elapsedHours || 0) / (a.slaHours || 48);
+        const bUrgency = (b.elapsedHours || 0) / (b.slaHours || 48);
+        return bUrgency - aUrgency;
+      }
       if (sortBy === "severity") {
         const order = ["critical", "high", "medium", "low"];
         return order.indexOf(a.priority) - order.indexOf(b.priority);

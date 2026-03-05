@@ -82,7 +82,7 @@ export function DoomsdayClock({ reportedAt, slaHours, status }: { reportedAt: nu
   return (
     <div className="flex items-center gap-3">
       <span className={`font-mono text-sm font-bold tracking-tighter ${breached ? 'text-red-600' : 'text-gray-900'}`}>
-        {breached ? '-' : ''}{String(Math.abs(h)).padStart(2, '0')}:{String(Math.abs(m)).padStart(2, '0')}:00
+        {breached ? '+' : ''}{String(Math.abs(h)).padStart(2, '0')}:{String(Math.abs(m)).padStart(2, '0')}:00
       </span>
       <div className="w-12 h-1 bg-gray-100 rounded-full overflow-hidden">
         <div 

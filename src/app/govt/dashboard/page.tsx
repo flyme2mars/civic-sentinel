@@ -5,7 +5,7 @@ import { Sidebar } from '@/components/govt/Sidebar';
 import { GrievancesView } from '@/components/govt/views/GrievancesView';
 import { DetailDrawer } from '@/components/govt/DetailDrawer';
 import { CivicIssue } from '@/lib/types';
-import { Search, Bell, HelpCircle } from 'lucide-react';
+import { Search } from 'lucide-react';
 
 export default function GovtDashboard() {
   const [activeTab, setActiveTab] = useState('inbox');
@@ -61,7 +61,8 @@ export default function GovtDashboard() {
               status: dbItem.status === 'OPEN' ? 'pending' : 
                       dbItem.status === 'IN_PROGRESS' ? 'in-progress' : 
                       dbItem.status === 'FIXED' ? 'resolved' : 
-                      dbItem.status === 'VERIFIED' ? 'verified' : 'pending',
+                      dbItem.status === 'VERIFIED' ? 'verified' : 
+                      dbItem.status === 'REJECTED' || dbItem.status === 'ESCALATED' ? 'escalated' : 'pending',
               priority: (dbItem.severity || 'medium').toLowerCase() as any,
               ward: dbItem.location?.area || 'Unknown Ward',
               zone: dbItem.location?.city || 'Unknown Zone',
@@ -90,11 +91,12 @@ export default function GovtDashboard() {
 
   const filteredIssues = useMemo(() => {
     return grievances.filter(issue => {
-      if (activeTab === 'inbox') return issue.status === 'pending' || issue.status === 'in-progress';
+      if (activeTab === 'inbox') return issue.status === 'pending' || issue.status === 'in-progress' || issue.status === 'escalated';
       if (activeTab === 'active') return issue.status !== 'resolved' && issue.status !== 'verified';
       if (activeTab === 'resolved') return issue.status === 'resolved' || issue.status === 'verified';
       return true;
-    }).filter(issue => 
+    })
+.filter(issue => 
       issue.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
       issue.id.toLowerCase().includes(searchQuery.toLowerCase())
     );
@@ -155,14 +157,6 @@ export default function GovtDashboard() {
           </div>
 
           <div className="flex items-center gap-2">
-            <button className="p-2 text-gray-400 hover:text-gray-900 hover:bg-gray-50 rounded-lg transition-all relative">
-              <Bell className="w-4 h-4" />
-              <span className="absolute top-2 right-2 w-1.5 h-1.5 bg-blue-500 rounded-full border border-white" />
-            </button>
-            <button className="p-2 text-gray-400 hover:text-gray-900 hover:bg-gray-50 rounded-lg transition-all">
-              <HelpCircle className="w-4 h-4" />
-            </button>
-            <div className="h-6 w-px bg-gray-100 mx-2" />
             <div className="flex items-center gap-2 pl-2 cursor-pointer hover:opacity-80 transition-opacity">
               <div className="w-7 h-7 rounded-full bg-gradient-to-tr from-gray-200 to-gray-100 border border-gray-200 flex items-center justify-center text-[10px] font-bold">
                 JD

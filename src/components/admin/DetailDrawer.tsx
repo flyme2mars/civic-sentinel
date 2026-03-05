@@ -3,343 +3,335 @@
 import React, { useState, useEffect } from 'react';
 import { Pill, PriorityDot, SLARing, SLABar, ScoreRing } from './Atoms';
 import { GrievanceType, PRIORITY_MAP, STATUS_MAP } from '@/lib/mock-data';
+import { X, ZoomIn, Camera, Check, User, Phone, MapPin, Info, Layout, Clock, Activity, ShieldCheck, Zap } from 'lucide-react';
 
 export function DetailDrawer({ g, dark, onClose }: { g: GrievanceType; dark: boolean; onClose: () => void }) {
   const [tab, setTab] = useState("overview");
   const [visible, setVisible] = useState(false);
   const [zoomedImage, setZoomedImage] = useState<string | null>(null);
-  useEffect(() => { requestAnimationFrame(() => setVisible(true)); }, []);
+  
+  useEffect(() => { 
+    const timer = requestAnimationFrame(() => setVisible(true));
+    return () => cancelAnimationFrame(timer);
+  }, []);
 
-  const bg = dark ? "#0F172A" : "#FFFFFF";
-  const border = dark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.06)";
-  const textPrimary = dark ? "#F9FAFB" : "#111827";
-  const textSecondary = dark ? "#6B7280" : "#9CA3AF";
+  const textSecondary = dark ? "text-gray-400" : "text-gray-500";
+  const textPrimary = dark ? "text-white" : "text-gray-900";
+  const bgSurface = dark ? "bg-[#111827]" : "bg-white";
+  const borderColor = dark ? "border-white/10" : "border-gray-100";
 
   return (
     <>
-    <div style={{
-      position: "fixed", inset: 0, zIndex: 50, display: "flex",
-      alignItems: "center", justifyContent: "center", padding: "40px 20px",
-      background: dark ? "rgba(0,0,0,0.5)" : "rgba(0,0,0,0.3)",
-      backdropFilter: "blur(2px)",
-      opacity: visible ? 1 : 0, transition: "opacity 0.25s ease"
-    }} onClick={onClose}>
-      <div style={{ width: 900, maxWidth: "100%", maxHeight: "100%", background: bg, border: `1px solid ${border}`, borderRadius: 16, overflow: "hidden", display: "flex", flexDirection: "column",
-        transform: visible ? "translateY(0) scale(1)" : "translateY(20px) scale(0.98)", transition: "transform 0.3s cubic-bezier(0.16,1,0.3,1)",
-        boxShadow: dark ? "0 25px 50px -12px rgba(0,0,0,0.5)" : "0 25px 50px -12px rgba(0,0,0,0.25)"
-      }} onClick={e => e.stopPropagation()}>
-
-        {/* Header */}
-        <div style={{ padding: "20px 24px", borderBottom: `1px solid ${border}`, flexShrink: 0 }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-            <div>
-              <div style={{ fontSize: 10, color: textSecondary, fontFamily: "'DM Mono', monospace", letterSpacing: "0.1em", marginBottom: 4 }}>{g.id} · {g.ward}</div>
-              <div style={{ fontSize: 18, fontWeight: 800, color: textPrimary, fontFamily: "'Sora', sans-serif", lineHeight: 1.3 }}>{g.title}</div>
-            </div>
-            <button onClick={onClose} style={{ background: dark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.06)", border: "none", borderRadius: 8, width: 32, height: 32, cursor: "pointer", color: textSecondary, fontSize: 16, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>✕</button>
-          </div>
-          <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
-            <Pill status={g.status as keyof typeof STATUS_MAP} dark={dark} />
-            <span style={{ fontSize: 11, color: PRIORITY_MAP[g.priority as keyof typeof PRIORITY_MAP]?.[dark ? "dark" : "light"], fontFamily: "'DM Mono', monospace", fontWeight: 700, display: "flex", alignItems: "center", gap: 4 }}>
-              <PriorityDot priority={g.priority as keyof typeof PRIORITY_MAP} dark={dark} /> {g.priority.toUpperCase()}
-            </span>
-          </div>
-        </div>
-
-        {/* Tabs */}
-        <div style={{ display: "flex", borderBottom: `1px solid ${border}`, flexShrink: 0 }}>
-          {["overview", "timeline", "ai audit", "actions"].map(t => (
-            <button key={t} onClick={() => setTab(t)} style={{
-              flex: 1, padding: "11px 0", background: "none", border: "none",
-              borderBottom: tab === t ? `2px solid ${dark ? "#818CF8" : "#6366F1"}` : "2px solid transparent",
-              color: tab === t ? (dark ? "#818CF8" : "#6366F1") : textSecondary,
-              fontSize: 10, fontWeight: 700, fontFamily: "'DM Mono', monospace", letterSpacing: "0.06em",
-              textTransform: "uppercase", cursor: "pointer", transition: "color 0.15s"
-            }}>{t}</button>
-          ))}
-        </div>
-
-        {/* Content */}
-        <div style={{ flex: 1, overflowY: "auto", padding: 24 }}>
-          {tab === "overview" && (
-            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-                <SLARing reportedAt={g.reportedAt} slaHours={g.slaHours} dark={dark} size={64} />
-                <div style={{ flex: 1 }}>
-                  <SLABar reportedAt={g.reportedAt} slaHours={g.slaHours} dark={dark} />
-                </div>
-              </div>
-
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-                {[["Citizen", g.citizen], ["Phone", g.phone], ["Zone", g.zone], ["Category", g.category]].map(([k, v]) => (
-                  <div key={k} style={{ background: dark ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.03)", borderRadius: 10, padding: "12px 14px", border: `1px solid ${border}` }}>
-                    <div style={{ fontSize: 9, color: textSecondary, fontFamily: "'DM Mono', monospace", letterSpacing: "0.1em", marginBottom: 4 }}>{k.toUpperCase()}</div>
-                    <div style={{ fontSize: 13, color: textPrimary, fontWeight: 600 }}>{v}</div>
-                  </div>
-                ))}
-              </div>
-
-              <div style={{ background: dark ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.03)", borderRadius: 10, padding: "12px 14px", border: `1px solid ${border}` }}>
-                <div style={{ fontSize: 9, color: textSecondary, fontFamily: "'DM Mono', monospace", letterSpacing: "0.1em", marginBottom: 6 }}>DESCRIPTION</div>
-                <p style={{ fontSize: 13, color: textSecondary, lineHeight: 1.7 }}>{g.description}</p>
-              </div>
-
+      <div 
+        className={`fixed inset-0 z-50 flex items-center justify-center p-5 md:p-10 bg-black/50 backdrop-blur-[2px] transition-opacity duration-300 ${visible ? 'opacity-100' : 'opacity-0'}`}
+        onClick={onClose}
+      >
+        <div 
+          className={`w-full max-w-4xl h-full max-h-[90vh] ${bgSurface} border ${borderColor} rounded-2xl overflow-hidden flex flex-col transition-transform duration-500 cubic-bezier(0.16,1,0.3,1) shadow-2xl ${visible ? 'translate-y-0 scale-100' : 'translate-y-8 scale-[0.98]'}`}
+          onClick={e => e.stopPropagation()}
+        >
+          {/* Header */}
+          <div className={`p-5 md:p-6 border-b ${borderColor} flex-shrink-0`}>
+            <div className="flex justify-between items-start">
               <div>
-                <div style={{ fontSize: 9, color: textSecondary, fontFamily: "'DM Mono', monospace", letterSpacing: "0.1em", marginBottom: 10 }}>PHOTO EVIDENCE</div>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-                  {["BEFORE", "AFTER"].map(label => (
-                    <div key={label} style={{ aspectRatio: "4/3", borderRadius: 10, background: dark ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.03)", border: `1px dashed ${border}`, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 6, overflow: "hidden", position: "relative" }}>
-                      {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-                      {(label === "BEFORE" && (g as any).imageUrl) ? (
-                        <>
-                          {/* eslint-disable-next-line @typescript-eslint/no-explicit-any, @next/next/no-img-element */}
-                          <img src={(g as any).imageUrl} alt="Before" style={{ width: "100%", height: "100%", objectFit: "cover", cursor: "zoom-in" }} onClick={() => setZoomedImage((g as any).imageUrl)} />
-                          <div style={{ position: "absolute", bottom: 8, right: 8, background: "rgba(0,0,0,0.6)", color: "#fff", padding: "4px 8px", borderRadius: 6, fontSize: 10, pointerEvents: "none", display: "flex", alignItems: "center", gap: 4 }}>
-                            🔍 Zoom
-                          </div>
-                        </>
-                      ) : (
-                        <>
-                          <div style={{ fontSize: 22, opacity: 0.2 }}>📷</div>
-                          <div style={{ fontSize: 9, color: dark ? "#374151" : "#D1D5DB", fontFamily: "'DM Mono', monospace", letterSpacing: "0.1em" }}>{label}</div>
-                          {label === "AFTER" && g.hasAfter && <div style={{ fontSize: 9, color: dark ? "#4ADE80" : "#16A34A", fontFamily: "'DM Mono', monospace" }}>✓ UPLOADED</div>}
-                        </>
-                      )}
-                    </div>
-                  ))}
+                <div className={`text-[10px] font-mono tracking-[0.1em] uppercase mb-1 ${textSecondary}`}>
+                  {g.id} · {g.ward}
                 </div>
+                <h2 className={`text-xl md:text-2xl font-extrabold leading-tight ${textPrimary}`}>
+                  {g.title}
+                </h2>
               </div>
-
-              {g.assignee && (
-                <div style={{ background: dark ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.03)", borderRadius: 10, padding: "12px 14px", border: `1px solid ${border}`, display: "flex", alignItems: "center", gap: 12 }}>
-                  <div style={{ width: 36, height: 36, borderRadius: "50%", background: dark ? "rgba(99,102,241,0.2)" : "rgba(99,102,241,0.1)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, fontWeight: 700, color: dark ? "#818CF8" : "#6366F1", flexShrink: 0 }}>
-                    {g.assignee.split(" ").map((n: string) => n[0]).join("")}
-                  </div>
-                  <div>
-                    <div style={{ fontSize: 9, color: textSecondary, fontFamily: "'DM Mono', monospace", letterSpacing: "0.1em" }}>ASSIGNED TO</div>
-                    <div style={{ fontSize: 13, color: textPrimary, fontWeight: 600, marginTop: 2 }}>{g.assignee}</div>
-                  </div>
-                </div>
-              )}
+              <button 
+                onClick={onClose} 
+                className={`w-8 h-8 flex items-center justify-center rounded-lg transition-colors ${dark ? 'hover:bg-white/10 text-gray-400' : 'hover:bg-gray-100 text-gray-500'}`}
+              >
+                <X className="w-5 h-5" />
+              </button>
             </div>
-          )}
+            <div className="flex flex-wrap gap-2 mt-4">
+              <Pill status={g.status as keyof typeof STATUS_MAP} dark={dark} />
+              <div 
+                className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-black/5 dark:bg-white/5 border border-transparent"
+                style={{ color: PRIORITY_MAP[g.priority as keyof typeof PRIORITY_MAP]?.[dark ? "dark" : "light"] }}
+              >
+                <PriorityDot priority={g.priority as keyof typeof PRIORITY_MAP} dark={dark} />
+                <span className="text-[11px] font-mono font-bold uppercase">{g.priority}</span>
+              </div>
+            </div>
+          </div>
 
-          {tab === "ai audit" && (
-            <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-              <div style={{ background: dark ? "rgba(99,102,241,0.07)" : "rgba(99,102,241,0.05)", border: `1px solid ${dark ? "rgba(99,102,241,0.2)" : "rgba(99,102,241,0.15)"}`, borderRadius: 10, padding: 16 }}>
-                <div style={{ fontSize: 9, color: dark ? "#818CF8" : "#6366F1", fontFamily: "'DM Mono', monospace", letterSpacing: "0.1em", marginBottom: 10 }}>BEDROCK AI ANALYSIS</div>
-                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                  {[["Confidence", `${Math.round(g.aiConfidence * 100)}%`], ["Urgency Score", `${Math.round(g.urgency * 100)}%`], ["Similar Issues Nearby", `${g.aiSimilar} in 5km`]].map(([k, v]) => (
-                    <div key={k} style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                      <span style={{ fontSize: 12, color: textSecondary }}>{k}</span>
-                      <span style={{ fontSize: 12, color: textPrimary, fontWeight: 700, fontFamily: "'DM Mono', monospace" }}>{v}</span>
+          {/* Tabs */}
+          <div className={`flex border-b ${borderColor} flex-shrink-0 bg-black/5 dark:bg-white/5`}>
+            {[
+              { id: "overview", label: "Overview", icon: Info },
+              { id: "timeline", label: "Timeline", icon: Clock },
+              { id: "ai audit", label: "AI Audit", icon: ShieldCheck },
+              { id: "actions", label: "Actions", icon: Zap }
+            ].map(t => (
+              <button 
+                key={t.id} 
+                onClick={() => setTab(t.id)} 
+                className={`
+                  flex-1 py-3 flex items-center justify-center gap-2 text-[10px] font-bold font-mono uppercase tracking-wider transition-all border-b-2
+                  ${tab === t.id 
+                    ? `border-indigo-500 text-indigo-500` 
+                    : `border-transparent ${textSecondary} hover:text-indigo-400`}
+                `}
+              >
+                <t.icon className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">{t.label}</span>
+              </button>
+            ))}
+          </div>
+
+          {/* Content */}
+          <div className="flex-1 overflow-y-auto p-6">
+            {tab === "overview" && (
+              <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                <div className="flex flex-col md:flex-row items-center gap-6">
+                  <SLARing reportedAt={g.reportedAt} slaHours={g.slaHours} dark={dark} size={80} />
+                  <div className="flex-1 w-full">
+                    <SLABar reportedAt={g.reportedAt} slaHours={g.slaHours} dark={dark} />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  {[
+                    { label: "Citizen", value: g.citizen, icon: User },
+                    { label: "Phone", value: g.phone, icon: Phone },
+                    { label: "Zone", value: g.zone, icon: Layout },
+                    { label: "Category", value: g.category, icon: Activity }
+                  ].map((item) => (
+                    <div key={item.label} className={`p-4 rounded-xl border ${borderColor} ${dark ? 'bg-white/5' : 'bg-gray-50'}`}>
+                      <div className={`text-[9px] font-mono font-bold tracking-widest uppercase mb-1 flex items-center gap-1.5 ${textSecondary}`}>
+                        <item.icon className="w-3 h-3" />
+                        {item.label}
+                      </div>
+                      <div className={`text-sm font-semibold truncate ${textPrimary}`}>{item.value}</div>
                     </div>
                   ))}
                 </div>
-              </div>
-              <div style={{ background: dark ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.03)", borderRadius: 10, padding: 16, border: `1px solid ${border}` }}>
-                <div style={{ fontSize: 9, color: textSecondary, fontFamily: "'DM Mono', monospace", letterSpacing: "0.1em", marginBottom: 10 }}>VISION AUDIT CRITERIA</div>
-                {["Before photo FOV must match After photo exactly", `All detected issues must be resolved in After photo`, "No zoomed-in or partial frame submissions", "Citizen must verify resolution within 24h"].map((c, i) => (
-                  <div key={i} style={{ display: "flex", gap: 10, alignItems: "flex-start", marginBottom: 10 }}>
-                    <span style={{ color: dark ? "#818CF8" : "#6366F1", fontSize: 10, marginTop: 2, flexShrink: 0 }}>◆</span>
-                    <span style={{ fontSize: 12, color: textSecondary, lineHeight: 1.6 }}>{c}</span>
+
+                <div className={`p-4 rounded-xl border ${borderColor} ${dark ? 'bg-white/5' : 'bg-gray-50'}`}>
+                  <div className={`text-[9px] font-mono font-bold tracking-widest uppercase mb-2 ${textSecondary}`}>Description</div>
+                  <p className={`text-sm leading-relaxed ${dark ? 'text-gray-300' : 'text-gray-600'}`}>{g.description}</p>
+                </div>
+
+                <div>
+                  <div className={`text-[9px] font-mono font-bold tracking-widest uppercase mb-4 ${textSecondary}`}>Photo Evidence</div>
+                  <div className="grid grid-cols-2 gap-4">
+                    {["BEFORE", "AFTER"].map(label => {
+                      const isBefore = label === "BEFORE";
+                      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                      const hasImage = isBefore ? !!(g as any).imageUrl : g.hasAfter;
+                      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                      const imgSrc = isBefore ? (g as any).imageUrl : null;
+                      
+                      return (
+                        <div key={label} className="group flex flex-col gap-2">
+                          <div className={`aspect-video rounded-xl border ${borderColor} relative overflow-hidden flex flex-col items-center justify-center gap-2 ${dark ? 'bg-white/5' : 'bg-gray-50'}`}>
+                            {hasImage && isBefore ? (
+                              <>
+                                <img 
+                                  src={imgSrc} 
+                                  alt={label} 
+                                  className="w-full h-full object-cover cursor-zoom-in transition-transform duration-500 group-hover:scale-110" 
+                                  onClick={() => setZoomedImage(imgSrc)} 
+                                />
+                                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
+                                  <ZoomIn className="w-6 h-6 text-white" />
+                                </div>
+                                <div className="absolute bottom-2 right-2 px-2 py-1 bg-black/60 backdrop-blur-md rounded-md text-[9px] font-bold text-white flex items-center gap-1">
+                                  {label}
+                                </div>
+                              </>
+                            ) : (
+                              <>
+                                <Camera className={`w-8 h-8 opacity-20 ${textPrimary}`} />
+                                <div className={`text-[10px] font-mono font-bold tracking-widest uppercase opacity-40 ${textPrimary}`}>{label}</div>
+                                {label === "AFTER" && g.hasAfter && (
+                                  <div className="absolute top-2 right-2 flex items-center gap-1 text-[10px] text-green-500 font-bold font-mono">
+                                    <Check className="w-3 h-3" /> VERIFIED
+                                  </div>
+                                )}
+                              </>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
+                </div>
+
+                {g.assignee && (
+                  <div className={`p-4 rounded-xl border ${borderColor} flex items-center gap-4 ${dark ? 'bg-white/5' : 'bg-gray-50'}`}>
+                    <div className="w-10 h-10 rounded-full bg-indigo-500/10 flex items-center justify-center text-sm font-bold text-indigo-400 border border-indigo-500/20">
+                      {g.assignee.split(" ").map((n: string) => n[0]).join("")}
+                    </div>
+                    <div>
+                      <div className={`text-[9px] font-mono font-bold tracking-widest uppercase ${textSecondary}`}>Assigned To</div>
+                      <div className={`text-sm font-bold mt-0.5 ${textPrimary}`}>{g.assignee}</div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {tab === "ai audit" && (
+              <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                <div className="p-5 rounded-2xl bg-indigo-500/5 border border-indigo-500/10">
+                  <div className="text-[10px] font-mono font-bold tracking-widest text-indigo-400 uppercase mb-4 flex items-center gap-2">
+                    <ShieldCheck className="w-4 h-4" /> Bedrock AI Analysis
+                  </div>
+                  <div className="space-y-4">
+                    {[
+                      { label: "Confidence Score", value: `${Math.round(g.aiConfidence * 100)}%` },
+                      { label: "Urgency Rating", value: `${Math.round((g.urgency || 0) * 100)}%` },
+                      { label: "Detected Anomalies", value: "None" },
+                      { label: "Spatial Comparison", value: "98% Match" }
+                    ].map((item) => (
+                      <div key={item.label} className="flex justify-between items-center border-b border-indigo-500/10 pb-2 last:border-0 last:pb-0">
+                        <span className={`text-xs ${textSecondary}`}>{item.label}</span>
+                        <span className={`text-xs font-bold font-mono ${textPrimary}`}>{item.value}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className={`p-5 rounded-2xl border ${borderColor} ${dark ? 'bg-white/5' : 'bg-gray-50'}`}>
+                  <div className={`text-[10px] font-mono font-bold tracking-widest uppercase mb-4 ${textSecondary}`}>Audit Logic</div>
+                  <div className="space-y-3">
+                    {[
+                      "Image overlap analysis using Claude Vision",
+                      "Detection of repair artifacts (new asphalt, cleaned site)",
+                      "Verification against historical street view data",
+                      "Citizen cross-check mandatory for final closure"
+                    ].map((text, i) => (
+                      <div key={i} className="flex gap-3 items-start group">
+                        <div className="w-1.5 h-1.5 rounded-full bg-indigo-500 mt-1.5 flex-shrink-0 group-hover:scale-125 transition-transform" />
+                        <span className={`text-xs leading-relaxed ${textSecondary}`}>{text}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {g.score != null && (
+                  <div className={`p-4 rounded-2xl border ${borderColor} flex items-center gap-5 ${dark ? 'bg-white/5' : 'bg-gray-100'}`}>
+                    <ScoreRing score={g.score} dark={dark} size={60} />
+                    <div>
+                      <div className={`text-[10px] font-mono font-bold tracking-widest uppercase ${textSecondary}`}>Resolution Quality</div>
+                      <div className={`text-lg font-bold mt-1 ${g.score >= 80 ? 'text-green-500' : 'text-amber-500'}`}>
+                        {g.score >= 80 ? "Superior Repair" : "Incomplete Resolution"}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {tab === "timeline" && (() => {
+              const stepMap: Record<string, number> = {
+                pending: 0, "in-progress": 1, escalated: 1, critical: 0,
+                resolved: 2, verified: 3, 
+                fixed: 2, open: 0
+              };
+              const currentStep = stepMap[g.status.toLowerCase()] ?? 0;
+
+              const steps = [
+                { label: "AI Triage Completed", detail: "Issue categorized and severity assessed", time: "Day 0", status: "completed" },
+                { label: "Official Assigned", detail: `${g.assignee} notified via portal`, time: "Day 0", status: currentStep >= 1 ? "completed" : "active" },
+                { label: "Evidence Uploaded", detail: "Official submitted resolution proof", time: currentStep >= 2 ? "Day 1" : "Pending", status: currentStep === 1 ? "active" : currentStep >= 2 ? "completed" : "pending" },
+                { label: "Vision Audit", detail: "AI verified resolution image", time: currentStep >= 3 ? "Day 1" : "Pending", status: currentStep === 2 ? "active" : currentStep >= 3 ? "completed" : "pending" },
+                { label: "Final Resolution", detail: "Ticket closed and citizen notified", time: g.status === "verified" ? "Day 2" : "Pending", status: g.status === "verified" ? "completed" : currentStep === 3 ? "active" : "pending" }
+              ];
+
+              return (
+                <div className="space-y-0 pl-3">
+                  {steps.map((step, i) => {
+                    const isCompleted = step.status === "completed";
+                    const isActive = step.status === "active";
+                    
+                    return (
+                      <div key={i} className="flex gap-6 relative group">
+                        {i < steps.length - 1 && (
+                          <div className={`absolute left-[11px] top-6 bottom-0 w-[2px] ${isCompleted ? 'bg-indigo-500' : 'bg-gray-700/30'}`} />
+                        )}
+                        <div className="relative flex-shrink-0 mt-1">
+                          <div className={`
+                            w-6 h-6 rounded-full flex items-center justify-center border-2 transition-all duration-500
+                            ${isCompleted ? 'bg-indigo-500 border-indigo-500 scale-100 shadow-[0_0_10px_rgba(99,102,241,0.5)]' : 
+                              isActive ? 'bg-indigo-500/20 border-indigo-500 scale-110 animate-pulse' : 
+                              'bg-transparent border-gray-700 scale-90'}
+                          `}>
+                            {isCompleted && <Check className="w-3.5 h-3.5 text-white" />}
+                            {isActive && <div className="w-2 h-2 rounded-full bg-indigo-500" />}
+                          </div>
+                        </div>
+                        <div className="pb-8">
+                          <div className={`text-[10px] font-mono font-bold uppercase mb-1 ${isActive ? 'text-indigo-500' : textSecondary}`}>
+                            {step.time}
+                          </div>
+                          <div className={`text-sm font-bold ${isActive ? 'text-indigo-400' : textPrimary}`}>
+                            {step.label}
+                          </div>
+                          <div className={`text-xs mt-1 ${textSecondary}`}>
+                            {step.detail}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              );
+            })()}
+
+            {tab === "actions" && (
+              <div className="grid grid-cols-1 gap-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                {[
+                  { label: "Upload Repair Proof", icon: Camera, desc: "Sumbit Before/After evidence", color: "indigo" },
+                  { label: "Assign Department", icon: User, desc: "Change ticket ownership", color: "blue" },
+                  { label: "Escalate Issue", icon: ShieldCheck, desc: "Notify senior officials", color: "red" },
+                  { label: "Update Location", icon: MapPin, desc: "Refine geographic data", color: "amber" }
+                ].map((action) => (
+                  <button 
+                    key={action.label}
+                    className={`
+                      w-full p-4 rounded-2xl border text-left transition-all duration-200 group flex items-center gap-4
+                      ${borderColor} ${dark ? 'hover:bg-white/5' : 'hover:bg-gray-50'}
+                    `}
+                  >
+                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center transition-colors ${dark ? 'bg-white/5 group-hover:bg-white/10' : 'bg-gray-100 group-hover:bg-gray-200'}`}>
+                      <action.icon className="w-6 h-6 text-indigo-500" />
+                    </div>
+                    <div className="flex-1">
+                      <div className={`text-sm font-bold ${textPrimary}`}>{action.label}</div>
+                      <div className={`text-xs mt-0.5 ${textSecondary}`}>{action.desc}</div>
+                    </div>
+                    <div className={`opacity-0 group-hover:opacity-100 transition-opacity pr-2 ${textSecondary}`}>
+                      →
+                    </div>
+                  </button>
                 ))}
               </div>
-              {g.score != null && (
-                <div style={{ display: "flex", alignItems: "center", gap: 16, background: dark ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.03)", borderRadius: 10, padding: "14px 16px", border: `1px solid ${border}` }}>
-                  <ScoreRing score={g.score} dark={dark} size={52} />
-                  <div>
-                    <div style={{ fontSize: 9, color: textSecondary, fontFamily: "'DM Mono', monospace", letterSpacing: "0.1em" }}>RESOLUTION QUALITY</div>
-                    <div style={{ fontSize: 14, fontWeight: 700, color: g.score >= 80 ? (dark ? "#4ADE80" : "#16A34A") : (dark ? "#FBBF24" : "#D97706"), marginTop: 4 }}>{g.score >= 80 ? "Full repair verified" : "Partial repair"}</div>
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-
-          {tab === "timeline" && (() => {
-            // Derive step states from grievance status
-            const stepMap: Record<string, number> = {
-              pending: 0, "in-progress": 1, escalated: 1,
-              resolved: 2, verified: 3, critical: 0,
-              PENDING: 0, RESOLUTION_SUBMITTED: 1, PENDING_CITIZEN_VERIFICATION: 2,
-              RESOLVED: 3, ESCALATED_DECEPTIVE: 1,
-            };
-            const currentStep = stepMap[g.status] ?? 0;
-
-            const steps = [
-              {
-                label: "AI triage completed",
-                detail: `${g.aiSimilar > 0 ? g.aiSimilar : 4} issues identified, SLA clock started`,
-                time: "Just now",
-                state: "done", // always done
-              },
-              {
-                label: "Official repair & upload",
-                detail: "Upload After photo to trigger Vision Auditor",
-                time: currentStep >= 1 ? "In progress" : "Pending",
-                state: currentStep === 1 ? "active" : currentStep > 1 ? "done" : "pending",
-              },
-              {
-                label: "Vision Auditor check",
-                detail: "Bedrock compares Before vs After",
-                time: currentStep >= 2 ? "In progress" : "Pending",
-                state: currentStep === 2 ? "active" : currentStep > 2 ? "done" : "pending",
-              },
-              {
-                label: "Citizen verification",
-                detail: "Citizen confirms or disputes resolution",
-                time: currentStep >= 3 ? "In progress" : "Pending",
-                state: currentStep === 3 ? "active" : currentStep > 3 ? "done" : "pending",
-              },
-              {
-                label: "Ticket closed",
-                detail: "Status → RESOLVED",
-                time: g.status === "resolved" || g.status === "RESOLVED" ? "Completed" : "Pending",
-                state: g.status === "resolved" || g.status === "RESOLVED" ? "done" : "pending",
-              },
-            ];
-
-            return (
-              <div style={{ display: "flex", flexDirection: "column", paddingTop: 4 }}>
-                {/* Inline keyframes for ring pulse */}
-                <style>{`
-                  @keyframes tlRingExpand {
-                    0% { transform: scale(1); opacity: 0.8; }
-                    100% { transform: scale(2.2); opacity: 0; }
-                  }
-                  @keyframes tlDotPulse {
-                    0%, 100% { opacity: 1; }
-                    50% { opacity: 0.6; }
-                  }
-                `}</style>
-                {steps.map((step, i) => {
-                  const isActive = step.state === "active" || (i === 0); // first is always "just done" = active style
-                  const isDone = step.state === "done";
-                  const isPending = step.state === "pending";
-
-                  // Colors
-                  const dotFill = isDone
-                    ? (dark ? "#4ADE80" : "#16A34A")
-                    : isActive
-                    ? (dark ? "#60A5FA" : "#3B82F6")
-                    : "transparent";
-                  const dotBorder = isDone
-                    ? (dark ? "#4ADE80" : "#16A34A")
-                    : isActive
-                    ? (dark ? "#60A5FA" : "#3B82F6")
-                    : (dark ? "#374151" : "#D1D5DB");
-                  const lineColor = isDone || i < currentStep
-                    ? (dark ? "#4ADE80" : "#16A34A")
-                    : (dark ? "#1F2937" : "#E5E7EB");
-
-                  return (
-                    <div key={i} style={{ display: "flex", gap: 16, paddingBottom: i < steps.length - 1 ? 0 : 0 }}>
-                      {/* Left: dot + connector line */}
-                      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", flexShrink: 0, width: 20 }}>
-                        {/* Dot with optional pulse ring */}
-                        <div style={{ position: "relative", width: 16, height: 16, display: "flex", alignItems: "center", justifyContent: "center", marginTop: 2 }}>
-                          {/* Pulsing outer ring for active steps */}
-                          {(isActive) && (
-                            <div style={{
-                              position: "absolute", width: 16, height: 16, borderRadius: "50%",
-                              border: `2px solid ${dotBorder}`,
-                              animation: "tlRingExpand 1.8s ease-out infinite",
-                              pointerEvents: "none"
-                            }} />
-                          )}
-                          {/* Second ring offset */}
-                          {isActive && (
-                            <div style={{
-                              position: "absolute", width: 16, height: 16, borderRadius: "50%",
-                              border: `2px solid ${dotBorder}`,
-                              animation: "tlRingExpand 1.8s ease-out 0.6s infinite",
-                              pointerEvents: "none"
-                            }} />
-                          )}
-                          {/* Core dot */}
-                          <div style={{
-                            width: isDone ? 10 : isActive ? 12 : 8,
-                            height: isDone ? 10 : isActive ? 12 : 8,
-                            borderRadius: "50%",
-                            background: dotFill,
-                            border: `2px solid ${dotBorder}`,
-                            transition: "all 0.3s ease",
-                            animation: isActive ? "tlDotPulse 2s ease-in-out infinite" : "none",
-                            boxShadow: isActive ? `0 0 8px ${dotBorder}80` : isDone ? `0 0 6px ${dotFill}60` : "none",
-                            zIndex: 1,
-                          }} />
-                          {/* Checkmark for done */}
-                          {isDone && (
-                            <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", zIndex: 2 }}>
-                              <svg width="7" height="7" viewBox="0 0 7 7" fill="none">
-                                <path d="M1 3.5L2.8 5.5L6 1.5" stroke={dark ? "#0B0F1A" : "#fff"} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                              </svg>
-                            </div>
-                          )}
-                        </div>
-                        {/* Connector line */}
-                        {i < steps.length - 1 && (
-                          <div style={{ width: 2, flex: 1, minHeight: 36, marginTop: 4, marginBottom: 4, background: lineColor, borderRadius: 1, transition: "background 0.3s" }} />
-                        )}
-                      </div>
-
-                      {/* Right: text */}
-                      <div style={{ paddingBottom: i < steps.length - 1 ? 24 : 4, flex: 1 }}>
-                        <div style={{ fontSize: 9, color: isActive ? (dark ? "#60A5FA" : "#3B82F6") : isDone ? (dark ? "#4ADE80" : "#16A34A") : textSecondary, fontFamily: "'DM Mono', monospace", letterSpacing: "0.08em", marginBottom: 3, textTransform: "uppercase" }}>
-                          {step.time}
-                        </div>
-                        <div style={{ fontSize: 13, fontWeight: 700, color: isPending ? (dark ? "#4B5563" : "#9CA3AF") : textPrimary, marginBottom: 3 }}>
-                          {step.label}
-                        </div>
-                        <div style={{ fontSize: 11, color: isPending ? (dark ? "#374151" : "#D1D5DB") : textSecondary, lineHeight: 1.5 }}>
-                          {step.detail}
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            );
-          })()}
-
-          {tab === "actions" && (
-            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-              {[
-                { label: "Upload Repair Proof", icon: "↑", desc: "Submit After photo for Vision Auditor", accent: dark ? "#818CF8" : "#6366F1", primary: true },
-                { label: "Generate RTI Request", icon: "📄", desc: "Auto-draft RTI under Section 2(j)(i)", accent: dark ? "#4ADE80" : "#16A34A", primary: false },
-                { label: "Share to X (Twitter)", icon: "𝕏", desc: "Post with evidence graphic + SLA breach tag", accent: dark ? "#60A5FA" : "#2563EB", primary: false },
-                { label: "Escalate to Commissioner", icon: "!", desc: "Flag as deceptive or unresolved", accent: dark ? "#EF4444" : "#DC2626", danger: true },
-              ].map(a => (
-                <button key={a.label} style={{
-                  background: a.danger ? (dark ? "rgba(239,68,68,0.08)" : "rgba(220,38,38,0.05)") : a.primary ? (dark ? "rgba(129,140,248,0.15)" : "rgba(99,102,241,0.1)") : (dark ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.03)"),
-                  border: `1px solid ${a.danger ? (dark ? "rgba(239,68,68,0.25)" : "rgba(220,38,38,0.2)") : a.primary ? (dark ? "rgba(129,140,248,0.3)" : "rgba(99,102,241,0.25)") : border}`,
-                  borderRadius: 10, padding: "14px 16px", cursor: "pointer", textAlign: "left", width: "100%",
-                  display: "flex", gap: 12, alignItems: "center", transition: "all 0.15s"
-                }}>
-                  <span style={{ fontSize: 18, flexShrink: 0 }}>{a.icon}</span>
-                  <div>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: a.accent, fontFamily: "'Sora', sans-serif" }}>{a.label}</div>
-                    <div style={{ fontSize: 11, color: textSecondary, marginTop: 2 }}>{a.desc}</div>
-                  </div>
-                </button>
-              ))}
-            </div>
-          )}
+            )}
+          </div>
         </div>
       </div>
-    </div>
 
-      {/* Image Zoom Modal */}
+      {/* Image Zoom Portal */}
       {zoomedImage && (
-        <div style={{
-          position: "fixed", inset: 0, zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center",
-          background: "rgba(0,0,0,0.9)", backdropFilter: "blur(8px)"
-        }} onClick={() => setZoomedImage(null)}>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={zoomedImage} alt="Zoomed" style={{ maxWidth: "95%", maxHeight: "95%", objectFit: "contain", borderRadius: 8 }} />
-          <button style={{ position: "absolute", top: 20, right: 20, background: "rgba(255,255,255,0.2)", border: "none", color: "#fff", width: 40, height: 40, borderRadius: "50%", cursor: "pointer", fontSize: 20 }}>✕</button>
+        <div 
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/95 backdrop-blur-xl animate-in fade-in duration-300"
+          onClick={() => setZoomedImage(null)}
+        >
+          <img 
+            src={zoomedImage} 
+            alt="Zoomed" 
+            className="max-w-[95%] max-h-[95%] object-contain rounded-lg shadow-2xl animate-in zoom-in-95 duration-500" 
+          />
+          <button className="absolute top-6 right-6 p-2 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors">
+            <X className="w-8 h-8" />
+          </button>
         </div>
       )}
     </>
