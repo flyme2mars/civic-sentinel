@@ -8,8 +8,9 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/com
 import { Input } from '@/components/ui/input';
 import { ShieldCheck, Loader2, CheckCircle2, Clock, MapPin, ChevronRight, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import RtiButton from '@/components/citizen/RtiButton';
 
-function DoomsdayClock({ deadline, large }: { deadline: string, large?: boolean }) {
+function DoomsdayClock({ deadline, large, onExpire }: { deadline: string, large?: boolean, onExpire?: () => void }) {
   const [timeLeft, setTimeLeft] = useState('');
   const [isExpired, setIsExpired] = useState(false);
 
@@ -21,7 +22,10 @@ function DoomsdayClock({ deadline, large }: { deadline: string, large?: boolean 
 
       if (diff <= 0) {
         setTimeLeft('SLA BREACHED');
-        setIsExpired(true);
+        if (!isExpired) {
+          setIsExpired(true);
+          if (onExpire) onExpire();
+        }
         clearInterval(timer);
         return;
       }
@@ -32,7 +36,7 @@ function DoomsdayClock({ deadline, large }: { deadline: string, large?: boolean 
       setTimeLeft(`${hours}h ${minutes}m ${seconds}s`);
     }, 1000);
     return () => clearInterval(timer);
-  }, [deadline]);
+  }, [deadline, isExpired, onExpire]);
 
   return (
     <div className={cn(
@@ -46,9 +50,11 @@ function DoomsdayClock({ deadline, large }: { deadline: string, large?: boolean 
   );
 }
 
-function GrievanceDetailModal({ g, onClose }: { g: any, onClose: () => void }) {
+function GrievanceDetailModal({ g, onClose, session, onExpire, expiredIds }: { g: any, onClose: () => void, session: any, onExpire: () => void, expiredIds: Set<string> }) {
   const [activeIndex, setActiveIndex] = useState(0);
   const media = g.evidenceUrls || [];
+  const isAlreadyExpired = new Date().getTime() > new Date(g.deadline).getTime();
+  const showRtiButton = isAlreadyExpired || expiredIds.has(g.id);
 
   return (
     <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-md z-[150] flex items-center justify-center p-4 lg:p-10 overflow-y-auto">
@@ -68,7 +74,6 @@ function GrievanceDetailModal({ g, onClose }: { g: any, onClose: () => void }) {
               <div className="text-slate-300 uppercase font-black tracking-widest text-[10px]">No visual evidence</div>
             )}
             
-            {/* Nav Arrows for Media */}
             {media.length > 1 && (
               <div className="absolute inset-x-4 flex justify-between items-center opacity-0 group-hover:opacity-100 transition-opacity">
                 <button 
@@ -109,7 +114,6 @@ function GrievanceDetailModal({ g, onClose }: { g: any, onClose: () => void }) {
             </div>
           )}
           
-          {/* TIMELINE (Below strip on mobile, hidden or integrated on desktop) */}
           <div className="p-8 bg-white space-y-6 hidden lg:block">
             <div className="flex items-center justify-between">
               <span className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">Current Timeline</span>
@@ -155,13 +159,24 @@ function GrievanceDetailModal({ g, onClose }: { g: any, onClose: () => void }) {
           <div className="flex items-center gap-10 border-y border-slate-50 py-8">
             <div className="space-y-1">
               <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Time Remaining</p>
-              <DoomsdayClock deadline={g.deadline} large />
+              <DoomsdayClock deadline={g.deadline} large onExpire={onExpire} />
             </div>
             <div className="space-y-1">
               <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Severity</p>
               <p className="text-sm font-black text-slate-900 uppercase italic tracking-widest">{g.severity}</p>
             </div>
           </div>
+
+          {showRtiButton && session && (
+            <div className="p-6 bg-red-50 rounded-[2rem] border border-red-100 space-y-4 animate-in fade-in duration-700">
+              <div className="flex items-center gap-2 text-red-600">
+                <ShieldCheck className="w-5 h-5" />
+                <span className="text-[10px] font-black uppercase tracking-widest">SLA Breach Detected</span>
+              </div>
+              <p className="text-xs text-red-900/60 font-medium leading-relaxed">The government has failed to address this issue within the legal timeframe. You are now authorized to generate a formal RTI application.</p>
+              <RtiButton grievanceId={g.id} citizenId={session.citizenId} />
+            </div>
+          )}
 
           <div className="space-y-4">
             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Oversight Summary</p>
@@ -205,6 +220,7 @@ export default function CitizenPage() {
   const [myGrievances, setMyGrievances] = useState<any[]>([]);
   const [fetchingGrievances, setFetchingGrievances] = useState(false);
   const [selectedGrievance, setSelectedGrievance] = useState<any | null>(null);
+  const [expiredIds, setExpiredIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     const s = authProvider.getSession();
@@ -369,7 +385,7 @@ export default function CitizenPage() {
               <div className="w-2 h-2 bg-green-500 rounded-full" />
               <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">Verified Citizen</span>
             </div>
-            <button onClick={() => {authProvider.logout(); window.location.reload();}} className="text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-red-500 transition-colors">Logout</button>
+            <button onClick={() => { authProvider.logout(); window.location.reload(); }} className="text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-red-500 transition-colors">Logout</button>
           </div>
           <div className="space-y-2">
             <h1 className="text-5xl font-black text-slate-900 tracking-tight uppercase italic">
@@ -415,49 +431,65 @@ export default function CitizenPage() {
                 </div>
               </div>
             ) : (
-              myGrievances.map((g) => (
-                <div 
-                  key={g.id} 
-                  onClick={() => setSelectedGrievance(g)}
-                  className="group bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm hover:shadow-2xl hover:shadow-slate-200/60 transition-all duration-500 space-y-6 relative overflow-hidden cursor-pointer active:scale-[0.98]"
-                >
-                  <div className="flex justify-between items-start relative z-10">
-                    <div className="space-y-1.5">
-                      <div className="flex items-center gap-2">
-                        <span className={cn(
-                          "px-2 py-0.5 rounded-md text-[8px] font-black uppercase tracking-widest",
-                          g.status === 'OPEN' ? "bg-amber-50 text-amber-600" : "bg-emerald-50 text-emerald-600"
-                        )}>
-                          {g.status}
-                        </span>
-                        <span className="text-[10px] text-slate-300 font-medium font-mono">{g.id.split('-')[0]}</span>
-                      </div>
-                      <h4 className="text-base font-black text-slate-900 tracking-tight leading-tight group-hover:text-slate-600 transition-colors">{g.title}</h4>
-                    </div>
-                    <DoomsdayClock deadline={g.deadline} />
-                  </div>
+              myGrievances.map((g) => {
+                const isAlreadyExpired = new Date().getTime() > new Date(g.deadline).getTime();
+                const showRtiButton = isAlreadyExpired || expiredIds.has(g.id);
 
-                  <div className="flex items-center justify-between pt-2 border-t border-slate-50 group-hover:border-slate-100 transition-colors">
-                    <div className="flex items-center gap-4">
-                      {g.imageUrl && (
-                        <div className="w-10 h-10 rounded-xl overflow-hidden shadow-sm border border-slate-100 ring-4 ring-slate-50 transition-all group-hover:scale-110 group-hover:ring-slate-100 duration-500">
-                          <img src={g.imageUrl} alt="Evidence" className="w-full h-full object-cover" />
+                return (
+                  <div 
+                    key={g.id} 
+                    onClick={() => setSelectedGrievance(g)}
+                    className="group bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm hover:shadow-2xl hover:shadow-slate-200/60 transition-all duration-500 space-y-6 relative overflow-hidden cursor-pointer active:scale-[0.98]"
+                  >
+                    <div className="flex justify-between items-start relative z-10">
+                      <div className="space-y-1.5 flex-1 pr-4">
+                        <div className="flex items-center gap-2">
+                          <span className={cn(
+                            "px-2 py-0.5 rounded-md text-[8px] font-black uppercase tracking-widest",
+                            g.status === 'OPEN' ? "bg-amber-50 text-amber-600" : "bg-emerald-50 text-emerald-600"
+                          )}>
+                            {g.status}
+                          </span>
+                          <span className="text-[10px] text-slate-300 font-medium font-mono">{g.id.split('-')[0]}</span>
                         </div>
-                      )}
-                      <div className="space-y-0.5">
-                        <div className="flex items-center gap-1 text-slate-400">
-                          <MapPin className="w-3 h-3" />
-                          <span className="text-[10px] font-bold uppercase tracking-tight text-slate-500">{g.location?.city || "Unknown Location"}</span>
-                        </div>
-                        <p className="text-[10px] text-slate-400 font-medium">{new Date(g.createdAt).toLocaleDateString()}</p>
+                        <h4 className="text-base font-black text-slate-900 tracking-tight leading-tight group-hover:text-slate-600 transition-colors">{g.title}</h4>
+                      </div>
+                      
+                      <div className="flex flex-col items-end gap-3 shrink-0">
+                        <DoomsdayClock 
+                          deadline={g.deadline} 
+                          onExpire={() => setExpiredIds(prev => new Set(prev).add(g.id))}
+                        />
+                        {showRtiButton && session && (
+                          <div className="animate-in fade-in slide-in-from-top-2 duration-500" onClick={(e) => e.stopPropagation()}>
+                            <RtiButton grievanceId={g.id} citizenId={session.citizenId} />
+                          </div>
+                        )}
                       </div>
                     </div>
-                    <Button variant="ghost" size="icon" className="rounded-full hover:bg-slate-900 hover:text-white text-slate-300 transition-all duration-500">
-                      <ChevronRight className="w-4 h-4" />
-                    </Button>
+
+                    <div className="flex items-center justify-between pt-2 border-t border-slate-50 group-hover:border-slate-100 transition-colors">
+                      <div className="flex items-center gap-4">
+                        {g.imageUrl && (
+                          <div className="w-10 h-10 rounded-xl overflow-hidden shadow-sm border border-slate-100 ring-4 ring-slate-50 transition-all group-hover:scale-110 group-hover:ring-slate-100 duration-500">
+                            <img src={g.imageUrl} alt="Evidence" className="w-full h-full object-cover" />
+                          </div>
+                        )}
+                        <div className="space-y-0.5">
+                          <div className="flex items-center gap-1 text-slate-400">
+                            <MapPin className="w-3 h-3" />
+                            <span className="text-[10px] font-bold uppercase tracking-tight text-slate-500">{g.location?.city || "Unknown Location"}</span>
+                          </div>
+                          <p className="text-[10px] text-slate-400 font-medium">{new Date(g.createdAt).toLocaleDateString()}</p>
+                        </div>
+                      </div>
+                      <Button variant="ghost" size="icon" className="rounded-full hover:bg-slate-900 hover:text-white text-slate-300 transition-all duration-500">
+                        <ChevronRight className="w-4 h-4" />
+                      </Button>
+                    </div>
                   </div>
-                </div>
-              ))
+                );
+              })
             )}
           </div>
         </section>
@@ -468,6 +500,9 @@ export default function CitizenPage() {
         <GrievanceDetailModal 
           g={selectedGrievance} 
           onClose={() => setSelectedGrievance(null)} 
+          session={session}
+          expiredIds={expiredIds}
+          onExpire={() => setExpiredIds(prev => new Set(prev).add(selectedGrievance.id))}
         />
       )}
     </main>
