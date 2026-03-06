@@ -63,7 +63,7 @@ export default function GovernmentDashboard() {
               title: dbItem.title || "Untitled Grievance",
               description: dbItem.summary || dbItem.originalDescription || "",
               category: (dbItem.category || 'other').toLowerCase(),
-              status: dbItem.status === 'OPEN' ? 'pending' : dbItem.status === 'IN_PROGRESS' ? 'in-progress' : dbItem.status === 'FIXED' ? 'resolved' : dbItem.status === 'VERIFIED' ? 'verified' : 'pending',
+              status: (dbItem.status || 'pending').toLowerCase(),
               priority: (dbItem.severity || 'medium').toLowerCase(),
               ward: dbItem.location?.area || 'Unknown Ward',
               zone: dbItem.location?.city || 'Unknown Zone',
@@ -107,13 +107,15 @@ export default function GovernmentDashboard() {
       
       let matchStatus = true;
       if (filterStatus === "all") {
-        matchStatus = g.status !== "closed"; // Don't show closed by default
+        matchStatus = true; // Show EVERYTHING including closed and rejected
       } else if (filterStatus === "new") {
         matchStatus = g.status === "pending" || g.status === "critical";
       } else if (filterStatus === "assigned") {
         matchStatus = g.status === "assigned" || g.status === "in-progress";
       } else if (filterStatus === "review") {
         matchStatus = g.status === "verified";
+      } else if (filterStatus === "rejected") {
+        matchStatus = g.status === "rejected";
       } else {
         matchStatus = g.status === filterStatus;
       }

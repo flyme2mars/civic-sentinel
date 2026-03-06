@@ -184,7 +184,7 @@ export const STATUS_MAP = {
   verified:    { label: "Verified",    light: { bg: "#FAF5FF", text: "#7E22CE", border: "#E9D5FF" }, dark: { bg: "#3B0764", text: "#C084FC", border: "#6B21A8" } },
   assigned:    { label: "Assigned",    light: { bg: "#F0F9FF", text: "#0369A1", border: "#BAE6FD" }, dark: { bg: "#0C4A6E", text: "#38BDF8", border: "#0EA5E9" } },
   closed:      { label: "Closed",      light: { bg: "#F8FAFC", text: "#475569", border: "#E2E8F0" }, dark: { bg: "#0F172A", text: "#94A3B8", border: "#1E293B" } },
-  REJECTED:    { label: "Rejected",    light: { bg: "#FEF2F2", text: "#991B1B", border: "#FECACA" }, dark: { bg: "#450A0A", text: "#F87171", border: "#7F1D1D" } },
+  rejected:    { label: "Rejected",    light: { bg: "#FEF2F2", text: "#991B1B", border: "#FECACA" }, dark: { bg: "#450A0A", text: "#F87171", border: "#7F1D1D" } },
 };
 
 export const PRIORITY_MAP = {

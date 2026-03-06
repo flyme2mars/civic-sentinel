@@ -18,10 +18,11 @@ export function GrievancesView({
       <div style={{ background: surface, border: `1px solid ${border}`, borderRadius: 14, padding: "14px 18px", marginBottom: 18, display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
         <div style={{ display: "flex", gap: 6, flex: 1, flexWrap: "wrap" }}>
           {[
-            { id: "all", label: "All Active" },
+            { id: "all", label: "Full History" },
             { id: "new", label: "New / Triage" },
             { id: "assigned", label: "In Progress" },
             { id: "review", label: "Awaiting Review" },
+            { id: "rejected", label: "Rejected" },
             { id: "closed", label: "Closed" }
           ].map(s => (
             <button key={s.id} onClick={() => setFilterStatus(s.id)} style={{

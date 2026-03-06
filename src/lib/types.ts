@@ -1,5 +1,5 @@
 export type Priority = 'low' | 'medium' | 'high' | 'critical';
-export type Status = 'pending' | 'in-progress' | 'resolved' | 'escalated' | 'critical' | 'verified' | 'assigned' | 'closed';
+export type Status = 'pending' | 'in-progress' | 'resolved' | 'escalated' | 'critical' | 'verified' | 'assigned' | 'closed' | 'rejected';
 
 export interface CivicIssue {
   id: string;      // Display ID (e.g., CIV-21D48F3E)
