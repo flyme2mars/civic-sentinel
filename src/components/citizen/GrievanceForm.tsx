@@ -18,7 +18,7 @@ interface Evidence {
   preview: string;
 }
 
-export default function GrievanceForm({ onSuccess, session: externalSession }: { onSuccess?: () => void, session?: CitizenSession | null }) {
+export default function GrievanceForm({ onSuccess, onAuthSuccess, session: externalSession }: { onSuccess?: () => void, onAuthSuccess?: (s: CitizenSession) => void, session?: CitizenSession | null }) {
   const [evidence, setEvidence] = useState<Evidence[]>([]);
   const [isCameraOpen, setIsCameraOpen] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
@@ -46,13 +46,12 @@ export default function GrievanceForm({ onSuccess, session: externalSession }: {
   const audioChunksRef = useRef<Blob[]>([]);
 
   useEffect(() => {
-    if (externalSession) {
-      setSession(externalSession);
-    } else {
-      setSession(authProvider.getSession());
-    }
-    getGeoLocation();
+    setSession(externalSession || null);
   }, [externalSession]);
+
+  useEffect(() => {
+    getGeoLocation();
+  }, []);
 
   const getGeoLocation = () => {
     if (typeof window !== "undefined" && navigator.geolocation) {
@@ -231,6 +230,7 @@ export default function GrievanceForm({ onSuccess, session: externalSession }: {
     try {
       const s = await authProvider.verifyOtp(phoneNumber, otp, otpSessionId);
       setSession(s);
+      if (onAuthSuccess) onAuthSuccess(s);
       setAuthStage('idle');
     } catch (e: any) { alert(e.message); }
     finally { setAuthLoading(false); }
@@ -317,7 +317,7 @@ export default function GrievanceForm({ onSuccess, session: externalSession }: {
                 >
                   {authLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Verify & Continue"}
                 </Button>
-                <button onClick={() => setAuthStage('phone')} className="w-full text-[10px] text-slate-400 font-bold uppercase tracking-widest hover:text-slate-600 transition-colors">Change Number</button>
+                <button onClick={() => setAuthStage('phone')} className="w-full text-[10px] text-slate-300 font-bold uppercase tracking-widest hover:text-slate-900 transition-colors">Change Number</button>
               </div>
             )}
           </CardContent>
