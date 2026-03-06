@@ -148,6 +148,38 @@ export function DetailDrawer({
       </div>
 
       <div className="flex-1 overflow-y-auto">
+        {/* Verification Actions (New Section) */}
+        <div className="px-6 py-4 bg-gray-900 text-white">
+          <div className="flex items-center gap-2 mb-4">
+            <ShieldCheck className="w-4 h-4 text-gray-400" />
+            <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Official Verification</span>
+          </div>
+
+          {(issue.status === 'pending' || issue.status === 'in-progress' || issue.status === 'escalated') ? (
+            <div className="space-y-3">
+              <p className="text-[11px] text-gray-400">Verify the legitimacy of this grievance before taking further action.</p>
+              <div className="flex gap-2">
+                <button className="flex-1 bg-white text-gray-900 py-2 rounded-lg text-xs font-bold hover:bg-gray-100 transition-colors flex items-center justify-center gap-2">
+                  <CheckCircle className="w-3.5 h-3.5" />
+                  Verify Original
+                </button>
+                <button className="flex-1 bg-red-500/20 text-red-400 border border-red-500/30 py-2 rounded-lg text-xs font-bold hover:bg-red-500/30 transition-colors flex items-center justify-center gap-2">
+                  <X className="w-3.5 h-3.5" />
+                  Reject Fake
+                </button>
+              </div>
+            </div>
+          ) : (issue.status === 'resolved' || issue.status === 'verified') ? (
+            <div className="space-y-3">
+              <p className="text-[11px] text-gray-400">Review the resolution evidence and provide final official approval.</p>
+              <button className="w-full bg-green-500 text-white py-2 rounded-lg text-xs font-bold hover:bg-green-600 transition-colors flex items-center justify-center gap-2">
+                <CheckCircle className="w-3.5 h-3.5" />
+                Approve and Close
+              </button>
+            </div>
+          ) : null}
+        </div>
+
         {/* Title & Description */}
         <div className="p-6 border-b border-gray-100">
           <h2 className="text-xl font-bold text-gray-900 mb-2 leading-tight">{issue.title}</h2>

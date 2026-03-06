@@ -286,32 +286,70 @@ export function DetailDrawer({ g, onClose }: { g: GrievanceType; onClose: () => 
             })()}
 
             {tab === "actions" && (
-              <div className="grid grid-cols-1 gap-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
-                {[
-                  { label: "Upload Repair Proof", icon: Camera, desc: "Sumbit Before/After evidence" },
-                  { label: "Assign Department", icon: User, desc: "Change ticket ownership", color: "blue" },
-                  { label: "Escalate Issue", icon: ShieldCheck, desc: "Notify senior officials", color: "red" },
-                  { label: "Update Location", icon: MapPin, desc: "Refine geographic data", color: "amber" }
-                ].map((action) => (
-                  <button 
-                    key={action.label}
-                    className={`
-                      w-full p-4 rounded-2xl border text-left transition-all duration-200 group flex items-center gap-4
-                      ${borderColor} hover:bg-gray-50
-                    `}
-                  >
-                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center transition-colors bg-gray-100 group-hover:bg-gray-200`}>
-                      <action.icon className="w-6 h-6 text-gray-900" />
+              <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                {/* Official Verification Section */}
+                <div className="p-5 rounded-2xl bg-gray-900 text-white shadow-xl">
+                  <div className="text-[10px] font-mono font-bold tracking-widest uppercase mb-4 flex items-center gap-2 opacity-70">
+                    <ShieldCheck className="w-4 h-4" /> Official Verification
+                  </div>
+                  
+                  {/* Initial Triage: Verify or Reject */}
+                  {(g.status === "pending" || g.status === "critical") ? (
+                    <div className="space-y-3">
+                      <p className="text-xs text-gray-400 mb-4">Validate the legitimacy of this report before department assignment.</p>
+                      <div className="flex gap-3">
+                        <button className="flex-1 bg-white text-gray-900 py-3 rounded-xl text-sm font-bold hover:bg-gray-100 transition-all flex items-center justify-center gap-2">
+                          <Check className="w-4 h-4" /> Verify as Original
+                        </button>
+                        <button className="flex-1 bg-red-500/20 text-red-400 border border-red-500/30 py-3 rounded-xl text-sm font-bold hover:bg-red-500/30 transition-all flex items-center justify-center gap-2">
+                          <X className="w-4 h-4" /> Reject as Fake
+                        </button>
+                      </div>
                     </div>
-                    <div className="flex-1">
-                      <div className={`text-sm font-bold ${textPrimary}`}>{action.label}</div>
-                      <div className={`text-xs mt-0.5 ${textSecondary}`}>{action.desc}</div>
+                  ) : (g.status === "resolved" || g.status === "fixed") ? (
+                    /* Final Audit: Approve or Re-open */
+                    <div className="space-y-3">
+                      <p className="text-xs text-gray-400 mb-4">AI Vision Auditor has flagged this as fixed. Provide final human approval.</p>
+                      <div className="flex gap-3">
+                        <button className="flex-1 bg-green-500 text-white py-3 rounded-xl text-sm font-bold hover:bg-green-600 transition-all flex items-center justify-center gap-2">
+                          <Check className="w-4 h-4" /> Approve and Close
+                        </button>
+                        <button className="flex-1 bg-white/10 text-white border border-white/10 py-3 rounded-xl text-sm font-bold hover:bg-white/20 transition-all flex items-center justify-center gap-2">
+                          <Activity className="w-4 h-4" /> Re-open Ticket
+                        </button>
+                      </div>
                     </div>
-                    <div className={`opacity-0 group-hover:opacity-100 transition-opacity pr-2 ${textSecondary}`}>
-                      →
+                  ) : (
+                    <div className="text-center py-4 bg-white/5 rounded-xl border border-white/5">
+                      <p className="text-xs text-gray-400 italic">Ticket is currently in {g.status} state. No pending verification actions.</p>
                     </div>
-                  </button>
-                ))}
+                  )}
+                </div>
+
+                <div className="grid grid-cols-1 gap-4">
+                  {[
+                    { label: "Assign Department", icon: User, desc: "Change ticket ownership", color: "blue" },
+                  ].map((action) => (
+                    <button 
+                      key={action.label}
+                      className={`
+                        w-full p-4 rounded-2xl border text-left transition-all duration-200 group flex items-center gap-4
+                        ${borderColor} hover:bg-gray-50
+                      `}
+                    >
+                      <div className={`w-12 h-12 rounded-xl flex items-center justify-center transition-colors bg-gray-100 group-hover:bg-gray-200`}>
+                        <action.icon className="w-6 h-6 text-gray-900" />
+                      </div>
+                      <div className="flex-1">
+                        <div className={`text-sm font-bold ${textPrimary}`}>{action.label}</div>
+                        <div className={`text-xs mt-0.5 ${textSecondary}`}>{action.desc}</div>
+                      </div>
+                      <div className={`opacity-0 group-hover:opacity-100 transition-opacity pr-2 ${textSecondary}`}>
+                        →
+                      </div>
+                    </button>
+                  ))}
+                </div>
               </div>
             )}
           </div>
