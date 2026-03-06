@@ -29,14 +29,27 @@ export async function POST(request: Request) {
     }));
 
     const grievance = getRes.Item;
-    if (!grievance || !grievance.imageKey || !grievance.fixedImageKey) {
+    if (!grievance) {
+      return NextResponse.json({ error: 'Grievance not found.' }, { status: 404 });
+    }
+
+    // Determine all before and after keys
+    const beforeKeys = Array.isArray(grievance.evidenceKeys) && grievance.evidenceKeys.length > 0 
+      ? grievance.evidenceKeys 
+      : (grievance.imageKey ? [grievance.imageKey] : []);
+      
+    const afterKeys = Array.isArray(grievance.fixedImageKeys) && grievance.fixedImageKeys.length > 0 
+      ? grievance.fixedImageKeys 
+      : (grievance.fixedImageKey ? [grievance.fixedImageKey] : []);
+
+    if (beforeKeys.length === 0 || afterKeys.length === 0) {
       return NextResponse.json({ error: 'Required images (before/after) not found for verification.' }, { status: 400 });
     }
 
-    // 2. Fetch both images from S3 as bytes
-    const [beforeBytes, afterBytes] = await Promise.all([
-      fetchS3Bytes(grievance.imageKey),
-      fetchS3Bytes(grievance.fixedImageKey)
+    // 2. Fetch all images from S3 as bytes
+    const [beforeImages, afterImages] = await Promise.all([
+      Promise.all(beforeKeys.map(async (key) => ({ key, bytes: await fetchS3Bytes(key) }))),
+      Promise.all(afterKeys.map(async (key) => ({ key, bytes: await fetchS3Bytes(key) })))
     ]);
 
     // Helper to determine format for Bedrock
@@ -50,37 +63,56 @@ export async function POST(request: Request) {
     // 3. Trigger Bedrock Claude 3.5 Sonnet to compare
     const systemPrompt = `
       You are an elite Civil Infrastructure Inspector. 
-      Your task is to compare two images of the same location. 
-      Image A is the "Before" image showing a reported grievance.
-      Image B is the "After" image showing the repair work.
+      Your task is to compare two sets of images of the same location. 
+      Set A contains "Before" images showing a reported grievance.
+      Set B contains "After" images showing the repair work.
+
+      Grievance Context:
+      - Title: ${grievance.title}
+      - Description: ${grievance.summary || grievance.originalDescription}
 
       Analyze:
-      1. Location Check: Do both images look like the same physical location?
-      2. Resolution Check: Has the reported issue (e.g., pothole, waste, broken pipe) been fixed?
-      3. Quality Check: Is the repair complete and professional?
+      1. Location Check: Do the images in Set B correspond to the same physical location shown in Set A? (Use signboards, wall textures, and poles as landmarks).
+      2. Resolution Check: Has the primary reported issue (e.g., the specific waste pile or broken pipe) been removed or fixed?
+      3. Quality Check: Is the repair complete? 
+      
+      IMPORTANT JUDGMENT CRITERIA:
+      - Distinguish between "Active Waste" (plastic, bags, debris) and "Environmental Stains" (moss, water stains on walls, or natural dirt ground). 
+      - Do NOT reject a resolution because of old wall textures or moss if the actual garbage pile has been removed.
+      - If the "Before" image showed a massive pile and the "After" image shows a clear area with only minor natural weathering, mark it as VERIFIED.
+      - Be pragmatic: A public road doesn't need to be surgically sterile; it just needs the grievance resolved.
 
       Output ONLY JSON in this format:
       {
         "verified": boolean,
         "status": "VERIFIED" | "REJECTED",
         "confidence": number (0-1),
-        "reasoning": "Technical explanation of why it was verified or rejected for the admin.",
+        "reasoning": "Technical explanation of why it was verified or rejected for the admin. Refer to specific images if necessary.",
         "resolutionSummary": "A concise, user-friendly summary of the repair work for the citizen (e.g., 'The pothole at MG Road has been filled and leveled.')"
       }
     `;
+
+    const userContent: any[] = [];
+    userContent.push({ text: "SET A: BEFORE IMAGES" });
+    beforeImages.forEach((img, i) => {
+      userContent.push({ text: `Before Image ${i + 1}:` });
+      userContent.push({ image: { format: getFormat(img.key), source: { bytes: img.bytes } } });
+    });
+
+    userContent.push({ text: "SET B: AFTER (RESOLUTION) IMAGES" });
+    afterImages.forEach((img, i) => {
+      userContent.push({ text: `After Image ${i + 1}:` });
+      userContent.push({ image: { format: getFormat(img.key), source: { bytes: img.bytes } } });
+    });
+
+    userContent.push({ text: "Please analyze the resolution based on all provided images and the grievance context." });
 
     const command = new ConverseCommand({
       modelId: AWS_CONFIG.bedrock.modelId,
       messages: [
         {
           role: "user",
-          content: [
-            { text: "Before Image:" },
-            { image: { format: getFormat(grievance.imageKey), source: { bytes: beforeBytes } } },
-            { text: "After Image:" },
-            { image: { format: getFormat(grievance.fixedImageKey), source: { bytes: afterBytes } } },
-            { text: "Please analyze the resolution." }
-          ]
+          content: userContent
         }
       ],
       system: [{ text: systemPrompt }]

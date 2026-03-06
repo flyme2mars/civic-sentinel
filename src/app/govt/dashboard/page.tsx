@@ -77,6 +77,8 @@ export default function GovtDashboard() {
               aiConfidence: 0.94,
               imageUrl: dbItem.imageUrl,
               fixedImageUrl: dbItem.fixedImageUrl,
+              evidenceUrls: dbItem.evidenceUrls || [],
+              evidenceKeys: dbItem.evidenceKeys || [],
               assignee: dbItem.targetDepartment || "Unassigned",
             };
           });

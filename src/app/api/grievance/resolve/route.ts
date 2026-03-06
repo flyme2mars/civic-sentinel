@@ -16,14 +16,18 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { id, resolvedImageKey, note } = body;
+    const { id, resolvedImageKey, resolvedImageKeys, note } = body;
 
     if (process.env.NODE_ENV === 'development') {
       console.log("[Resolve API] Received Payload:", body);
     }
 
-    if (!id || !resolvedImageKey) {
-      return NextResponse.json({ error: 'Grievance ID and resolvedImageKey are required.' }, { status: 400 });
+    // Determine the primary key and the full array of keys
+    const primaryKey = resolvedImageKey || (Array.isArray(resolvedImageKeys) && resolvedImageKeys.length > 0 ? resolvedImageKeys[0] : null);
+    const allKeys = Array.isArray(resolvedImageKeys) && resolvedImageKeys.length > 0 ? resolvedImageKeys : (resolvedImageKey ? [resolvedImageKey] : []);
+
+    if (!id || allKeys.length === 0) {
+      return NextResponse.json({ error: 'Grievance ID and at least one resolved image evidence are required.' }, { status: 400 });
     }
 
     const timestamp = new Date().toISOString();
@@ -31,14 +35,15 @@ export async function POST(request: Request) {
     const command = new UpdateCommand({
       TableName: AWS_CONFIG.dynamodb.tableName,
       Key: { id },
-      // Update status, add the fixed image key, and append to history
-      UpdateExpression: "SET #st = :status, fixedImageKey = :img, updatedAt = :time, history = list_append(if_not_exists(history, :empty_list), :historyEntry)",
+      // Update status, add the fixed image keys, and append to history
+      UpdateExpression: "SET #st = :status, fixedImageKey = :img, fixedImageKeys = :imgs, updatedAt = :time, history = list_append(if_not_exists(history, :empty_list), :historyEntry)",
       ExpressionAttributeNames: {
         "#st": "status"
       },
       ExpressionAttributeValues: {
         ":status": "FIXED",
-        ":img": resolvedImageKey,
+        ":img": primaryKey,
+        ":imgs": allKeys,
         ":time": timestamp,
         ":empty_list": [],
         ":historyEntry": [
