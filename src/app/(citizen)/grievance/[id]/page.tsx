@@ -9,6 +9,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { ShieldCheck, Loader2, CheckCircle2, Clock, MapPin, ChevronLeft, Send, Share2, FileText, X, AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import RtiEditor from '@/components/citizen/RtiEditor';
+import SocialEditor from '@/components/citizen/SocialEditor';
 
 function DoomsdayClock({ deadline, large, onExpire }: { deadline: string, large?: boolean, onExpire?: () => void }) {
   const [timeLeft, setTimeLeft] = useState('');
@@ -241,6 +242,7 @@ export default function GrievanceDetailPage() {
             ) : (
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 md:gap-12 animate-in fade-in slide-in-from-top-4 duration-1000">
                 {/* Channel 01: Social Media Section */}
+                {/* Channel 01: Social Media Section */}
                 <div className="space-y-6 p-6 md:p-10 bg-slate-50/50 rounded-2xl border border-slate-100">
                   <div className="flex items-center gap-3 text-slate-900">
                     <Share2 className="w-5 h-5" />
@@ -249,12 +251,9 @@ export default function GrievanceDetailPage() {
                   <p className="text-xs text-slate-500 font-medium leading-relaxed">
                     Generate an AI post for social media to bring public attention to this unresolved grievance.
                   </p>
-                  <div className="min-h-[180px] md:min-h-[240px] flex items-center justify-center border-2 border-dashed border-slate-200 rounded-2xl bg-white/50 text-[10px] font-bold text-slate-300 uppercase tracking-[0.2em] text-center p-8">
-                    Post Editor Area
-                  </div>
-                  <Button className="w-full h-12 md:h-14 bg-slate-900 text-white rounded-xl font-bold text-xs uppercase tracking-[0.1em] gap-2 shadow-sm">
-                    Generate Awareness Post
-                  </Button>
+
+                  {/* Drop the new component here! */}
+                  <SocialEditor grievance={g} citizenId={session?.citizenId || ''} />
                 </div>
 
                 {/* Channel 02: Legal RTI Section */}
