@@ -19,17 +19,17 @@ export function GrievancesView({
         <div style={{ display: "flex", gap: 6, flex: 1, flexWrap: "wrap" }}>
           {["all", "pending", "in-progress", "critical", "escalated", "resolved"].map(s => (
             <button key={s} onClick={() => setFilterStatus(s)} style={{
-              background: filterStatus === s ? "rgba(99,102,241,0.12)" : "rgba(0,0,0,0.04)",
-              border: `1px solid ${filterStatus === s ? "rgba(99,102,241,0.3)" : border}`,
-              color: filterStatus === s ? accent : textSecondary,
-              borderRadius: 8, padding: "6px 12px", cursor: "pointer", fontSize: 11, fontWeight: 700,
-              fontFamily: "'DM Mono', monospace", letterSpacing: "0.04em", transition: "all 0.15s",
+              background: filterStatus === s ? "#111827" : "transparent",
+              border: `1px solid ${filterStatus === s ? "#111827" : border}`,
+              color: filterStatus === s ? "#fff" : textSecondary,
+              borderRadius: 8, padding: "6px 12px", cursor: "pointer", fontSize: 11, fontWeight: 600,
+              letterSpacing: "0.04em", transition: "all 0.15s",
               textTransform: "capitalize"
             }}>{s === "all" ? "All" : s}</button>
           ))}
         </div>
 
-        <select value={sortBy} onChange={e => setSortBy(e.target.value)} style={{ background: "rgba(0,0,0,0.04)", border: `1px solid ${border}`, borderRadius: 8, padding: "7px 12px", color: textSecondary, fontSize: 11, cursor: "pointer", fontFamily: "'DM Mono', monospace", outline: "none" }}>
+        <select value={sortBy} onChange={e => setSortBy(e.target.value)} style={{ background: "transparent", border: `1px solid ${border}`, borderRadius: 8, padding: "7px 12px", color: textSecondary, fontSize: 11, cursor: "pointer", outline: "none" }}>
           <option value="urgency">Sort: Urgency</option>
           <option value="severity">Sort: Severity</option>
           <option value="recent">Sort: Recent</option>
@@ -37,7 +37,12 @@ export function GrievancesView({
 
         <div style={{ display: "flex", gap: 4 }}>
           {[["grid", "⊞"], ["list", "☰"]].map(([m, icon]) => (
-            <button key={m} onClick={() => setViewMode(m)} style={{ background: viewMode === m ? "rgba(99,102,241,0.12)" : "transparent", border: `1px solid ${viewMode === m ? "rgba(99,102,241,0.3)" : border}`, color: viewMode === m ? accent : textSecondary, borderRadius: 8, width: 34, height: 34, cursor: "pointer", fontSize: 16, display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.15s" }}>{icon}</button>
+            <button key={m} onClick={() => setViewMode(m)} style={{ 
+              background: viewMode === m ? "#111827" : "transparent", 
+              border: `1px solid ${viewMode === m ? "#111827" : border}`, 
+              color: viewMode === m ? "#fff" : textSecondary, 
+              borderRadius: 8, width: 34, height: 34, cursor: "pointer", fontSize: 16, display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.15s" 
+            }}>{icon}</button>
           ))}
         </div>
       </div>
