@@ -14,7 +14,8 @@ import {
   ArrowRight,
   Zap,
   Loader2,
-  Trash2
+  Trash2,
+  ShieldCheck
 } from 'lucide-react';
 import { StatusIcon, PriorityIcon } from './Atoms';
 import { formatDate, cn } from '@/lib/utils';

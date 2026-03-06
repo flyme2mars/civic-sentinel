@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 
-export function StatCard({ label, value, sub, accent, icon, dark, delay = 0 }: { label: string; value: number | string; sub?: string; accent: string; icon: React.ReactNode; dark: boolean; delay?: number }) {
+export function StatCard({ label, value, sub, accent, icon, delay = 0 }: { label: string; value: number | string; sub?: string; accent: string; icon: React.ReactNode; delay?: number }) {
   const [displayed, setDisplayed] = useState(0);
   const [visible, setVisible] = useState(false);
   const [pulse, setPulse] = useState(false);
@@ -34,9 +34,9 @@ export function StatCard({ label, value, sub, accent, icon, dark, delay = 0 }: {
     return () => clearInterval(t);
   }, []);
 
-  const bg = dark ? "#111827" : "#FFFFFF";
-  const border = dark ? "rgba(255,255,255,0.07)" : "rgba(0,0,0,0.07)";
-  const textSecondary = dark ? "#6B7280" : "#9CA3AF";
+  const bg = "#FFFFFF";
+  const border = "rgba(0,0,0,0.07)";
+  const textSecondary = "#9CA3AF";
 
   return (
     <div style={{
@@ -44,7 +44,7 @@ export function StatCard({ label, value, sub, accent, icon, dark, delay = 0 }: {
       opacity: visible ? 1 : 0, transform: visible ? "translateY(0)" : "translateY(16px)",
       transition: `opacity 0.5s ease ${delay}ms, transform 0.5s ease ${delay}ms`,
       position: "relative", overflow: "hidden",
-      boxShadow: dark ? "0 1px 3px rgba(0,0,0,0.4)" : "0 1px 3px rgba(0,0,0,0.08)"
+      boxShadow: "0 1px 3px rgba(0,0,0,0.08)"
     }}>
       {/* Accent glow */}
       <div style={{ position: "absolute", top: 0, right: 0, width: 80, height: 80, borderRadius: "50%", background: `${accent}15`, filter: "blur(30px)", pointerEvents: "none" }} />
@@ -54,7 +54,7 @@ export function StatCard({ label, value, sub, accent, icon, dark, delay = 0 }: {
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
         <div>
           <div style={{ fontSize: 11, color: textSecondary, fontFamily: "'DM Mono', monospace", letterSpacing: "0.08em", marginBottom: 8 }}>{label}</div>
-          <div style={{ fontSize: 30, fontWeight: 800, color: accent, fontFamily: "'Sora', sans-serif", letterSpacing: "-0.04em", lineHeight: 1 }}>
+          <div style={{ fontSize: 30, fontWeight: 700, color: accent, letterSpacing: "-0.02em", lineHeight: 1 }}>
             {typeof value === "number" ? displayed.toLocaleString() : displayed.toLocaleString() + "%"}
           </div>
           {sub && <div style={{ fontSize: 11, color: textSecondary, marginTop: 5 }}>{sub}</div>}

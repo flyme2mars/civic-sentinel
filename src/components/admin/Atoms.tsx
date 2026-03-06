@@ -4,9 +4,9 @@ import React from 'react';
 import { useCountdown } from '@/hooks/useCountdown';
 import { STATUS_MAP, PRIORITY_MAP } from '@/lib/mock-data';
 
-export function Pill({ status, dark }: { status: keyof typeof STATUS_MAP, dark: boolean }) {
+export function Pill({ status }: { status: keyof typeof STATUS_MAP }) {
   const cfg = STATUS_MAP[status] || STATUS_MAP.pending;
-  const c = dark ? cfg.dark : cfg.light;
+  const c = cfg.light;
   
   // Refactored to Tailwind where possible, but keeping the dynamic colors from STATUS_MAP
   return (
@@ -19,8 +19,8 @@ export function Pill({ status, dark }: { status: keyof typeof STATUS_MAP, dark: 
   );
 }
 
-export function PriorityDot({ priority, dark }: { priority: keyof typeof PRIORITY_MAP, dark: boolean }) {
-  const color = dark ? PRIORITY_MAP[priority]?.dark : PRIORITY_MAP[priority]?.light;
+export function PriorityDot({ priority }: { priority: keyof typeof PRIORITY_MAP }) {
+  const color = PRIORITY_MAP[priority]?.light;
   return (
     <span 
       className={`inline-block w-[7px] h-[7px] rounded-full flex-shrink-0 ${priority === 'critical' ? 'shadow-[0_0_6px_var(--dot-color)]' : ''}`}
@@ -29,10 +29,10 @@ export function PriorityDot({ priority, dark }: { priority: keyof typeof PRIORIT
   );
 }
 
-export function SLABar({ reportedAt, slaHours, compact, dark }: { reportedAt: number, slaHours: number, compact?: boolean, dark: boolean }) {
+export function SLABar({ reportedAt, slaHours, compact }: { reportedAt: number, slaHours: number, compact?: boolean }) {
   const { breached, h, m, pct, urgent } = useCountdown(reportedAt, slaHours);
-  const barColor = breached ? (dark ? "#EF4444" : "#DC2626") : urgent ? (dark ? "#F97316" : "#EA580C") : (dark ? "#4ADE80" : "#16A34A");
-  const textColor = breached ? (dark ? "#EF4444" : "#DC2626") : urgent ? (dark ? "#F97316" : "#EA580C") : (dark ? "#4ADE80" : "#16A34A");
+  const barColor = breached ? "#DC2626" : urgent ? "#EA580C" : "#16A34A";
+  const textColor = breached ? "#DC2626" : urgent ? "#EA580C" : "#16A34A";
 
   if (compact) {
     return (
@@ -45,14 +45,14 @@ export function SLABar({ reportedAt, slaHours, compact, dark }: { reportedAt: nu
   return (
     <div className="flex flex-col gap-[5px]">
       <div className="flex justify-between items-center">
-        <span className="text-[10px] font-mono tracking-widest" style={{ color: dark ? "#6B7280" : "#9CA3AF" }}>
+        <span className="text-[10px] font-mono tracking-widest" style={{ color: "#9CA3AF" }}>
           {breached ? "SLA BREACHED" : "SLA DEADLINE"}
         </span>
         <span className="font-mono text-[13px] font-bold" style={{ color: textColor }}>
           {breached ? `+${h}h ${m}m` : `${h}h ${m}m`}
         </span>
       </div>
-      <div className="h-[5px] rounded-[3px] overflow-hidden relative" style={{ background: dark ? "rgba(255,255,255,0.07)" : "rgba(0,0,0,0.07)" }}>
+      <div className="h-[5px] rounded-[3px] overflow-hidden relative" style={{ background: "rgba(0,0,0,0.07)" }}>
         <div 
           className="h-full rounded-[3px] transition-all duration-1000 linear"
           style={{ 
@@ -72,10 +72,10 @@ export function SLABar({ reportedAt, slaHours, compact, dark }: { reportedAt: nu
   );
 }
 
-export function SLARing({ reportedAt, slaHours, dark, size = 52 }: { reportedAt: number, slaHours: number, dark: boolean, size?: number }) {
+export function SLARing({ reportedAt, slaHours, size = 52 }: { reportedAt: number, slaHours: number, size?: number }) {
   const { breached, h, m, pct, urgent } = useCountdown(reportedAt, slaHours);
-  const color = breached ? (dark ? "#EF4444" : "#DC2626") : urgent ? (dark ? "#F97316" : "#EA580C") : (dark ? "#4ADE80" : "#16A34A");
-  const trackColor = dark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.07)";
+  const color = breached ? "#DC2626" : urgent ? "#EA580C" : "#16A34A";
+  const trackColor = "rgba(0,0,0,0.07)";
   const cx = size / 2, cy = size / 2, r = (size - 6) / 2;
   const circ = 2 * Math.PI * r;
   const dash = (pct / 100) * circ;
@@ -103,7 +103,7 @@ export function SLARing({ reportedAt, slaHours, dark, size = 52 }: { reportedAt:
         <span className="font-mono font-bold leading-none" style={{ fontSize: size < 60 ? 9 : 11, color }}>
           {breached ? `+${h}h` : `${h}h`}
         </span>
-        <span className="font-mono leading-none mt-[1px]" style={{ fontSize: size < 60 ? 7 : 9, color: dark ? "#6B7280" : "#9CA3AF" }}>
+        <span className="font-mono leading-none mt-[1px]" style={{ fontSize: size < 60 ? 7 : 9, color: "#9CA3AF" }}>
           {breached ? "over" : `${m}m`}
         </span>
       </div>
@@ -111,13 +111,13 @@ export function SLARing({ reportedAt, slaHours, dark, size = 52 }: { reportedAt:
   );
 }
 
-export function ScoreRing({ score, dark, size = 44 }: { score: number, dark: boolean, size?: number }) {
-  const color = score >= 80 ? (dark ? "#4ADE80" : "#16A34A") : score >= 50 ? (dark ? "#FBBF24" : "#D97706") : (dark ? "#EF4444" : "#DC2626");
+export function ScoreRing({ score, size = 44 }: { score: number, size?: number }) {
+  const color = score >= 80 ? "#16A34A" : score >= 50 ? "#D97706" : "#DC2626";
   const r = 16; const circ = 2 * Math.PI * r;
   const dash = (score / 100) * circ;
   return (
     <svg width={size} height={size} viewBox="0 0 40 40">
-      <circle cx="20" cy="20" r={r} fill="none" stroke={dark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.06)"} strokeWidth="4" />
+      <circle cx="20" cy="20" r={r} fill="none" stroke={"rgba(0,0,0,0.06)"} strokeWidth="4" />
       <circle cx="20" cy="20" r={r} fill="none" stroke={color} strokeWidth="4"
         strokeDasharray={`${dash} ${circ}`} strokeLinecap="round"
         className="transition-all duration-600 ease-in-out"

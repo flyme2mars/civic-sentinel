@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React from 'react';
 
-export function ReportsView({ dark, surface, border, textSecondary, accent }: any) {
+export function ReportsView({ surface, border, textSecondary, accent }: any) {
   return (
     <div style={{ animation: "fadeSlideUp 0.3s ease" }}>
       <h2 style={{ fontSize: 24, fontWeight: 800, marginBottom: 20 }}>Automated Reports</h2>
@@ -15,9 +15,9 @@ export function ReportsView({ dark, surface, border, textSecondary, accent }: an
           <div key={i} style={{ background: surface, border: `1px solid ${border}`, borderRadius: 12, padding: 16, display: "flex", justifyContent: "space-between", alignItems: "center", animation: `fadeSlideUp 0.3s ease ${i * 50}ms both` }}>
             <div>
               <div style={{ fontSize: 14, fontWeight: 600 }}>{r.title}</div>
-              <div style={{ fontSize: 11, color: textSecondary, marginTop: 4, fontFamily: "'DM Mono', monospace" }}>Generated: {r.date}</div>
+              <div style={{ fontSize: 11, color: textSecondary, marginTop: 4 }}>Generated: {r.date}</div>
             </div>
-            <button style={{ background: dark ? "rgba(99,102,241,0.15)" : "rgba(99,102,241,0.1)", color: accent, border: "none", padding: "6px 12px", borderRadius: 8, fontSize: 11, fontWeight: 700, fontFamily: "'DM Mono', monospace", cursor: "pointer" }}>
+            <button style={{ background: "rgba(17,24,39,0.05)", color: accent, border: "none", padding: "6px 12px", borderRadius: 8, fontSize: 11, fontWeight: 700, cursor: "pointer" }}>
               Download {r.type}
             </button>
           </div>
