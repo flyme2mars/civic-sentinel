@@ -13,7 +13,10 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const token = request.headers.get('x-govt-token') || searchParams.get('token');
     
-    if (token !== process.env.GOVT_API_TOKEN) {
+    const isEnvValid = process.env.GOVT_API_TOKEN === 'sentinel2026';
+    const isTokenValid = token === 'sentinel2026';
+
+    if (!isEnvValid || !isTokenValid) {
       return NextResponse.json({ error: 'Unauthorized Access Denied' }, { status: 401 });
     }
 

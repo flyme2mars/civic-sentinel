@@ -7,7 +7,8 @@ import {
   BarChart3, 
   ChevronDown,
   Building2,
-  Search
+  Search,
+  LogOut
 } from 'lucide-react';
 
 const NAV_ITEMS = [
@@ -16,12 +17,15 @@ const NAV_ITEMS = [
   { id: 'analytics', label: 'Analytics', icon: BarChart3 },
 ];
 
-const DEPARTMENTS = [
-  { id: 'pwd-kas', name: 'PWD Kasargod', location: 'Kalamassery Municipality' },
-  { id: 'nhai-kan', name: 'NHAI Kannur', location: 'Kannur District' },
-];
-
-export function Sidebar({ activeTab, setActiveTab }: { activeTab: string, setActiveTab: (id: string) => void }) {
+export function Sidebar({ 
+  activeTab, 
+  setActiveTab,
+  onLogout
+}: { 
+  activeTab: string, 
+  setActiveTab: (id: string) => void,
+  onLogout?: () => void
+}) {
   return (
     <aside className="w-64 h-screen border-r border-gray-100 flex flex-col bg-white select-none">
       {/* Department Switcher */}
@@ -32,8 +36,8 @@ export function Sidebar({ activeTab, setActiveTab }: { activeTab: string, setAct
               <Building2 className="w-4 h-4 text-white" />
             </div>
             <div className="text-left overflow-hidden">
-              <div className="text-sm font-semibold truncate text-gray-900">{DEPARTMENTS[0].name}</div>
-              <div className="text-[10px] text-gray-500 truncate">{DEPARTMENTS[0].location}</div>
+              <div className="text-sm font-semibold truncate text-gray-900 tracking-tight">Sentinel Govt</div>
+              <div className="text-[10px] text-gray-500 truncate uppercase font-bold tracking-widest opacity-60">Verified Node</div>
             </div>
           </div>
           <ChevronDown className="w-4 h-4 text-gray-400 group-hover:text-gray-600 transition-colors" />
@@ -43,7 +47,7 @@ export function Sidebar({ activeTab, setActiveTab }: { activeTab: string, setAct
       {/* Main Nav */}
       <nav className="flex-1 px-3 py-4 space-y-1">
         <div className="mb-6">
-          <button className="w-full flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-gray-400 uppercase tracking-wider mb-2">
+          <button className="w-full flex items-center gap-2 px-3 py-1.5 text-xs font-bold text-gray-400 uppercase tracking-widest mb-2 pointer-events-none">
             Workspace
           </button>
           {NAV_ITEMS.map((item) => (
@@ -61,7 +65,6 @@ export function Sidebar({ activeTab, setActiveTab }: { activeTab: string, setAct
             </button>
           ))}
         </div>
-
       </nav>
 
       {/* User / Bottom */}
@@ -70,6 +73,15 @@ export function Sidebar({ activeTab, setActiveTab }: { activeTab: string, setAct
           <Search className="w-4 h-4 text-gray-400" />
           Quick Search
         </button>
+        {onLogout && (
+          <button 
+            onClick={onLogout}
+            className="w-full flex items-center gap-3 px-3 py-2 text-sm text-red-500 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors font-medium"
+          >
+            <LogOut className="w-4 h-4" />
+            Sign Out
+          </button>
+        )}
       </div>
     </aside>
   );
