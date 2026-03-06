@@ -14,7 +14,6 @@ import { DetailDrawer } from "@/components/admin/DetailDrawer";
 import { GrievanceType } from "@/lib/mock-data";
 
 export default function GovernmentDashboard() {
-  const [dark, setDark] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [activeNav, setActiveNav] = useState("grievances");
   const [selected, setSelected] = useState<GrievanceType | null>(null);
@@ -60,6 +59,7 @@ export default function GovernmentDashboard() {
           const formatted = data.grievances.map((dbItem: any) => {
             return {
               id: "CIV-" + dbItem.id.split('-')[0].toUpperCase(),
+              rawId: dbItem.id,
               title: dbItem.title || "Untitled Grievance",
               description: dbItem.summary || dbItem.originalDescription || "",
               category: (dbItem.category || 'other').toLowerCase(),
@@ -91,12 +91,12 @@ export default function GovernmentDashboard() {
     fetchGrievances();
   }, [authToken]);
 
-  const bg = dark ? "#0B0F1A" : "#f8fafc"; // dark navy vs light slate-50
-  const surface = dark ? "#111827" : "#ffffff"; // dark surface vs pure white
-  const border = dark ? "rgba(255,255,255,0.07)" : "#e2e8f0"; // dark border vs light slate-200
-  const textPrimary = dark ? "#F9FAFB" : "#0f172a"; // dark text vs slate-900
-  const textSecondary = dark ? "#9CA3AF" : "#64748b"; // dark muted vs slate-500
-  const accent = dark ? "#818CF8" : "#0f172a"; // indigo accent vs strong slate-900 (like citizen UI buttons)
+  const bg = "#f8fafc"; // light slate-50
+  const surface = "#ffffff"; // pure white
+  const border = "#e2e8f0"; // light slate-200
+  const textPrimary = "#0f172a"; // slate-900
+  const textSecondary = "#64748b"; // slate-500
+  const accent = "#0f172a"; // strong slate-900 (like citizen UI buttons)
 
   // PERFORMANCE: Memoize filtering and sorting logic
   const filtered = React.useMemo(() => {
@@ -123,30 +123,27 @@ export default function GovernmentDashboard() {
     { id: "overview", icon: "⬡", label: "Overview" },
     { id: "grievances", icon: "◈", label: "Grievances" },
     { id: "departments", icon: "◫", label: "Departments" },
-    { id: "wards", icon: "📍", label: "Wards" },
-    { id: "analytics", icon: "◎", label: "Analytics" },
-    { id: "reports", icon: "◆", label: "Reports" },
     { id: "settings", icon: "⊕", label: "Settings" },
   ];
 
   const NOTIFS = [
-    { msg: "5 new critical issues reported", time: "5 min ago", read: false, color: dark ? "#EF4444" : "#DC2626" },
-    { msg: "SLA breach: GRV-2024-003", time: "1 hour ago", read: false, color: dark ? "#F97316" : "#EA580C" },
-    { msg: "Vision audit completed: 3 grievances", time: "2 hours ago", read: true, color: dark ? "#4ADE80" : "#16A34A" },
+    { msg: "5 new critical issues reported", time: "5 min ago", read: false, color: "#DC2626" },
+    { msg: "SLA breach: GRV-2024-003", time: "1 hour ago", read: false, color: "#EA580C" },
+    { msg: "Vision audit completed: 3 grievances", time: "2 hours ago", read: true, color: "#16A34A" },
   ];
 
   if (!isAuthorized) {
     return (
-      <div style={{ minHeight: "100vh", background: "#0B0F1A", display: "flex", alignItems: "center", justifyItems: "center", justifyContent: "center", padding: 24, fontFamily: "'Sora', sans-serif" }}>
-        <div style={{ background: "#111827", padding: 40, borderRadius: 24, border: "1px solid rgba(255,255,255,0.07)", width: "100%", maxWidth: 400, textAlign: "center" }}>
-          <div style={{ fontSize: 40, marginBottom: 16 }}>🛡️</div>
-          <h1 style={{ color: "#F9FAFB", fontSize: 24, fontWeight: 800, marginBottom: 8, letterSpacing: "-0.02em" }}>GOVERNMENT ACCESS</h1>
-          <p style={{ color: "#9CA3AF", fontSize: 14, marginBottom: 32 }}>Secure portal for authorized civil auditors.</p>
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-6 font-sans">
+        <div className="bg-white p-10 rounded-2xl border border-gray-100 w-full max-w-md shadow-xl shadow-gray-200/50 text-center">
+          <div className="w-16 h-16 bg-gray-900 rounded-2xl flex items-center justify-center mx-auto mb-6 text-2xl">🛡️</div>
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">Admin Access</h1>
+          <p className="text-gray-500 text-sm mb-8">Secure portal for system administrators.</p>
           
           <input 
             type="password" 
-            placeholder="Enter Government Access Token"
-            style={{ width: "100%", padding: "16px 20px", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 12, color: "#fff", fontSize: 14, marginBottom: 16, outline: "none" }}
+            placeholder="Enter Admin Access Token"
+            className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm mb-4 outline-none focus:ring-4 focus:ring-gray-100 transition-all"
             onKeyDown={(e) => {
               if (e.key === 'Enter') {
                 setAuthToken((e.target as HTMLInputElement).value);
@@ -160,7 +157,7 @@ export default function GovernmentDashboard() {
               setAuthToken(input.value);
               setIsAuthorized(true);
             }}
-            style={{ width: "100%", padding: "16px", background: "#F9FAFB", color: "#0B0F1A", borderRadius: 12, fontWeight: 800, fontSize: 14, border: "none", cursor: "pointer" }}
+            className="w-full py-3 bg-gray-900 text-white rounded-xl font-bold text-sm hover:bg-black transition-colors"
           >
             VERIFY IDENTITY
           </button>
@@ -170,9 +167,9 @@ export default function GovernmentDashboard() {
   }
 
   return (
-    <div style={{ minHeight: "100vh", background: bg, fontFamily: "'Sora', sans-serif", color: textPrimary, display: "flex" }}>
+    <div style={{ minHeight: "100vh", background: bg, fontFamily: "ui-sans-serif, system-ui, sans-serif", color: textPrimary, display: "flex" }}>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=DM+Mono:wght@400;500;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500;700&display=swap');
         * { box-sizing: border-box; margin: 0; padding: 0; }
         ::-webkit-scrollbar { width: 4px; }
         ::-webkit-scrollbar-track { background: transparent; }
@@ -188,32 +185,23 @@ export default function GovernmentDashboard() {
       `}</style>
 
       <Sidebar 
-        dark={dark} setDark={setDark} 
-        sidebarOpen={sidebarOpen} 
         activeNav={activeNav} setActiveNav={setActiveNav} 
         NAV={NAV} 
-        surface={surface} border={border} 
-        textSecondary={textSecondary} accent={accent} 
         grievancesCount={grievances.length}
       />
 
       {/* MAIN */}
       <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
         <TopNav 
-          dark={dark} surface={surface} border={border} 
-          textSecondary={textSecondary} textPrimary={textPrimary} 
-          sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} 
           search={search} setSearch={setSearch} 
-          notifOpen={notifOpen} setNotifOpen={setNotifOpen} 
-          NOTIFS={NOTIFS} 
         />
 
         {/* CONTENT */}
         <main style={{ flex: 1, overflowY: "auto", padding: 24 }}>
-          {activeNav === "overview" && <OverviewView dark={dark} setSelected={setSelected} border={border} surface={surface} textSecondary={textSecondary} grievances={grievances} />}
+          {activeNav === "overview" && <OverviewView setSelected={setSelected} border={border} surface={surface} textSecondary={textSecondary} grievances={grievances} />}
           {activeNav === "grievances" && (
             <GrievancesView 
-              dark={dark} surface={surface} border={border} 
+              surface={surface} border={border} 
               textSecondary={textSecondary} textPrimary={textPrimary} accent={accent}
               filterStatus={filterStatus} setFilterStatus={setFilterStatus}
               sortBy={sortBy} setSortBy={setSortBy}
@@ -221,16 +209,13 @@ export default function GovernmentDashboard() {
               filtered={filtered} setSelected={setSelected}
             />
           )}
-          {activeNav === "departments" && <DepartmentsView dark={dark} surface={surface} border={border} textSecondary={textSecondary} textPrimary={textPrimary} />}
-          {activeNav === "wards" && <WardsView dark={dark} surface={surface} border={border} textSecondary={textSecondary} />}
-          {activeNav === "analytics" && <AnalyticsView textSecondary={textSecondary} />}
-          {activeNav === "reports" && <ReportsView dark={dark} surface={surface} border={border} textSecondary={textSecondary} accent={accent} />}
-          {activeNav === "settings" && <SettingsView dark={dark} surface={surface} border={border} textSecondary={textSecondary} textPrimary={textPrimary} accent={accent} />}
+          {activeNav === "departments" && <DepartmentsView surface={surface} border={border} textSecondary={textSecondary} textPrimary={textPrimary} />}
+          {activeNav === "settings" && <SettingsView surface={surface} border={border} textSecondary={textSecondary} textPrimary={textPrimary} accent={accent} />}
         </main>
       </div>
 
       {/* DRAWER */}
-      {selected && <DetailDrawer g={selected} dark={dark} onClose={() => setSelected(null)} />}
+      {selected && <DetailDrawer g={selected} onClose={() => setSelected(null)} />}
     </div>
   );
 }

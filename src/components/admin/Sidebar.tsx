@@ -1,55 +1,70 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React from 'react';
+import { 
+  Building2,
+  ChevronDown,
+  Search
+} from 'lucide-react';
 
-export function Sidebar({ dark, setDark, sidebarOpen, activeNav, setActiveNav, NAV, surface, border, textSecondary, accent, grievancesCount }: any) {
+export function Sidebar({ activeNav, setActiveNav, NAV, grievancesCount }: any) {
+  const DEPARTMENTS = [
+    { id: 'admin-sentinel', name: 'Sentinel Admin', location: 'System Oversight' },
+  ];
+
   return (
-    <aside style={{
-      width: sidebarOpen ? 220 : 68, flexShrink: 0, background: surface, borderRight: `1px solid ${border}`,
-      display: "flex", flexDirection: "column", transition: "width 0.25s cubic-bezier(0.4,0,0.2,1)", overflow: "hidden", height: "100vh", position: "sticky", top: 0
-    }}>
-      {/* Logo */}
-      <div style={{ padding: "20px 16px", borderBottom: `1px solid ${border}`, display: "flex", alignItems: "center", gap: 10, overflow: "hidden" }}>
-        <div style={{ width: 36, height: 36, borderRadius: 10, background: "linear-gradient(135deg,#6366F1,#F97316)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, flexShrink: 0 }}>🛡</div>
-        {sidebarOpen && (
-          <div style={{ overflow: "hidden" }}>
-            <div style={{ fontSize: 14, fontWeight: 800, letterSpacing: "-0.02em", whiteSpace: "nowrap" }}>CivicSentinel</div>
-            <div style={{ fontSize: 9, color: textSecondary, fontFamily: "'DM Mono', monospace", letterSpacing: "0.1em" }}>GOV PORTAL</div>
+    <aside className="w-64 h-screen border-r border-gray-100 flex flex-col bg-white select-none sticky top-0">
+      {/* Department Switcher */}
+      <div className="p-4 border-b border-gray-100">
+        <button className="w-full flex items-center justify-between p-2 rounded-lg hover:bg-gray-50 transition-colors border border-transparent hover:border-gray-200 group">
+          <div className="flex items-center gap-3 overflow-hidden">
+            <div className="w-8 h-8 rounded-md bg-gray-900 flex items-center justify-center flex-shrink-0">
+               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></svg>
+            </div>
+            <div className="text-left overflow-hidden">
+              <div className="text-sm font-semibold truncate text-gray-900">{DEPARTMENTS[0].name}</div>
+              <div className="text-[10px] text-gray-500 truncate">{DEPARTMENTS[0].location}</div>
+            </div>
           </div>
-        )}
+          <ChevronDown className="w-4 h-4 text-gray-400 group-hover:text-gray-600 transition-colors" />
+        </button>
       </div>
 
-      {/* Nav */}
-      <nav style={{ flex: 1, padding: "14px 10px", display: "flex", flexDirection: "column", gap: 3, overflowY: "auto" }}>
-        {NAV.map((n: any) => {
-          const isActive = activeNav === n.id;
-          return (
-            <button key={n.id} onClick={() => setActiveNav(n.id)} style={{
-              display: "flex", alignItems: "center", gap: 10, padding: sidebarOpen ? "10px 12px" : "10px", borderRadius: 10,
-              background: isActive ? (dark ? "rgba(99,102,241,0.15)" : "rgba(99,102,241,0.1)") : "transparent",
-              border: `1px solid ${isActive ? (dark ? "rgba(99,102,241,0.25)" : "rgba(99,102,241,0.2)") : "transparent"}`,
-              color: isActive ? accent : textSecondary, cursor: "pointer",
-              transition: "all 0.15s", fontSize: 12, fontWeight: isActive ? 700 : 500,
-              justifyContent: sidebarOpen ? "flex-start" : "center", overflow: "hidden", whiteSpace: "nowrap",
-            }}>
-              <span style={{ fontSize: 16, flexShrink: 0 }}>{n.icon}</span>
-              {sidebarOpen && <span>{n.label}</span>}
-              {n.id === "grievances" && sidebarOpen && (
-                <span style={{ marginLeft: "auto", background: dark ? "rgba(239,68,68,0.2)" : "rgba(220,38,38,0.1)", color: dark ? "#EF4444" : "#DC2626", fontSize: 9, fontWeight: 700, borderRadius: 99, padding: "1px 6px", fontFamily: "'DM Mono', monospace" }}>{grievancesCount}</span>
+      {/* Main Nav */}
+      <nav className="flex-1 px-3 py-4 space-y-1">
+        <div className="mb-6">
+          <button className="w-full flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-gray-400 uppercase tracking-wider mb-2">
+            Workspace
+          </button>
+          {NAV.map((item: any) => (
+            <button
+              key={item.id}
+              onClick={() => setActiveNav(item.id)}
+              className={`w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                activeNav === item.id 
+                  ? 'bg-gray-100 text-gray-900' 
+                  : 'text-gray-500 hover:text-gray-900 hover:bg-gray-50'
+              }`}
+            >
+              {/* If item.icon is a string (emoji/symbol), wrap it, otherwise it could be a component */}
+              {typeof item.icon === 'string' ? (
+                <span className={`w-4 h-4 flex items-center justify-center text-sm ${activeNav === item.id ? 'opacity-100' : 'opacity-60 grayscale'}`}>{item.icon}</span>
+              ) : (
+                <item.icon className={`w-4 h-4 ${activeNav === item.id ? 'text-gray-900' : 'text-gray-400'}`} />
+              )}
+              <span className="flex-1 text-left">{item.label}</span>
+              {item.id === "grievances" && (
+                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-500">{grievancesCount}</span>
               )}
             </button>
-          );
-        })}
+          ))}
+        </div>
       </nav>
 
-      {/* Bottom */}
-      <div style={{ padding: "12px 10px", borderTop: `1px solid ${border}`, display: "flex", flexDirection: "column", gap: 6 }}>
-        <button onClick={() => setDark(!dark)} style={{
-          display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", borderRadius: 10,
-          background: "transparent", border: "none", color: textSecondary, cursor: "pointer",
-          transition: "all 0.15s", fontSize: 12, justifyContent: sidebarOpen ? "flex-start" : "center", overflow: "hidden", whiteSpace: "nowrap",
-        }}>
-          <span style={{ fontSize: 16 }}>{dark ? "☀️" : "🌙"}</span>
-          {sidebarOpen && <span>{dark ? "Light Mode" : "Dark Mode"}</span>}
+      {/* User / Bottom */}
+      <div className="p-4 border-t border-gray-100 space-y-2">
+        <button className="w-full flex items-center gap-3 px-3 py-2 text-sm text-gray-500 hover:text-gray-900 hover:bg-gray-50 rounded-md transition-colors">
+          <Search className="w-4 h-4 text-gray-400" />
+          Quick Search
         </button>
       </div>
     </aside>
