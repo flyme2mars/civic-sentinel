@@ -5,7 +5,7 @@ import { Pill, PriorityDot, SLARing, SLABar, ScoreRing } from './Atoms';
 import { GrievanceType, PRIORITY_MAP, STATUS_MAP } from '@/lib/mock-data';
 import { X, ZoomIn, Camera, Check, User, Phone, MapPin, Info, Layout, Clock, Activity, ShieldCheck, Zap } from 'lucide-react';
 
-export function DetailDrawer({ g, dark, onClose }: { g: GrievanceType; dark: boolean; onClose: () => void }) {
+export function DetailDrawer({ g, onClose }: { g: GrievanceType; onClose: () => void }) {
   const [tab, setTab] = useState("overview");
   const [visible, setVisible] = useState(false);
   const [zoomedImage, setZoomedImage] = useState<string | null>(null);
@@ -15,10 +15,10 @@ export function DetailDrawer({ g, dark, onClose }: { g: GrievanceType; dark: boo
     return () => cancelAnimationFrame(timer);
   }, []);
 
-  const textSecondary = dark ? "text-gray-400" : "text-gray-500";
-  const textPrimary = dark ? "text-white" : "text-gray-900";
-  const bgSurface = dark ? "bg-[#111827]" : "bg-white";
-  const borderColor = dark ? "border-white/10" : "border-gray-100";
+  const textSecondary = "text-gray-500";
+  const textPrimary = "text-gray-900";
+  const bgSurface = "bg-white";
+  const borderColor = "border-gray-100";
 
   return (
     <>
@@ -43,25 +43,25 @@ export function DetailDrawer({ g, dark, onClose }: { g: GrievanceType; dark: boo
               </div>
               <button 
                 onClick={onClose} 
-                className={`w-8 h-8 flex items-center justify-center rounded-lg transition-colors ${dark ? 'hover:bg-white/10 text-gray-400' : 'hover:bg-gray-100 text-gray-500'}`}
+                className={`w-8 h-8 flex items-center justify-center rounded-lg transition-colors hover:bg-gray-100 text-gray-500`}
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
             <div className="flex flex-wrap gap-2 mt-4">
-              <Pill status={g.status as keyof typeof STATUS_MAP} dark={dark} />
+              <Pill status={g.status as keyof typeof STATUS_MAP} />
               <div 
-                className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-black/5 dark:bg-white/5 border border-transparent"
-                style={{ color: PRIORITY_MAP[g.priority as keyof typeof PRIORITY_MAP]?.[dark ? "dark" : "light"] }}
+                className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-black/5 border border-transparent"
+                style={{ color: PRIORITY_MAP[g.priority as keyof typeof PRIORITY_MAP]?.light }}
               >
-                <PriorityDot priority={g.priority as keyof typeof PRIORITY_MAP} dark={dark} />
+                <PriorityDot priority={g.priority as keyof typeof PRIORITY_MAP} />
                 <span className="text-[11px] font-mono font-bold uppercase">{g.priority}</span>
               </div>
             </div>
           </div>
 
           {/* Tabs */}
-          <div className={`flex border-b ${borderColor} flex-shrink-0 bg-black/5 dark:bg-white/5`}>
+          <div className={`flex border-b ${borderColor} flex-shrink-0 bg-black/5`}>
             {[
               { id: "overview", label: "Overview", icon: Info },
               { id: "timeline", label: "Timeline", icon: Clock },
@@ -74,8 +74,8 @@ export function DetailDrawer({ g, dark, onClose }: { g: GrievanceType; dark: boo
                 className={`
                   flex-1 py-3 flex items-center justify-center gap-2 text-[10px] font-bold font-mono uppercase tracking-wider transition-all border-b-2
                   ${tab === t.id 
-                    ? `border-indigo-500 text-indigo-500` 
-                    : `border-transparent ${textSecondary} hover:text-indigo-400`}
+                    ? `border-gray-900 text-gray-900` 
+                    : `border-transparent ${textSecondary} hover:text-gray-700`}
                 `}
               >
                 <t.icon className="w-3.5 h-3.5" />
@@ -89,9 +89,9 @@ export function DetailDrawer({ g, dark, onClose }: { g: GrievanceType; dark: boo
             {tab === "overview" && (
               <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
                 <div className="flex flex-col md:flex-row items-center gap-6">
-                  <SLARing reportedAt={g.reportedAt} slaHours={g.slaHours} dark={dark} size={80} />
+                  <SLARing reportedAt={g.reportedAt} slaHours={g.slaHours} size={80} />
                   <div className="flex-1 w-full">
-                    <SLABar reportedAt={g.reportedAt} slaHours={g.slaHours} dark={dark} />
+                    <SLABar reportedAt={g.reportedAt} slaHours={g.slaHours} />
                   </div>
                 </div>
 
@@ -102,7 +102,7 @@ export function DetailDrawer({ g, dark, onClose }: { g: GrievanceType; dark: boo
                     { label: "Zone", value: g.zone, icon: Layout },
                     { label: "Category", value: g.category, icon: Activity }
                   ].map((item) => (
-                    <div key={item.label} className={`p-4 rounded-xl border ${borderColor} ${dark ? 'bg-white/5' : 'bg-gray-50'}`}>
+                    <div key={item.label} className={`p-4 rounded-xl border ${borderColor} bg-gray-50`}>
                       <div className={`text-[9px] font-mono font-bold tracking-widest uppercase mb-1 flex items-center gap-1.5 ${textSecondary}`}>
                         <item.icon className="w-3 h-3" />
                         {item.label}
@@ -112,9 +112,9 @@ export function DetailDrawer({ g, dark, onClose }: { g: GrievanceType; dark: boo
                   ))}
                 </div>
 
-                <div className={`p-4 rounded-xl border ${borderColor} ${dark ? 'bg-white/5' : 'bg-gray-50'}`}>
+                <div className={`p-4 rounded-xl border ${borderColor} bg-gray-50`}>
                   <div className={`text-[9px] font-mono font-bold tracking-widest uppercase mb-2 ${textSecondary}`}>Description</div>
-                  <p className={`text-sm leading-relaxed ${dark ? 'text-gray-300' : 'text-gray-600'}`}>{g.description}</p>
+                  <p className={`text-sm leading-relaxed text-gray-600`}>{g.description}</p>
                 </div>
 
                 <div>
@@ -129,7 +129,7 @@ export function DetailDrawer({ g, dark, onClose }: { g: GrievanceType; dark: boo
                       
                       return (
                         <div key={label} className="group flex flex-col gap-2">
-                          <div className={`aspect-video rounded-xl border ${borderColor} relative overflow-hidden flex flex-col items-center justify-center gap-2 ${dark ? 'bg-white/5' : 'bg-gray-50'}`}>
+                          <div className={`aspect-video rounded-xl border ${borderColor} relative overflow-hidden flex flex-col items-center justify-center gap-2 bg-gray-50`}>
                             {hasImage && isBefore ? (
                               <>
                                 <img 
@@ -164,8 +164,8 @@ export function DetailDrawer({ g, dark, onClose }: { g: GrievanceType; dark: boo
                 </div>
 
                 {g.assignee && (
-                  <div className={`p-4 rounded-xl border ${borderColor} flex items-center gap-4 ${dark ? 'bg-white/5' : 'bg-gray-50'}`}>
-                    <div className="w-10 h-10 rounded-full bg-indigo-500/10 flex items-center justify-center text-sm font-bold text-indigo-400 border border-indigo-500/20">
+                  <div className={`p-4 rounded-xl border ${borderColor} flex items-center gap-4 bg-gray-50`}>
+                    <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-sm font-bold text-gray-900 border border-gray-200">
                       {g.assignee.split(" ").map((n: string) => n[0]).join("")}
                     </div>
                     <div>
@@ -179,8 +179,8 @@ export function DetailDrawer({ g, dark, onClose }: { g: GrievanceType; dark: boo
 
             {tab === "ai audit" && (
               <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
-                <div className="p-5 rounded-2xl bg-indigo-500/5 border border-indigo-500/10">
-                  <div className="text-[10px] font-mono font-bold tracking-widest text-indigo-400 uppercase mb-4 flex items-center gap-2">
+                <div className="p-5 rounded-2xl bg-gray-50 border border-gray-100">
+                  <div className="text-[10px] font-mono font-bold tracking-widest text-gray-900 uppercase mb-4 flex items-center gap-2">
                     <ShieldCheck className="w-4 h-4" /> Bedrock AI Analysis
                   </div>
                   <div className="space-y-4">
@@ -190,7 +190,7 @@ export function DetailDrawer({ g, dark, onClose }: { g: GrievanceType; dark: boo
                       { label: "Detected Anomalies", value: "None" },
                       { label: "Spatial Comparison", value: "98% Match" }
                     ].map((item) => (
-                      <div key={item.label} className="flex justify-between items-center border-b border-indigo-500/10 pb-2 last:border-0 last:pb-0">
+                      <div key={item.label} className="flex justify-between items-center border-b border-gray-100 pb-2 last:border-0 last:pb-0">
                         <span className={`text-xs ${textSecondary}`}>{item.label}</span>
                         <span className={`text-xs font-bold font-mono ${textPrimary}`}>{item.value}</span>
                       </div>
@@ -198,7 +198,7 @@ export function DetailDrawer({ g, dark, onClose }: { g: GrievanceType; dark: boo
                   </div>
                 </div>
 
-                <div className={`p-5 rounded-2xl border ${borderColor} ${dark ? 'bg-white/5' : 'bg-gray-50'}`}>
+                <div className={`p-5 rounded-2xl border ${borderColor} bg-gray-50`}>
                   <div className={`text-[10px] font-mono font-bold tracking-widest uppercase mb-4 ${textSecondary}`}>Audit Logic</div>
                   <div className="space-y-3">
                     {[
@@ -208,7 +208,7 @@ export function DetailDrawer({ g, dark, onClose }: { g: GrievanceType; dark: boo
                       "Citizen cross-check mandatory for final closure"
                     ].map((text, i) => (
                       <div key={i} className="flex gap-3 items-start group">
-                        <div className="w-1.5 h-1.5 rounded-full bg-indigo-500 mt-1.5 flex-shrink-0 group-hover:scale-125 transition-transform" />
+                        <div className="w-1.5 h-1.5 rounded-full bg-gray-900 mt-1.5 flex-shrink-0 group-hover:scale-125 transition-transform" />
                         <span className={`text-xs leading-relaxed ${textSecondary}`}>{text}</span>
                       </div>
                     ))}
@@ -216,8 +216,8 @@ export function DetailDrawer({ g, dark, onClose }: { g: GrievanceType; dark: boo
                 </div>
 
                 {g.score != null && (
-                  <div className={`p-4 rounded-2xl border ${borderColor} flex items-center gap-5 ${dark ? 'bg-white/5' : 'bg-gray-100'}`}>
-                    <ScoreRing score={g.score} dark={dark} size={60} />
+                  <div className={`p-4 rounded-2xl border ${borderColor} flex items-center gap-5 bg-gray-100`}>
+                    <ScoreRing score={g.score} size={60} />
                     <div>
                       <div className={`text-[10px] font-mono font-bold tracking-widest uppercase ${textSecondary}`}>Resolution Quality</div>
                       <div className={`text-lg font-bold mt-1 ${g.score >= 80 ? 'text-green-500' : 'text-amber-500'}`}>
@@ -254,24 +254,24 @@ export function DetailDrawer({ g, dark, onClose }: { g: GrievanceType; dark: boo
                     return (
                       <div key={i} className="flex gap-6 relative group">
                         {i < steps.length - 1 && (
-                          <div className={`absolute left-[11px] top-6 bottom-0 w-[2px] ${isCompleted ? 'bg-indigo-500' : 'bg-gray-700/30'}`} />
+                          <div className={`absolute left-[11px] top-6 bottom-0 w-[2px] ${isCompleted ? 'bg-gray-900' : 'bg-gray-700/30'}`} />
                         )}
                         <div className="relative flex-shrink-0 mt-1">
                           <div className={`
                             w-6 h-6 rounded-full flex items-center justify-center border-2 transition-all duration-500
-                            ${isCompleted ? 'bg-indigo-500 border-indigo-500 scale-100 shadow-[0_0_10px_rgba(99,102,241,0.5)]' : 
-                              isActive ? 'bg-indigo-500/20 border-indigo-500 scale-110 animate-pulse' : 
+                            ${isCompleted ? 'bg-gray-900 border-gray-900 scale-100 shadow-[0_0_10px_rgba(17,24,39,0.2)]' : 
+                              isActive ? 'bg-gray-900/20 border-gray-900 scale-110 animate-pulse' : 
                               'bg-transparent border-gray-700 scale-90'}
                           `}>
                             {isCompleted && <Check className="w-3.5 h-3.5 text-white" />}
-                            {isActive && <div className="w-2 h-2 rounded-full bg-indigo-500" />}
+                            {isActive && <div className="w-2 h-2 rounded-full bg-gray-900" />}
                           </div>
                         </div>
                         <div className="pb-8">
-                          <div className={`text-[10px] font-mono font-bold uppercase mb-1 ${isActive ? 'text-indigo-500' : textSecondary}`}>
+                          <div className={`text-[10px] font-mono font-bold uppercase mb-1 ${isActive ? 'text-gray-900' : textSecondary}`}>
                             {step.time}
                           </div>
-                          <div className={`text-sm font-bold ${isActive ? 'text-indigo-400' : textPrimary}`}>
+                          <div className={`text-sm font-bold ${isActive ? 'text-gray-800' : textPrimary}`}>
                             {step.label}
                           </div>
                           <div className={`text-xs mt-1 ${textSecondary}`}>
@@ -288,7 +288,7 @@ export function DetailDrawer({ g, dark, onClose }: { g: GrievanceType; dark: boo
             {tab === "actions" && (
               <div className="grid grid-cols-1 gap-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
                 {[
-                  { label: "Upload Repair Proof", icon: Camera, desc: "Sumbit Before/After evidence", color: "indigo" },
+                  { label: "Upload Repair Proof", icon: Camera, desc: "Sumbit Before/After evidence" },
                   { label: "Assign Department", icon: User, desc: "Change ticket ownership", color: "blue" },
                   { label: "Escalate Issue", icon: ShieldCheck, desc: "Notify senior officials", color: "red" },
                   { label: "Update Location", icon: MapPin, desc: "Refine geographic data", color: "amber" }
@@ -297,11 +297,11 @@ export function DetailDrawer({ g, dark, onClose }: { g: GrievanceType; dark: boo
                     key={action.label}
                     className={`
                       w-full p-4 rounded-2xl border text-left transition-all duration-200 group flex items-center gap-4
-                      ${borderColor} ${dark ? 'hover:bg-white/5' : 'hover:bg-gray-50'}
+                      ${borderColor} hover:bg-gray-50
                     `}
                   >
-                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center transition-colors ${dark ? 'bg-white/5 group-hover:bg-white/10' : 'bg-gray-100 group-hover:bg-gray-200'}`}>
-                      <action.icon className="w-6 h-6 text-indigo-500" />
+                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center transition-colors bg-gray-100 group-hover:bg-gray-200`}>
+                      <action.icon className="w-6 h-6 text-gray-900" />
                     </div>
                     <div className="flex-1">
                       <div className={`text-sm font-bold ${textPrimary}`}>{action.label}</div>

@@ -44,7 +44,7 @@ export function GrievancesView({
           <tbody>
             {issues.map((issue) => (
               <tr 
-                key={issue.id}
+                key={issue.rawId}
                 onClick={() => onSelect(issue)}
                 className="group border-b border-gray-50 hover:bg-gray-50 transition-colors cursor-pointer select-none"
               >
