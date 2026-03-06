@@ -21,6 +21,8 @@ export interface CivicIssue {
   aiConfidence: number;
   imageUrl?: string;
   fixedImageUrl?: string;
+  evidenceKeys?: string[];
+  evidenceUrls?: string[];
   assignee?: string;
   verifiedAt?: number;
   

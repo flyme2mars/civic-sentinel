@@ -12,11 +12,48 @@ import {
   CheckCircle,
   Eye,
   ArrowRight,
-  Zap
+  Zap,
+  Loader2
 } from 'lucide-react';
 import { StatusIcon, PriorityIcon } from './Atoms';
-import { formatDate } from '@/lib/utils';
+import { formatDate, cn } from '@/lib/utils';
 import { ImageModal } from '../ui/ImageModal';
+
+function ImageWithLoader({ src, alt, className, onClick }: { src: string, alt: string, className?: string, onClick?: () => void }) {
+  const [isLoading, setIsLoading] = useState(true);
+
+  return (
+    <div className={cn("relative overflow-hidden group", className)}>
+      {isLoading && (
+        <div className="absolute inset-0 flex items-center justify-center bg-gray-50 z-10">
+          <Loader2 className="w-5 h-5 text-gray-300 animate-spin" />
+        </div>
+      )}
+      <img 
+        src={src} 
+        alt={alt} 
+        onLoad={() => setIsLoading(false)}
+        className={cn(
+          "w-full h-full object-cover transition-all duration-500",
+          isLoading ? "opacity-0" : "opacity-100 grayscale group-hover:grayscale-0"
+        )}
+      />
+      {!isLoading && (
+        <div className="absolute inset-0 bg-gray-900/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+          <button 
+            onClick={(e) => {
+              e.stopPropagation();
+              onClick?.();
+            }}
+            className="bg-white p-2 rounded-lg text-gray-900 shadow-xl transform translate-y-2 group-hover:translate-y-0 transition-transform hover:bg-gray-50"
+          >
+            <Eye className="w-4 h-4" />
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
 
 export function DetailDrawer({ 
   issue, 
@@ -234,27 +271,32 @@ export function DetailDrawer({
 
         {/* Media Section */}
         <div className="p-6 space-y-8">
-          {/* Original Image */}
+          {/* Original Images Grid */}
           <div>
             <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4 flex items-center gap-2">
               <ImageIcon className="w-3 h-3" />
-              Initial Report Evidence
+              Initial Report Evidence ({issue.evidenceUrls?.length || (issue.imageUrl ? 1 : 0)})
             </h3>
-            <div className="aspect-video bg-gray-50 rounded-xl border border-gray-200 overflow-hidden group relative">
-              <img 
-                src={issue.imageUrl || '/placeholder-issue.jpg'} 
-                alt="Reported Issue" 
-                className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500"
-              />
-              <div className="absolute inset-0 bg-gray-900/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                <button 
+            
+            <div className="grid grid-cols-2 gap-3">
+              {issue.evidenceUrls && issue.evidenceUrls.length > 0 ? (
+                issue.evidenceUrls.map((url, index) => (
+                  <ImageWithLoader 
+                    key={index}
+                    src={url} 
+                    alt={`Evidence ${index + 1}`} 
+                    className="aspect-square bg-gray-50 rounded-xl border border-gray-200"
+                    onClick={() => openModal(url, `Evidence ${index + 1}`)}
+                  />
+                ))
+              ) : (
+                <ImageWithLoader 
+                  src={issue.imageUrl || '/placeholder-issue.jpg'} 
+                  alt="Reported Issue" 
+                  className="col-span-2 aspect-video bg-gray-50 rounded-xl border border-gray-200"
                   onClick={() => openModal(issue.imageUrl || '/placeholder-issue.jpg', "Initial Report Evidence")}
-                  className="bg-white px-4 py-2 rounded-lg text-xs font-bold text-gray-900 flex items-center gap-2 shadow-xl transform translate-y-2 group-hover:translate-y-0 transition-transform hover:bg-gray-50"
-                >
-                  <Eye className="w-4 h-4" />
-                  View Original Image
-                </button>
-              </div>
+                />
+              )}
             </div>
           </div>
 
@@ -267,22 +309,12 @@ export function DetailDrawer({
             
             {issue.status === 'resolved' || issue.status === 'verified' ? (
               <div className="space-y-4">
-                <div className="aspect-video bg-gray-50 rounded-xl border border-gray-200 overflow-hidden group relative">
-                  <img 
-                    src={issue.fixedImageUrl || '/placeholder-issue.jpg'} 
-                    alt="Resolved Issue" 
-                    className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500"
-                  />
-                  <div className="absolute inset-0 bg-gray-900/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                    <button 
-                      onClick={() => openModal(issue.fixedImageUrl || '/placeholder-issue.jpg', "Resolution Evidence")}
-                      className="bg-white px-4 py-2 rounded-lg text-xs font-bold text-gray-900 flex items-center gap-2 shadow-xl transform translate-y-2 group-hover:translate-y-0 transition-transform hover:bg-gray-50"
-                    >
-                      <Eye className="w-4 h-4" />
-                      View Resolved Image
-                    </button>
-                  </div>
-                </div>
+                <ImageWithLoader 
+                  src={issue.fixedImageUrl || '/placeholder-issue.jpg'} 
+                  alt="Resolved Issue" 
+                  className="aspect-video bg-gray-50 rounded-xl border border-gray-200"
+                  onClick={() => openModal(issue.fixedImageUrl || '/placeholder-issue.jpg', "Resolution Evidence")}
+                />
                 
                 {issue.status === 'resolved' && !verificationResult && (
                   <button
