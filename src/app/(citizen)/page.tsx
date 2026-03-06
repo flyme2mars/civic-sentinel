@@ -168,17 +168,17 @@ export default function CitizenPage() {
             {authStage === 'phone' ? (
               <div className="space-y-4">
                 <div className="space-y-3">
-                  <Input 
-                    type="text" 
-                    placeholder="Full Name" 
-                    value={citizenName} 
+                  <Input
+                    type="text"
+                    placeholder="Full Name"
+                    value={citizenName}
                     onChange={(e) => setCitizenName(e.target.value)}
                     className="h-12 md:h-14 text-center text-base md:text-lg font-bold tracking-tight bg-white border-slate-100 rounded-xl md:rounded-2xl shadow-sm focus-visible:ring-slate-900 transition-all"
                   />
-                  <Input 
-                    type="tel" 
-                    placeholder="Mobile Number" 
-                    value={phoneNumber} 
+                  <Input
+                    type="tel"
+                    placeholder="Mobile Number"
+                    value={phoneNumber}
                     onChange={(e) => setPhoneNumber(e.target.value)}
                     className="h-12 md:h-14 text-center text-base md:text-lg font-bold tracking-tight bg-white border-slate-100 rounded-xl md:rounded-2xl shadow-sm focus-visible:ring-slate-900 transition-all"
                   />
@@ -186,13 +186,13 @@ export default function CitizenPage() {
                 <Button onClick={handleStart} disabled={authLoading || !phoneNumber || !citizenName} className="w-full h-12 md:h-14 bg-slate-900 text-white rounded-xl md:rounded-2xl font-black text-[10px] md:text-xs uppercase tracking-[0.2em] hover:bg-slate-800 transition-all shadow-lg shadow-slate-200">
                   {authLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Request Access"}
                 </Button>
-                
+
                 <div className="pt-8 flex flex-col items-center gap-4">
                   <div className="w-full h-px bg-slate-200 flex items-center justify-center">
                     <span className="bg-white px-4 text-[9px] font-black text-slate-400 uppercase tracking-[0.3em]">Evaluation Mode</span>
                   </div>
-                  <button 
-                    onClick={handleDemoAccess} 
+                  <button
+                    onClick={handleDemoAccess}
                     disabled={authLoading}
                     className="group flex items-center gap-3 px-8 py-4 rounded-2xl bg-slate-100 border-2 border-slate-200 hover:bg-slate-900 hover:border-slate-900 transition-all duration-300 w-full justify-center shadow-sm"
                   >
@@ -205,11 +205,11 @@ export default function CitizenPage() {
             ) : (
               <div className="space-y-6">
                 <div className="space-y-2 text-center">
-                  <Input 
-                    type="text" 
+                  <Input
+                    type="text"
                     maxLength={6}
-                    placeholder="000000" 
-                    value={otp} 
+                    placeholder="000000"
+                    value={otp}
                     onChange={(e) => setOtp(e.target.value)}
                     className="h-16 md:h-20 text-center text-3xl md:text-4xl font-black tracking-[0.4em] bg-white border-slate-100 rounded-xl md:rounded-2xl shadow-sm focus-visible:ring-slate-900"
                   />
@@ -252,13 +252,13 @@ export default function CitizenPage() {
           </div>
         </header>
 
-        <GrievanceForm 
+        <GrievanceForm
           session={session}
           onAuthSuccess={(s) => setSession(s)}
           onSuccess={() => {
             setIsSuccess(true);
             if (session) fetchMyGrievances(session.citizenId);
-          }} 
+          }}
         />
 
         {/* Status Preview / Doomsday Clock Panel */}
@@ -295,8 +295,8 @@ export default function CitizenPage() {
                 const showRtiButton = isAlreadyExpired || expiredIds.has(g.id);
 
                 return (
-                  <div 
-                    key={g.id} 
+                  <div
+                    key={g.id}
                     onClick={() => router.push(`/grievance/${g.id}`)}
                     className="group bg-white p-4 md:p-6 rounded-2xl md:rounded-[2rem] border border-slate-100 shadow-sm hover:shadow-2xl hover:shadow-slate-200/60 transition-all duration-500 space-y-4 md:space-y-6 relative overflow-hidden cursor-pointer active:scale-[0.98]"
                   >
@@ -313,17 +313,12 @@ export default function CitizenPage() {
                         </div>
                         <h4 className="text-sm md:text-base font-black text-slate-900 tracking-tight leading-tight group-hover:text-slate-600 transition-colors">{g.title}</h4>
                       </div>
-                      
+
                       <div className="flex flex-col items-end gap-2 md:gap-3 shrink-0 self-end sm:self-auto">
-                        <DoomsdayClock 
-                          deadline={g.deadline} 
+                        <DoomsdayClock
+                          deadline={g.deadline}
                           onExpire={() => setExpiredIds(prev => new Set(prev).add(g.id))}
                         />
-                        {showRtiButton && session && (
-                          <div className="animate-in fade-in slide-in-from-top-2 duration-500" onClick={(e) => e.stopPropagation()}>
-                            <RtiButton grievanceId={g.id} citizenId={session.citizenId} />
-                          </div>
-                        )}
                       </div>
                     </div>
 

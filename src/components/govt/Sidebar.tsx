@@ -3,7 +3,6 @@
 import React from 'react';
 import { 
   Inbox, 
-  Layers, 
   CheckCircle2, 
   BarChart3, 
   ChevronDown,
@@ -13,7 +12,6 @@ import {
 
 const NAV_ITEMS = [
   { id: 'inbox', label: 'Inbox', icon: Inbox },
-  { id: 'active', label: 'Active Issues', icon: Layers },
   { id: 'resolved', label: 'Resolved', icon: CheckCircle2 },
   { id: 'analytics', label: 'Analytics', icon: BarChart3 },
 ];
