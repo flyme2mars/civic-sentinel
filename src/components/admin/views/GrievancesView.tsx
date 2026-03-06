@@ -17,15 +17,21 @@ export function GrievancesView({
       {/* TOOLBAR */}
       <div style={{ background: surface, border: `1px solid ${border}`, borderRadius: 14, padding: "14px 18px", marginBottom: 18, display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
         <div style={{ display: "flex", gap: 6, flex: 1, flexWrap: "wrap" }}>
-          {["all", "pending", "in-progress", "critical", "escalated", "resolved"].map(s => (
-            <button key={s} onClick={() => setFilterStatus(s)} style={{
-              background: filterStatus === s ? "#111827" : "transparent",
-              border: `1px solid ${filterStatus === s ? "#111827" : border}`,
-              color: filterStatus === s ? "#fff" : textSecondary,
+          {[
+            { id: "all", label: "All Active" },
+            { id: "new", label: "New / Triage" },
+            { id: "assigned", label: "In Progress" },
+            { id: "review", label: "Awaiting Review" },
+            { id: "closed", label: "Closed" }
+          ].map(s => (
+            <button key={s.id} onClick={() => setFilterStatus(s.id)} style={{
+              background: filterStatus === s.id ? "#111827" : "transparent",
+              border: `1px solid ${filterStatus === s.id ? "#111827" : border}`,
+              color: filterStatus === s.id ? "#fff" : textSecondary,
               borderRadius: 8, padding: "6px 12px", cursor: "pointer", fontSize: 11, fontWeight: 600,
               letterSpacing: "0.04em", transition: "all 0.15s",
               textTransform: "capitalize"
-            }}>{s === "all" ? "All" : s}</button>
+            }}>{s.label}</button>
           ))}
         </div>
 

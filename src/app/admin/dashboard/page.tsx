@@ -79,6 +79,7 @@ export default function GovernmentDashboard() {
               rtiGenerated: false,
               hasAfter: !!dbItem.afterImageKey,
               assignee: dbItem.targetDepartment || "Unassigned",
+              assignedTo: dbItem.assignedTo,
               imageUrl: dbItem.imageUrl,
             };
           });
@@ -103,7 +104,20 @@ export default function GovernmentDashboard() {
     return grievances.filter(g => {
       const q = search.toLowerCase();
       const matchSearch = !q || g.title.toLowerCase().includes(q) || g.id.toLowerCase().includes(q) || g.citizen.toLowerCase().includes(q) || g.address.toLowerCase().includes(q);
-      const matchStatus = filterStatus === "all" || g.status === filterStatus;
+      
+      let matchStatus = true;
+      if (filterStatus === "all") {
+        matchStatus = g.status !== "closed"; // Don't show closed by default
+      } else if (filterStatus === "new") {
+        matchStatus = g.status === "pending" || g.status === "critical";
+      } else if (filterStatus === "assigned") {
+        matchStatus = g.status === "assigned" || g.status === "in-progress";
+      } else if (filterStatus === "review") {
+        matchStatus = g.status === "verified";
+      } else {
+        matchStatus = g.status === filterStatus;
+      }
+      
       return matchSearch && matchStatus;
     }).sort((a, b) => {
       if (sortBy === "urgency") {

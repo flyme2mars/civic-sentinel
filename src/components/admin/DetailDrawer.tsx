@@ -3,12 +3,61 @@
 import React, { useState, useEffect } from 'react';
 import { Pill, PriorityDot, SLARing, SLABar, ScoreRing } from './Atoms';
 import { GrievanceType, PRIORITY_MAP, STATUS_MAP } from '@/lib/mock-data';
-import { X, ZoomIn, Camera, Check, User, Phone, MapPin, Info, Layout, Clock, Activity, ShieldCheck, Zap } from 'lucide-react';
+import { X, ZoomIn, Camera, Check, User, Phone, MapPin, Info, Layout, Clock, Activity, ShieldCheck, Zap, Building2, Send } from 'lucide-react';
 import { ImageModal } from '../ui/ImageModal';
+import { DEPARTMENTS } from '@/lib/departments';
 
 export function DetailDrawer({ g, onClose }: { g: GrievanceType; onClose: () => void }) {
   const [tab, setTab] = useState("overview");
   const [visible, setVisible] = useState(false);
+  const [isAssigning, setIsAssigning] = useState(false);
+  const [selectedBranch, setSelectedBranch] = useState("");
+  
+  // Pre-select branch based on targetDepartment from AI
+  useEffect(() => {
+    if (g.assignee) {
+      const dept = DEPARTMENTS.find(d => d.department === g.assignee || d.name === g.assignee);
+      if (dept) setSelectedBranch(dept.id);
+    }
+  }, [g.assignee]);
+
+  const handleUpdate = async (status: string, assignedBranchId?: string) => {
+    setIsAssigning(true);
+    try {
+      // Check which token key is used in this environment
+      const token = localStorage.getItem('govt_token') || localStorage.getItem('admin_token');
+      
+      const res = await fetch('/api/grievance/assign', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-govt-token': token || ''
+        },
+        body: JSON.stringify({
+          id: (g as any).rawId || g.id,
+          status,
+          assignedTo: assignedBranchId
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        alert(`Action Successful: Status changed to ${status.toUpperCase()}`);
+        onClose();
+        // Trigger a custom event to tell the dashboard to refetch
+        window.dispatchEvent(new CustomEvent('grievanceUpdated'));
+        // Fallback if event is not handled
+        setTimeout(() => window.location.reload(), 500);
+      } else {
+        alert(data.error || "Update failed. Check permissions.");
+      }
+    } catch (e) {
+      console.error(e);
+      alert("Network error: Could not connect to API.");
+    } finally {
+      setIsAssigning(false);
+    }
+  };
+
   const [modalState, setModalState] = useState<{ isOpen: boolean; src: string; alt: string }>({
     isOpen: false,
     src: '',
@@ -299,65 +348,95 @@ export function DetailDrawer({ g, onClose }: { g: GrievanceType; onClose: () => 
                 {/* Official Verification Section */}
                 <div className="p-5 rounded-2xl bg-gray-900 text-white shadow-xl">
                   <div className="text-[10px] font-mono font-bold tracking-widest uppercase mb-4 flex items-center gap-2 opacity-70">
-                    <ShieldCheck className="w-4 h-4" /> Official Verification
+                    <ShieldCheck className="w-4 h-4" /> Administrative Control
                   </div>
                   
                   {/* Initial Triage: Verify or Reject */}
                   {(g.status === "pending" || g.status === "critical") ? (
-                    <div className="space-y-3">
-                      <p className="text-xs text-gray-400 mb-4">Validate the legitimacy of this report before department assignment.</p>
+                    <div className="space-y-4">
+                      <p className="text-xs text-gray-400">Step 1: Validate the report and assign to a branch for resolution.</p>
+                      
+                      <div className="space-y-2">
+                        <label className="text-[9px] font-mono font-bold uppercase text-gray-500">Target Department Branch</label>
+                        <select 
+                          value={selectedBranch}
+                          onChange={(e) => setSelectedBranch(e.target.value)}
+                          className="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-sm font-bold text-white outline-none focus:ring-2 focus:ring-white/20 transition-all appearance-none"
+                        >
+                          <option value="" className="text-black">Choose a branch...</option>
+                          {DEPARTMENTS.map(dept => (
+                            <option key={dept.id} value={dept.id} className="text-black">
+                              {dept.name} ({dept.department})
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
                       <div className="flex gap-3">
-                        <button className="flex-1 bg-white text-gray-900 py-3 rounded-xl text-sm font-bold hover:bg-gray-100 transition-all flex items-center justify-center gap-2">
-                          <Check className="w-4 h-4" /> Verify as Original
+                        <button 
+                          disabled={!selectedBranch || isAssigning}
+                          onClick={() => handleUpdate("assigned", selectedBranch)}
+                          className="flex-1 bg-white text-gray-900 py-3 rounded-xl text-sm font-bold hover:bg-gray-100 disabled:opacity-50 transition-all flex items-center justify-center gap-2"
+                        >
+                          <Check className="w-4 h-4" /> {isAssigning ? "Processing..." : "Verify as Original"}
                         </button>
-                        <button className="flex-1 bg-red-500/20 text-red-400 border border-red-500/30 py-3 rounded-xl text-sm font-bold hover:bg-red-500/30 transition-all flex items-center justify-center gap-2">
+                        <button 
+                          disabled={isAssigning}
+                          onClick={() => handleUpdate("REJECTED")}
+                          className="flex-1 bg-red-500/20 text-red-400 border border-red-500/30 py-3 rounded-xl text-sm font-bold hover:bg-red-500/30 transition-all flex items-center justify-center gap-2"
+                        >
                           <X className="w-4 h-4" /> Reject as Fake
                         </button>
                       </div>
+                      {!selectedBranch && <p className="text-[9px] text-amber-400/80 font-mono text-center">※ Department branch selection required to verify issue</p>}
                     </div>
-                  ) : (g.status === "resolved") ? (
-                    /* Final Audit: Approve or Re-open */
-                    <div className="space-y-3">
-                      <p className="text-xs text-gray-400 mb-4">AI Vision Auditor has flagged this as fixed. Provide final human approval.</p>
-                      <div className="flex gap-3">
-                        <button className="flex-1 bg-green-500 text-white py-3 rounded-xl text-sm font-bold hover:bg-green-600 transition-all flex items-center justify-center gap-2">
-                          <Check className="w-4 h-4" /> Approve and Close
-                        </button>
-                        <button className="flex-1 bg-white/10 text-white border border-white/10 py-3 rounded-xl text-sm font-bold hover:bg-white/20 transition-all flex items-center justify-center gap-2">
-                          <Activity className="w-4 h-4" /> Re-open Ticket
-                        </button>
+                  ) : (g.status === "verified") ? (
+                    /* Final Audit: Close */
+                    <div className="space-y-4 text-center">
+                      <div className="w-12 h-12 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-2">
+                        <Check className="w-6 h-6 text-green-500" />
                       </div>
+                      <h4 className="text-lg font-bold">Verified by AI Vision</h4>
+                      <p className="text-xs text-gray-400 mb-2">The repair has been visually verified. Close this ticket to finalize.</p>
+                      <button 
+                        onClick={() => handleUpdate("closed")}
+                        className="w-full bg-green-500 text-white py-4 rounded-xl text-sm font-black uppercase tracking-widest hover:bg-green-600 transition-all flex items-center justify-center gap-2 shadow-lg shadow-green-500/20"
+                      >
+                        <ShieldCheck className="w-5 h-5" /> Close & Notify Citizen
+                      </button>
                     </div>
                   ) : (
-                    <div className="text-center py-4 bg-white/5 rounded-xl border border-white/5">
-                      <p className="text-xs text-gray-400 italic">Ticket is currently in {g.status} state. No pending verification actions.</p>
+                    <div className="text-center py-6 bg-white/5 rounded-xl border border-white/5">
+                      <p className="text-xs text-gray-400 italic">Ticket is currently in {g.status.toUpperCase()} state. No pending administrative actions.</p>
+                      {g.status === "assigned" && (
+                        <p className="text-[10px] text-gray-500 mt-2 font-mono">Awaiting department branch resolution...</p>
+                      )}
                     </div>
                   )}
                 </div>
 
                 <div className="grid grid-cols-1 gap-4">
-                  {[
-                    { label: "Assign Department", icon: User, desc: "Change ticket ownership", color: "blue" },
-                  ].map((action) => (
-                    <button 
-                      key={action.label}
-                      className={`
-                        w-full p-4 rounded-2xl border text-left transition-all duration-200 group flex items-center gap-4
-                        ${borderColor} hover:bg-gray-50
-                      `}
-                    >
-                      <div className={`w-12 h-12 rounded-xl flex items-center justify-center transition-colors bg-gray-100 group-hover:bg-gray-200`}>
-                        <action.icon className="w-6 h-6 text-gray-900" />
+                  <div className={`p-4 rounded-2xl border ${borderColor} bg-gray-50`}>
+                    <div className="flex items-center gap-3 mb-3">
+                       <Building2 className="w-5 h-5 text-gray-400" />
+                       <span className="text-xs font-bold uppercase tracking-wider">Assigned Branch Info</span>
+                    </div>
+                    {selectedBranch ? (
+                      <div>
+                        <div className="text-sm font-bold text-gray-900">{DEPARTMENTS.find(d => d.id === selectedBranch)?.name}</div>
+                        <div className="text-[10px] text-gray-500 mt-1">{DEPARTMENTS.find(d => d.id === selectedBranch)?.description}</div>
+                        <button 
+                          onClick={() => handleUpdate("assigned", selectedBranch)}
+                          disabled={isAssigning}
+                          className="mt-4 w-full py-2 bg-gray-900 text-white rounded-lg text-[10px] font-bold uppercase tracking-widest hover:bg-black transition-all flex items-center justify-center gap-2"
+                        >
+                          <Send className="w-3 h-3" /> Re-Dispatch / Update
+                        </button>
                       </div>
-                      <div className="flex-1">
-                        <div className={`text-sm font-bold ${textPrimary}`}>{action.label}</div>
-                        <div className={`text-xs mt-0.5 ${textSecondary}`}>{action.desc}</div>
-                      </div>
-                      <div className={`opacity-0 group-hover:opacity-100 transition-opacity pr-2 ${textSecondary}`}>
-                        →
-                      </div>
-                    </button>
-                  ))}
+                    ) : (
+                      <div className="text-xs text-gray-400 italic">No branch selected.</div>
+                    )}
+                  </div>
                 </div>
               </div>
             )}
