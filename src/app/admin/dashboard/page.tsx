@@ -185,23 +185,15 @@ export default function GovernmentDashboard() {
       `}</style>
 
       <Sidebar 
-        sidebarOpen={sidebarOpen} 
         activeNav={activeNav} setActiveNav={setActiveNav} 
         NAV={NAV} 
-        surface={surface} border={border} 
-        textSecondary={textSecondary} accent={accent} 
         grievancesCount={grievances.length}
       />
 
       {/* MAIN */}
       <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
         <TopNav 
-          surface={surface} border={border} 
-          textSecondary={textSecondary} textPrimary={textPrimary} 
-          sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} 
           search={search} setSearch={setSearch} 
-          notifOpen={notifOpen} setNotifOpen={setNotifOpen} 
-          NOTIFS={NOTIFS} 
         />
 
         {/* CONTENT */}
