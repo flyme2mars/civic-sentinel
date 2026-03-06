@@ -315,7 +315,7 @@ export function DetailDrawer({ g, onClose }: { g: GrievanceType; onClose: () => 
                         </button>
                       </div>
                     </div>
-                  ) : (g.status === "resolved" || g.status === "fixed") ? (
+                  ) : (g.status === "resolved") ? (
                     /* Final Audit: Approve or Re-open */
                     <div className="space-y-3">
                       <p className="text-xs text-gray-400 mb-4">AI Vision Auditor has flagged this as fixed. Provide final human approval.</p>
