@@ -11,7 +11,8 @@ import {
   Upload,
   CheckCircle,
   Eye,
-  ArrowRight
+  ArrowRight,
+  Zap
 } from 'lucide-react';
 import { StatusIcon, PriorityIcon } from './Atoms';
 import { formatDate } from '@/lib/utils';
@@ -140,6 +141,31 @@ export function DetailDrawer({
     }
   };
 
+  const handleVerifyOnly = async () => {
+    const targetId = issue.rawId || issue.id;
+    if (!targetId) return;
+
+    setIsVerifying(true);
+    setVerificationResult(null);
+    try {
+      const verifyRes = await fetch('/api/grievance/verify', {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'x-govt-token': authToken || ''
+        },
+        body: JSON.stringify({ id: targetId })
+      });
+      const verifyData = await verifyRes.json();
+      setVerificationResult(verifyData);
+    } catch (e: unknown) {
+      console.error("Verification failed", e);
+      setVerificationResult({ success: false, error: (e as Error).message || "Verification failed." });
+    } finally {
+      setIsVerifying(false);
+    }
+  };
+
   const handleDrag = (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -240,21 +266,38 @@ export function DetailDrawer({
             </h3>
             
             {issue.status === 'resolved' || issue.status === 'verified' ? (
-              <div className="aspect-video bg-gray-50 rounded-xl border border-gray-200 overflow-hidden group relative">
-                <img 
-                  src={issue.fixedImageUrl || '/placeholder-issue.jpg'} 
-                  alt="Resolved Issue" 
-                  className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500"
-                />
-                <div className="absolute inset-0 bg-gray-900/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                  <button 
-                    onClick={() => openModal(issue.fixedImageUrl || '/placeholder-issue.jpg', "Resolution Evidence")}
-                    className="bg-white px-4 py-2 rounded-lg text-xs font-bold text-gray-900 flex items-center gap-2 shadow-xl transform translate-y-2 group-hover:translate-y-0 transition-transform hover:bg-gray-50"
-                  >
-                    <Eye className="w-4 h-4" />
-                    View Resolved Image
-                  </button>
+              <div className="space-y-4">
+                <div className="aspect-video bg-gray-50 rounded-xl border border-gray-200 overflow-hidden group relative">
+                  <img 
+                    src={issue.fixedImageUrl || '/placeholder-issue.jpg'} 
+                    alt="Resolved Issue" 
+                    className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500"
+                  />
+                  <div className="absolute inset-0 bg-gray-900/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                    <button 
+                      onClick={() => openModal(issue.fixedImageUrl || '/placeholder-issue.jpg', "Resolution Evidence")}
+                      className="bg-white px-4 py-2 rounded-lg text-xs font-bold text-gray-900 flex items-center gap-2 shadow-xl transform translate-y-2 group-hover:translate-y-0 transition-transform hover:bg-gray-50"
+                    >
+                      <Eye className="w-4 h-4" />
+                      View Resolved Image
+                    </button>
+                  </div>
                 </div>
+                
+                {issue.status === 'resolved' && !verificationResult && (
+                  <button
+                    onClick={handleVerifyOnly}
+                    disabled={isVerifying}
+                    className="w-full py-2.5 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 text-xs font-bold text-gray-900 flex items-center justify-center gap-2 transition-all shadow-sm disabled:opacity-50"
+                  >
+                    {isVerifying ? (
+                      <div className="w-3 h-3 border-2 border-gray-200 border-t-gray-900 rounded-full animate-spin" />
+                    ) : (
+                      <Zap className="w-3 h-3 text-indigo-500" />
+                    )}
+                    {isVerifying ? 'Verifying...' : 'Re-run AI Auditor'}
+                  </button>
+                )}
               </div>
             ) : (
               <div 
