@@ -11,16 +11,20 @@ import {
   Upload,
   CheckCircle,
   Eye,
-  ArrowRight
+  ArrowRight,
+  Zap
 } from 'lucide-react';
 import { StatusIcon, PriorityIcon } from './Atoms';
 import { formatDate } from '@/lib/utils';
+import { ImageModal } from '../ui/ImageModal';
 
 export function DetailDrawer({ 
   issue, 
+  authToken,
   onClose 
 }: { 
   issue: CivicIssue, 
+  authToken: string | null,
   onClose: () => void 
 }) {
   const [dragActive, setDragActive] = useState(false);
@@ -33,6 +37,16 @@ export function DetailDrawer({
     reasoning?: string;
     error?: string;
   } | null>(null);
+
+  const [modalState, setModalState] = useState<{ isOpen: boolean; src: string; alt: string }>({
+    isOpen: false,
+    src: '',
+    alt: ''
+  });
+
+  const openModal = (src: string, alt: string) => {
+    setModalState({ isOpen: true, src, alt });
+  };
 
   const handleFileUpload = async (file: File) => {
     setIsUploading(true);
@@ -92,7 +106,10 @@ export function DetailDrawer({
       // 1. Submit the resolution to the database
       const res = await fetch('/api/grievance/resolve', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'x-govt-token': authToken || ''
+        },
         body: JSON.stringify({
           id: targetId,
           resolvedImageKey: resolutionKey,
@@ -105,7 +122,10 @@ export function DetailDrawer({
         // 2. Trigger the AI Vision Auditor
         const verifyRes = await fetch('/api/grievance/verify', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 
+            'Content-Type': 'application/json',
+            'x-govt-token': authToken || ''
+          },
           body: JSON.stringify({ id: targetId })
         });
         const verifyData = await verifyRes.json();
@@ -113,9 +133,34 @@ export function DetailDrawer({
       } else {
         setVerificationResult({ success: false, error: data.error || "Failed to mark as fixed." });
       }
-    } catch (e: any) {
+    } catch (e: unknown) {
       console.error("Resolution submit failed", e);
-      setVerificationResult({ success: false, error: e.message || "An unexpected error occurred." });
+      setVerificationResult({ success: false, error: (e as Error).message || "An unexpected error occurred." });
+    } finally {
+      setIsVerifying(false);
+    }
+  };
+
+  const handleVerifyOnly = async () => {
+    const targetId = issue.rawId || issue.id;
+    if (!targetId) return;
+
+    setIsVerifying(true);
+    setVerificationResult(null);
+    try {
+      const verifyRes = await fetch('/api/grievance/verify', {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'x-govt-token': authToken || ''
+        },
+        body: JSON.stringify({ id: targetId })
+      });
+      const verifyData = await verifyRes.json();
+      setVerificationResult(verifyData);
+    } catch (e: unknown) {
+      console.error("Verification failed", e);
+      setVerificationResult({ success: false, error: (e as Error).message || "Verification failed." });
     } finally {
       setIsVerifying(false);
     }
@@ -202,7 +247,10 @@ export function DetailDrawer({
                 className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500"
               />
               <div className="absolute inset-0 bg-gray-900/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                <button className="bg-white px-4 py-2 rounded-lg text-xs font-bold text-gray-900 flex items-center gap-2 shadow-xl transform translate-y-2 group-hover:translate-y-0 transition-transform">
+                <button 
+                  onClick={() => openModal(issue.imageUrl || '/placeholder-issue.jpg', "Initial Report Evidence")}
+                  className="bg-white px-4 py-2 rounded-lg text-xs font-bold text-gray-900 flex items-center gap-2 shadow-xl transform translate-y-2 group-hover:translate-y-0 transition-transform hover:bg-gray-50"
+                >
                   <Eye className="w-4 h-4" />
                   View Original Image
                 </button>
@@ -218,18 +266,38 @@ export function DetailDrawer({
             </h3>
             
             {issue.status === 'resolved' || issue.status === 'verified' ? (
-              <div className="aspect-video bg-gray-50 rounded-xl border border-gray-200 overflow-hidden group relative">
-                <img 
-                  src={issue.fixedImageUrl || '/placeholder-issue.jpg'} 
-                  alt="Resolved Issue" 
-                  className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500"
-                />
-                <div className="absolute inset-0 bg-gray-900/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                  <button className="bg-white px-4 py-2 rounded-lg text-xs font-bold text-gray-900 flex items-center gap-2 shadow-xl transform translate-y-2 group-hover:translate-y-0 transition-transform">
-                    <Eye className="w-4 h-4" />
-                    View Resolved Image
-                  </button>
+              <div className="space-y-4">
+                <div className="aspect-video bg-gray-50 rounded-xl border border-gray-200 overflow-hidden group relative">
+                  <img 
+                    src={issue.fixedImageUrl || '/placeholder-issue.jpg'} 
+                    alt="Resolved Issue" 
+                    className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500"
+                  />
+                  <div className="absolute inset-0 bg-gray-900/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                    <button 
+                      onClick={() => openModal(issue.fixedImageUrl || '/placeholder-issue.jpg', "Resolution Evidence")}
+                      className="bg-white px-4 py-2 rounded-lg text-xs font-bold text-gray-900 flex items-center gap-2 shadow-xl transform translate-y-2 group-hover:translate-y-0 transition-transform hover:bg-gray-50"
+                    >
+                      <Eye className="w-4 h-4" />
+                      View Resolved Image
+                    </button>
+                  </div>
                 </div>
+                
+                {issue.status === 'resolved' && !verificationResult && (
+                  <button
+                    onClick={handleVerifyOnly}
+                    disabled={isVerifying}
+                    className="w-full py-2.5 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 text-xs font-bold text-gray-900 flex items-center justify-center gap-2 transition-all shadow-sm disabled:opacity-50"
+                  >
+                    {isVerifying ? (
+                      <div className="w-3 h-3 border-2 border-gray-200 border-t-gray-900 rounded-full animate-spin" />
+                    ) : (
+                      <Zap className="w-3 h-3 text-indigo-500" />
+                    )}
+                    {isVerifying ? 'Verifying...' : 'Re-run AI Auditor'}
+                  </button>
+                )}
               </div>
             ) : (
               <div 
@@ -257,7 +325,7 @@ export function DetailDrawer({
                       <Upload className={`w-6 h-6 ${dragActive ? 'text-blue-500' : 'text-gray-400'}`} />
                     </div>
                     <div className="text-center">
-                      <p className="text-sm font-semibold text-gray-900">Drag & Drop "Fixed" Image</p>
+                      <p className="text-sm font-semibold text-gray-900">Drag &amp; Drop &quot;Fixed&quot; Image</p>
                       <p className="text-xs text-gray-500 mt-1">PNG, JPG up to 10MB</p>
                     </div>
                     <label className="mt-2 px-4 py-2 bg-white border border-gray-200 rounded-lg text-xs font-bold text-gray-900 hover:shadow-md transition-shadow cursor-pointer">
@@ -318,6 +386,13 @@ export function DetailDrawer({
           </button>
         </div>
       )}
+
+      <ImageModal 
+        isOpen={modalState.isOpen}
+        onClose={() => setModalState(prev => ({ ...prev, isOpen: false }))}
+        imageSrc={modalState.src}
+        altText={modalState.alt}
+      />
     </div>
   );
 }

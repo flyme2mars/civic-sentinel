@@ -4,16 +4,25 @@ import React, { useState, useEffect } from 'react';
 import { Pill, PriorityDot, SLARing, SLABar, ScoreRing } from './Atoms';
 import { GrievanceType, PRIORITY_MAP, STATUS_MAP } from '@/lib/mock-data';
 import { X, ZoomIn, Camera, Check, User, Phone, MapPin, Info, Layout, Clock, Activity, ShieldCheck, Zap } from 'lucide-react';
+import { ImageModal } from '../ui/ImageModal';
 
 export function DetailDrawer({ g, dark, onClose }: { g: GrievanceType; dark: boolean; onClose: () => void }) {
   const [tab, setTab] = useState("overview");
   const [visible, setVisible] = useState(false);
-  const [zoomedImage, setZoomedImage] = useState<string | null>(null);
+  const [modalState, setModalState] = useState<{ isOpen: boolean; src: string; alt: string }>({
+    isOpen: false,
+    src: '',
+    alt: ''
+  });
   
   useEffect(() => { 
     const timer = requestAnimationFrame(() => setVisible(true));
     return () => cancelAnimationFrame(timer);
   }, []);
+
+  const openModal = (src: string, alt: string) => {
+    setModalState({ isOpen: true, src, alt });
+  };
 
   const textSecondary = dark ? "text-gray-400" : "text-gray-500";
   const textPrimary = dark ? "text-white" : "text-gray-900";
@@ -136,7 +145,7 @@ export function DetailDrawer({ g, dark, onClose }: { g: GrievanceType; dark: boo
                                   src={imgSrc} 
                                   alt={label} 
                                   className="w-full h-full object-cover cursor-zoom-in transition-transform duration-500 group-hover:scale-110" 
-                                  onClick={() => setZoomedImage(imgSrc)} 
+                                  onClick={() => openModal(imgSrc, `${label} Evidence`)} 
                                 />
                                 <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
                                   <ZoomIn className="w-6 h-6 text-white" />
@@ -318,22 +327,12 @@ export function DetailDrawer({ g, dark, onClose }: { g: GrievanceType; dark: boo
         </div>
       </div>
 
-      {/* Image Zoom Portal */}
-      {zoomedImage && (
-        <div 
-          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/95 backdrop-blur-xl animate-in fade-in duration-300"
-          onClick={() => setZoomedImage(null)}
-        >
-          <img 
-            src={zoomedImage} 
-            alt="Zoomed" 
-            className="max-w-[95%] max-h-[95%] object-contain rounded-lg shadow-2xl animate-in zoom-in-95 duration-500" 
-          />
-          <button className="absolute top-6 right-6 p-2 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors">
-            <X className="w-8 h-8" />
-          </button>
-        </div>
-      )}
+      <ImageModal 
+        isOpen={modalState.isOpen}
+        onClose={() => setModalState(prev => ({ ...prev, isOpen: false }))}
+        imageSrc={modalState.src}
+        altText={modalState.alt}
+      />
     </>
   );
 }
