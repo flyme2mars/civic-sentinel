@@ -64,11 +64,20 @@ Output ONLY the numbered list of questions. Do not include any introductory text
   return content.trim();
 }
 
-// 3. Stamp the single PDF
-export async function buildRTIPdfs(grievance: any, questionsText: string) {
+// 3. Stamp the single PDF using the exact fields from the UI editor
+export async function buildRTIPdfs(grievance: any, editedData: {
+  applicantName: string,
+  applicantAddress: string,
+  applicantPhoneNumber: string,
+  applicantEMailAddress: string,
+  departmentName: string,
+  departmentAddress: string,
+  submissionPlace: string,
+  submissionDate: string,
+  questions: string
+}) {
   const templatePath = path.join(process.cwd(), 'public', 'templates', 'RTI_Format.pdf');
   const existingPdfBytes = await fs.readFile(templatePath);
-  const today = new Date().toLocaleDateString('en-IN');
 
   const pdfDoc = await PDFDocument.load(existingPdfBytes);
   const form = pdfDoc.getForm();
@@ -77,7 +86,7 @@ export async function buildRTIPdfs(grievance: any, questionsText: string) {
     try {
       const field = form.getTextField(name);
       if (field) {
-        field.setText(val);
+        field.setText(val || ''); // Provide empty string fallback to avoid crashes
         if (fontSize) field.setFontSize(fontSize);
       }
     } catch (e) {
@@ -85,35 +94,26 @@ export async function buildRTIPdfs(grievance: any, questionsText: string) {
     }
   };
 
-  // Ensure we use the exact same fallbacks for the PDF
-  const targetDept = grievance.target_department || grievance.targetDepartment || grievance.category || 'Concerned Authority';
+  // Map the new fields directly from editedData!
+  fill('departmentName', editedData.departmentName, 12);
+  fill('departmentAddress', editedData.departmentAddress, 12);
+  fill('novaQuestions', editedData.questions, 12);
 
-  const locObj = grievance.location || {};
-  const fullAddress = [locObj.landmark, locObj.area, locObj.city, locObj.district, locObj.state]
-    .filter(Boolean)
-    .join(', ');
+  fill('applicantName', editedData.applicantName, 12);
+  fill('applicantAddress', editedData.applicantAddress, 12);
+  fill('applicantPhoneNumber', editedData.applicantPhoneNumber, 12);
+  fill('applicantEMailAddress', editedData.applicantEMailAddress, 12);
 
-  fill('departmentName', targetDept, 13);
-  fill('novaQuestions', questionsText, 13);
-
-  fill('applicantName', grievance.citizen || 'Citizen', 13);
-  fill('departmentAddress', fullAddress || '', 13);
-
-  // applicantAddress field name in the template pdf
-  // applicantPhoneNumber field name in the template pdf
-  // applicantEMailAddress field name in the template pdf
-
-  // Make sure these fields exist in your new PDF template!
-  // fill('submissionDate', today, 11);
-  // fill('submissionPlace', locObj.city || locObj.district || 'Kerala', 11);
+  fill('submissionPlace', editedData.submissionPlace, 12);
+  fill('submissionDate', editedData.submissionDate, 12);
 
   form.flatten();
   const bytes = await pdfDoc.save();
 
-  const cleanDept = targetDept.replace(/[^a-z0-9]/gi, '_');
+  const cleanDept = (editedData.departmentName || 'Department').replace(/[^a-z0-9]/gi, '_');
 
-  return [{
+  return {
     name: `RTI_${grievance.id}_${cleanDept}.pdf`,
     bytes
-  }];
+  };
 }
