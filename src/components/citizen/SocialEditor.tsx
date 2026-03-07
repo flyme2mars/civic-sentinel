@@ -1,8 +1,9 @@
 "use client";
 import React, { useState } from 'react';
-import { Loader2, Share2, Edit3, Send, Download, AlertCircle } from 'lucide-react';
+import { Loader2, Share2, Edit3, Send, Download, AlertCircle, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
+import { cn } from '@/lib/utils';
 
 interface SocialEditorProps {
     grievance: any;
@@ -12,7 +13,7 @@ interface SocialEditorProps {
 export default function SocialEditor({ grievance, citizenId }: SocialEditorProps) {
     const [stage, setStage] = useState<'idle' | 'drafting' | 'editing'>('idle');
     const [postText, setPostText] = useState('');
-    const [imageUrl, setImageUrl] = useState('');
+    const [imageUrls, setImageUrls] = useState<string[]>([]);
 
     const handleDraft = async () => {
         setStage('drafting');
@@ -27,7 +28,7 @@ export default function SocialEditor({ grievance, citizenId }: SocialEditorProps
             const data = await response.json();
 
             setPostText(data.postText);
-            setImageUrl(data.imageUrl);
+            setImageUrls(data.imageUrls || [data.imageUrl].filter(Boolean));
             setStage('editing');
         } catch (error) {
             console.error(error);
@@ -37,28 +38,61 @@ export default function SocialEditor({ grievance, citizenId }: SocialEditorProps
     };
 
     const handlePostToX = () => {
-        // ONLY pass the text to X. No URLs.
         const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(postText)}`;
         window.open(twitterUrl, '_blank');
-        setStage('idle'); // Reset after posting
+        setStage('idle');
     };
 
-    const handleDownloadImage = async () => {
-        if (!imageUrl) return;
+    const handleDownloadImage = async (url: string, index: number) => {
         try {
-            const response = await fetch(imageUrl);
+            const response = await fetch(url);
             const blob = await response.blob();
-            const url = window.URL.createObjectURL(blob);
+            const downloadUrl = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
-            a.href = url;
-            a.download = `Evidence_${grievance.id.split('-')[0]}.jpg`;
+            a.href = downloadUrl;
+            a.download = `Evidence_${grievance.id.split('-')[0]}_${index + 1}.jpg`;
             document.body.appendChild(a);
             a.click();
             a.remove();
-            window.URL.revokeObjectURL(url);
+            window.URL.revokeObjectURL(downloadUrl);
         } catch (error) {
             console.error("Failed to download image", error);
         }
+    };
+
+    const TwitterGrid = ({ urls }: { urls: string[] }) => {
+        const count = urls.length;
+        if (count === 0) return null;
+
+        return (
+            <div className={cn(
+                "grid gap-0.5 rounded-2xl overflow-hidden border border-slate-200 shadow-sm",
+                count === 1 ? "grid-cols-1" : "grid-cols-2",
+                count === 3 ? "grid-rows-2" : ""
+            )}>
+                {urls.slice(0, 4).map((url, i) => (
+                    <div 
+                        key={i} 
+                        className={cn(
+                            "relative group bg-slate-100",
+                            count === 3 && i === 0 ? "row-span-2" : "aspect-square md:aspect-auto"
+                        )}
+                    >
+                        <img src={url} alt="Evidence" className="w-full h-full object-cover" />
+                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-[2px]">
+                            <Button 
+                                onClick={(e) => { e.stopPropagation(); handleDownloadImage(url, i); }} 
+                                variant="secondary" 
+                                size="sm"
+                                className="h-8 text-[10px] font-bold gap-1.5"
+                            >
+                                <Download className="w-3 h-3" /> Save
+                            </Button>
+                        </div>
+                    </div>
+                ))}
+            </div>
+        );
     };
 
     if (stage === 'idle') {
@@ -91,16 +125,20 @@ export default function SocialEditor({ grievance, citizenId }: SocialEditorProps
 
             <div className="flex items-start gap-4 p-4 rounded-2xl border border-slate-100 bg-slate-50 shadow-inner">
                 {/* Mock Avatar */}
-                <div className="w-10 h-10 rounded-full bg-slate-200 flex items-center justify-center shrink-0">
-                    <span className="text-xs font-bold text-slate-500">YOU</span>
+                <div className="w-10 h-10 rounded-full bg-slate-200 flex items-center justify-center shrink-0 border border-slate-200 shadow-sm">
+                    <User className="w-5 h-5 text-slate-400" />
                 </div>
 
                 <div className="flex-1 space-y-4">
                     <div className="space-y-1">
+                        <div className="flex items-center gap-1.5 mb-1">
+                            <span className="text-sm font-black text-slate-900 tracking-tight">You</span>
+                            <span className="text-xs text-slate-400 font-medium tracking-tight">@citizen · now</span>
+                        </div>
                         <Textarea
                             value={postText}
                             onChange={(e) => setPostText(e.target.value)}
-                            className="min-h-[100px] text-sm md:text-base border-none bg-transparent p-0 resize-none focus-visible:ring-0 leading-relaxed"
+                            className="min-h-[120px] text-sm md:text-base border-none bg-transparent p-0 resize-none focus-visible:ring-0 leading-relaxed font-medium text-slate-800"
                             maxLength={280}
                             placeholder="What's happening?"
                         />
@@ -111,26 +149,15 @@ export default function SocialEditor({ grievance, citizenId }: SocialEditorProps
                         </div>
                     </div>
 
-                    {/* Twitter-style Image Preview */}
-                    {imageUrl && (
-                        <div className="relative rounded-2xl overflow-hidden border border-slate-200 shadow-sm group">
-                            <img src={imageUrl} alt="Evidence Preview" className="w-full h-48 md:h-64 object-cover" />
-
-                            {/* Overlay Download Button */}
-                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-sm">
-                                <Button onClick={handleDownloadImage} variant="secondary" className="gap-2 font-bold">
-                                    <Download className="w-4 h-4" /> Save Image to Attach
-                                </Button>
-                            </div>
-                        </div>
-                    )}
+                    {/* Twitter-style Grid */}
+                    <TwitterGrid urls={imageUrls} />
                 </div>
             </div>
 
-            <div className="flex items-start gap-3 p-3 bg-blue-50 text-blue-700 rounded-xl border border-blue-100">
+            <div className="flex items-start gap-3 p-3 bg-slate-100/50 text-slate-600 rounded-xl border border-slate-200">
                 <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
                 <p className="text-[10px] md:text-xs font-medium leading-relaxed">
-                    <strong>Note:</strong> X does not allow automatic image uploads from third-party apps. If you want the evidence included, <strong>save the image above</strong> and attach it manually after clicking the launch button.
+                    <strong>Note:</strong> X does not allow automatic image uploads. Please <strong>save the evidence images</strong> and attach them manually after clicking the launch button.
                 </p>
             </div>
 
