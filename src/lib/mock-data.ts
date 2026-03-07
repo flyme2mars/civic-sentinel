@@ -182,6 +182,9 @@ export const STATUS_MAP = {
   escalated:   { label: "Escalated",   light: { bg: "#FFF1F2", text: "#BE123C", border: "#FECDD3" }, dark: { bg: "#4C0519", text: "#F87171", border: "#9F1239" } },
   critical:    { label: "Critical",    light: { bg: "#FFF1F2", text: "#9F1239", border: "#FECDD3" }, dark: { bg: "#4C0519", text: "#FB7185", border: "#881337" } },
   verified:    { label: "Verified",    light: { bg: "#FAF5FF", text: "#7E22CE", border: "#E9D5FF" }, dark: { bg: "#3B0764", text: "#C084FC", border: "#6B21A8" } },
+  assigned:    { label: "Assigned",    light: { bg: "#F0F9FF", text: "#0369A1", border: "#BAE6FD" }, dark: { bg: "#0C4A6E", text: "#38BDF8", border: "#0EA5E9" } },
+  closed:      { label: "Closed",      light: { bg: "#F8FAFC", text: "#475569", border: "#E2E8F0" }, dark: { bg: "#0F172A", text: "#94A3B8", border: "#1E293B" } },
+  rejected:    { label: "Rejected",    light: { bg: "#FEF2F2", text: "#991B1B", border: "#FECACA" }, dark: { bg: "#450A0A", text: "#F87171", border: "#7F1D1D" } },
 };
 
 export const PRIORITY_MAP = {

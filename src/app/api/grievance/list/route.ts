@@ -12,6 +12,7 @@ export async function GET(request: Request) {
     // SECURITY: Basic Token-based Authorization for Hackathon
     const { searchParams } = new URL(request.url);
     const token = request.headers.get('x-govt-token') || searchParams.get('token');
+    const branch = searchParams.get('branch');
     
     const isEnvValid = process.env.GOVT_API_TOKEN === 'sentinel2026';
     const isTokenValid = token === 'sentinel2026';
@@ -20,15 +21,24 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Unauthorized Access Denied' }, { status: 401 });
     }
 
-    const data = await dynamoDb.send(new ScanCommand({ 
+    const scanParams: any = { 
       TableName: AWS_CONFIG.dynamodb.tableName,
       // 'status' and 'location' can be reserved; use ExpressionAttributeNames
-      ProjectionExpression: "id, createdAt, title, #st, severity, slaHours, #loc, imageKey, fixedImageKey, evidenceKeys, fixedImageKeys",
+      ProjectionExpression: "id, createdAt, title, #st, severity, slaHours, #loc, imageKey, fixedImageKey, evidenceKeys, fixedImageKeys, assignedTo, targetDepartment, citizenName, phoneNumber, score, aiVerificationResult, originalDescription, summary, history, successCriteria, officialDesignation",
       ExpressionAttributeNames: {
         "#st": "status",
         "#loc": "location"
       }
-    }));
+    };
+
+    if (branch) {
+      scanParams.FilterExpression = "assignedTo = :branch";
+      scanParams.ExpressionAttributeValues = {
+        ":branch": branch
+      };
+    }
+
+    const data = await dynamoDb.send(new ScanCommand(scanParams));
     
     const rawItems = (data.Items || []) as Record<string, any>[];
     

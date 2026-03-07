@@ -1,7 +1,30 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React from 'react';
 import { StatCard } from '../StatCard';
-import { STATS, CAT_ICONS } from '@/lib/mock-data';
+import { STATS } from '@/lib/mock-data';
+import { 
+  FileText, 
+  Clock, 
+  ShieldCheck, 
+  AlertTriangle,
+  Construction,
+  Waves,
+  Droplets,
+  Zap,
+  Trash2,
+  Building2,
+  Circle
+} from 'lucide-react';
+
+const CATEGORY_ICONS: Record<string, any> = {
+  roads: Construction,
+  sanitation: Waves,
+  water: Droplets,
+  electricity: Zap,
+  waste: Trash2,
+  infrastructure: Building2,
+  other: Circle
+};
 
 export function OverviewView({ setSelected, border, surface, textSecondary, grievances }: any) {
   return (
@@ -9,36 +32,87 @@ export function OverviewView({ setSelected, border, surface, textSecondary, grie
       <h2 style={{ fontSize: 24, fontWeight: 800, marginBottom: 20 }}>Overview Dashboard</h2>
       {/* STAT CARDS */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16, marginBottom: 24 }}>
-        <StatCard label="TOTAL GRIEVANCES" value={grievances?.length || 0} sub={`+${STATS.todayNew} today`} accent={"#6366F1"} icon="◈" delay={0} />
-        <StatCard label="PENDING" value={STATS.pending} sub={`${STATS.inProgress} in progress`} accent={"#D97706"} icon="⏳" delay={80} />
-        <StatCard label="SLA COMPLIANCE" value={`${STATS.slaCompliance}%`} sub={`${STATS.avgResolution}h avg resolution`} accent={"#16A34A"} icon="◎" delay={160} />
-        <StatCard label="ESCALATED / CRITICAL" value={STATS.escalated} sub={`${STATS.critical} critical active`} accent={"#DC2626"} icon="⚡" delay={240} />
+        <StatCard 
+          label="TOTAL GRIEVANCES" 
+          value={grievances?.length || 0} 
+          sub={`+${STATS.todayNew} today`} 
+          accent={"#0f172a"} 
+          icon={<FileText className="w-5 h-5 text-slate-900" />} 
+          delay={0} 
+        />
+        <StatCard 
+          label="PENDING" 
+          value={STATS.pending} 
+          sub={`${STATS.inProgress} in progress`} 
+          accent={"#0f172a"} 
+          icon={<Clock className="w-5 h-5 text-slate-900" />} 
+          delay={80} 
+        />
+        <StatCard 
+          label="SLA COMPLIANCE" 
+          value={`${STATS.slaCompliance}%`} 
+          sub={`${STATS.avgResolution}h avg resolution`} 
+          accent={"#0f172a"} 
+          icon={<ShieldCheck className="w-5 h-5 text-slate-900" />} 
+          delay={160} 
+        />
+        <StatCard 
+          label="ESCALATED / CRITICAL" 
+          value={STATS.escalated} 
+          sub={`${STATS.critical} critical active`} 
+          accent={"#ef4444"} 
+          icon={<AlertTriangle className="w-5 h-5 text-red-600" />} 
+          delay={240} 
+        />
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 16 }}>
-        <div style={{ background: surface, border: `1px solid ${border}`, borderRadius: 16, padding: 20 }}>
-          <h3 style={{ fontSize: 14, fontWeight: 700, marginBottom: 16 }}>Recent Critical Issues</h3>
-          {(grievances || []).filter((g: any) => g.priority === 'critical' || g.priority === 'high').slice(0, 3).map((g: any, i: number) => (
-            <div key={g.rawId} onClick={() => setSelected(g)} style={{ padding: "12px 0", borderBottom: i < 2 ? `1px solid ${border}` : 'none', cursor: "pointer", display: "flex", gap: 12 }}>
-              <span style={{ fontSize: 20 }}>{CAT_ICONS[g.category as keyof typeof CAT_ICONS]}</span>
-              <div>
-                <div style={{ fontSize: 13, fontWeight: 600 }}>{g.title}</div>
-                <div style={{ fontSize: 11, color: textSecondary, marginTop: 4 }}>{g.address} · {g.ward}</div>
-              </div>
-            </div>
-          ))}
-        </div>
-        <div style={{ background: surface, border: `1px solid ${border}`, borderRadius: 16, padding: 20 }}>
-          <h3 style={{ fontSize: 14, fontWeight: 700, marginBottom: 16 }}>System Health</h3>
-          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-            <div>
-              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, marginBottom: 4 }}><span>Vision Auditor Uptime</span><span style={{color: "#16A34A"}}>99.9%</span></div>
-              <div style={{ height: 4, background: "rgba(0,0,0,0.1)", borderRadius: 2 }}><div style={{ width: "99.9%", height: "100%", background: "#16A34A", borderRadius: 2 }}></div></div>
-            </div>
-            <div>
-              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, marginBottom: 4 }}><span>Bedrock Triage Latency</span><span style={{color: "#D97706"}}>1.2s</span></div>
-              <div style={{ height: 4, background: "rgba(0,0,0,0.1)", borderRadius: 2 }}><div style={{ width: "70%", height: "100%", background: "#D97706", borderRadius: 2 }}></div></div>
-            </div>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 16 }}>
+        <div style={{ background: surface, border: `1px solid ${border}`, borderRadius: 16, padding: 24 }}>
+          <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 20 }}>Recent Critical Issues</h3>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: 20 }}>
+            {(grievances || []).filter((g: any) => g.priority === 'critical' || g.priority === 'high').slice(0, 6).map((g: any, i: number) => {
+              const Icon = CATEGORY_ICONS[g.category as keyof typeof CATEGORY_ICONS] || CATEGORY_ICONS.other;
+              return (
+                <div key={g.rawId} onClick={() => setSelected(g)} style={{ 
+                  padding: "16px", 
+                  border: `1px solid ${border}`, 
+                  borderRadius: 12,
+                  cursor: "pointer", 
+                  display: "flex", 
+                  gap: 14,
+                  transition: "all 0.2s",
+                  background: "rgba(0,0,0,0.01)"
+                }}
+                onMouseEnter={e => e.currentTarget.style.background = "rgba(0,0,0,0.03)"}
+                onMouseLeave={e => e.currentTarget.style.background = "rgba(0,0,0,0.01)"}>
+                  <div className="w-10 h-10 rounded-lg bg-slate-50 flex items-center justify-center flex-shrink-0">
+                    <Icon className="w-5 h-5 text-slate-900" />
+                  </div>
+                  <div style={{ minWidth: 0, flex: 1 }}>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: "#111827", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{g.title}</div>
+                    <div style={{ fontSize: 11, color: textSecondary, marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{g.address} · {g.ward}</div>
+                    {g.description && (
+                      <p style={{ 
+                        fontSize: 11, 
+                        color: textSecondary, 
+                        marginTop: 8, 
+                        display: "-webkit-box", 
+                        WebkitLineClamp: 2, 
+                        WebkitBoxOrient: "vertical", 
+                        overflow: "hidden", 
+                        lineHeight: 1.5,
+                        opacity: 0.8
+                      }}>
+                        {g.description}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
           </div>
+          {(grievances || []).filter((g: any) => g.priority === 'critical' || g.priority === 'high').length === 0 && (
+            <div style={{ textAlign: "center", padding: 40, color: textSecondary }}>No critical issues found.</div>
+          )}
         </div>
       </div>
     </div>

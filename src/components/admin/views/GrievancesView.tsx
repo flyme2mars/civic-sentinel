@@ -3,6 +3,7 @@ import React from 'react';
 import { GrievanceCard } from '../GrievanceCard';
 import { Pill, PriorityDot, SLARing, SLABar, ScoreRing } from '../Atoms';
 import { STATUS_MAP, PRIORITY_MAP } from '@/lib/mock-data';
+import { LayoutGrid, List } from 'lucide-react';
 
 export function GrievancesView({ 
   surface, border, textSecondary, textPrimary, accent, 
@@ -17,15 +18,22 @@ export function GrievancesView({
       {/* TOOLBAR */}
       <div style={{ background: surface, border: `1px solid ${border}`, borderRadius: 14, padding: "14px 18px", marginBottom: 18, display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
         <div style={{ display: "flex", gap: 6, flex: 1, flexWrap: "wrap" }}>
-          {["all", "pending", "in-progress", "critical", "escalated", "resolved"].map(s => (
-            <button key={s} onClick={() => setFilterStatus(s)} style={{
-              background: filterStatus === s ? "#111827" : "transparent",
-              border: `1px solid ${filterStatus === s ? "#111827" : border}`,
-              color: filterStatus === s ? "#fff" : textSecondary,
+          {[
+            { id: "all", label: "Full History" },
+            { id: "new", label: "New / Triage" },
+            { id: "assigned", label: "In Progress" },
+            { id: "review", label: "Awaiting Review" },
+            { id: "rejected", label: "Rejected" },
+            { id: "closed", label: "Closed" }
+          ].map(s => (
+            <button key={s.id} onClick={() => setFilterStatus(s.id)} style={{
+              background: filterStatus === s.id ? "#111827" : "transparent",
+              border: `1px solid ${filterStatus === s.id ? "#111827" : border}`,
+              color: filterStatus === s.id ? "#fff" : textSecondary,
               borderRadius: 8, padding: "6px 12px", cursor: "pointer", fontSize: 11, fontWeight: 600,
               letterSpacing: "0.04em", transition: "all 0.15s",
               textTransform: "capitalize"
-            }}>{s === "all" ? "All" : s}</button>
+            }}>{s.label}</button>
           ))}
         </div>
 
@@ -36,13 +44,15 @@ export function GrievancesView({
         </select>
 
         <div style={{ display: "flex", gap: 4 }}>
-          {[["grid", "⊞"], ["list", "☰"]].map(([m, icon]) => (
+          {[["grid", LayoutGrid], ["list", List]].map(([m, Icon]: any) => (
             <button key={m} onClick={() => setViewMode(m)} style={{ 
               background: viewMode === m ? "#111827" : "transparent", 
               border: `1px solid ${viewMode === m ? "#111827" : border}`, 
               color: viewMode === m ? "#fff" : textSecondary, 
               borderRadius: 8, width: 34, height: 34, cursor: "pointer", fontSize: 16, display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.15s" 
-            }}>{icon}</button>
+            }}>
+              <Icon className="w-4 h-4" />
+            </button>
           ))}
         </div>
       </div>
@@ -62,35 +72,48 @@ export function GrievancesView({
       {/* LIST VIEW */}
       {viewMode === "list" && (
         <div style={{ background: surface, border: `1px solid ${border}`, borderRadius: 14, overflow: "hidden" }}>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 130px 120px 130px 110px 80px", gap: 16, padding: "10px 18px", borderBottom: `1px solid ${border}` }}>
-            {["ISSUE", "STATUS", "WARD", "SLA", "PRIORITY", "SCORE"].map(h => (
-              <div key={h} style={{ fontSize: 9, color: textSecondary, fontFamily: "'DM Mono', monospace", letterSpacing: "0.1em" }}>{h}</div>
+          <div style={{ 
+            display: "grid", 
+            gridTemplateColumns: "minmax(200px, 1fr) 140px 120px 140px 110px", 
+            gap: 16, 
+            padding: "12px 20px", 
+            borderBottom: `1px solid ${border}`,
+            background: "rgba(0,0,0,0.01)"
+          }}>
+            {["ISSUE", "STATUS", "WARD", "SLA STATUS", "PRIORITY"].map(h => (
+              <div key={h} style={{ fontSize: 10, fontWeight: 700, color: textSecondary, fontFamily: "'DM Mono', monospace", letterSpacing: "0.05em" }}>{h}</div>
             ))}
           </div>
           {filtered.map((g: any, i: number) => (
             <div key={g.rawId} onClick={() => setSelected(g)} style={{
-              display: "grid", gridTemplateColumns: "1fr 130px 120px 130px 110px 80px", gap: 16,
-              padding: "14px 18px", borderBottom: `1px solid ${border}`, cursor: "pointer",
-              transition: "background 0.15s", alignItems: "center",
+              display: "grid", 
+              gridTemplateColumns: "minmax(200px, 1fr) 140px 120px 140px 110px", 
+              gap: 16,
+              padding: "14px 20px", 
+              borderBottom: `1px solid ${border}`, 
+              cursor: "pointer",
+              transition: "background 0.15s", 
+              alignItems: "center",
               animation: `fadeSlideUp 0.3s ease ${i * 50}ms both`
             }}
               onMouseEnter={e => { e.currentTarget.style.background = "rgba(0,0,0,0.025)"; }}
               onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}>
-              <div>
+              <div style={{ minWidth: 0 }}>
                 <div style={{ fontSize: 10, color: textSecondary, fontFamily: "'DM Mono', monospace" }}>{g.id}</div>
                 <div style={{ fontSize: 13, fontWeight: 600, color: textPrimary, marginTop: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{g.title}</div>
               </div>
-              <Pill status={g.status as keyof typeof STATUS_MAP} />
-              <span style={{ fontSize: 12, color: textSecondary }}>{g.ward}</span>
-              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <SLARing reportedAt={g.reportedAt} slaHours={g.slaHours} size={44} />
+              <div style={{ display: "flex" }}>
+                <Pill status={g.status as keyof typeof STATUS_MAP} />
+              </div>
+              <span style={{ fontSize: 12, color: textSecondary, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{g.ward}</span>
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <SLARing reportedAt={g.reportedAt} slaHours={g.slaHours} size={40} />
                 <SLABar reportedAt={g.reportedAt} slaHours={g.slaHours} compact />
               </div>
-              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                 <PriorityDot priority={g.priority as keyof typeof PRIORITY_MAP} />
-                <span style={{ fontSize: 11, color: PRIORITY_MAP[g.priority as keyof typeof PRIORITY_MAP]?.light, fontFamily: "'DM Mono', monospace", textTransform: "capitalize" }}>{g.priority}</span>
+                <span style={{ fontSize: 11, color: PRIORITY_MAP[g.priority as keyof typeof PRIORITY_MAP]?.light, fontFamily: "'DM Mono', monospace", textTransform: "capitalize", fontWeight: 600 }}>{g.priority}</span>
               </div>
-              {g.score != null ? <ScoreRing score={g.score} size={36} /> : <span style={{ color: "#E5E7EB", fontSize: 12 }}>—</span>}
             </div>
           ))}
         </div>

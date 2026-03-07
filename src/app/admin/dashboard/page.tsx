@@ -12,6 +12,14 @@ import { ReportsView } from "@/components/admin/views/ReportsView";
 import { SettingsView } from "@/components/admin/views/SettingsView";
 import { DetailDrawer } from "@/components/admin/DetailDrawer";
 import { GrievanceType } from "@/lib/mock-data";
+import { DEPARTMENTS } from "@/lib/departments";
+import { 
+  LayoutDashboard, 
+  Inbox, 
+  Building2, 
+  Settings, 
+  Shield 
+} from "lucide-react";
 
 export default function GovernmentDashboard() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -27,6 +35,12 @@ export default function GovernmentDashboard() {
   // SECURITY: Basic Token-based Authorization for Hackathon
   const [authToken, setAuthToken] = useState<string | null>(null);
   const [isAuthorized, setIsAuthorized] = useState(false);
+
+  const handleLogout = () => {
+    localStorage.removeItem('govt_token');
+    setAuthToken(null);
+    setIsAuthorized(false);
+  };
 
   useEffect(() => {
     const savedToken = localStorage.getItem('govt_token');
@@ -57,19 +71,23 @@ export default function GovernmentDashboard() {
           localStorage.setItem('govt_token', authToken!);
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const formatted = data.grievances.map((dbItem: any) => {
+            const assignedBranch = DEPARTMENTS.find(d => d.id === dbItem.assignedTo);
+            
             return {
               id: "CIV-" + dbItem.id.split('-')[0].toUpperCase(),
               rawId: dbItem.id,
               title: dbItem.title || "Untitled Grievance",
-              description: dbItem.summary || dbItem.originalDescription || "",
+              description: dbItem.originalDescription || dbItem.summary || "No description provided.",
+              summary: dbItem.summary || "",
+              originalDescription: dbItem.originalDescription || "",
               category: (dbItem.category || 'other').toLowerCase(),
-              status: dbItem.status === 'OPEN' ? 'pending' : dbItem.status === 'IN_PROGRESS' ? 'in-progress' : dbItem.status === 'FIXED' ? 'resolved' : dbItem.status === 'VERIFIED' ? 'verified' : 'pending',
+              status: dbItem.status?.toLowerCase() === 'open' ? 'pending' : (dbItem.status || 'pending').toLowerCase(),
               priority: (dbItem.severity || 'medium').toLowerCase(),
               ward: dbItem.location?.area || 'Unknown Ward',
               zone: dbItem.location?.city || 'Unknown Zone',
               address: dbItem.location?.landmark || dbItem.location?.area || 'Unknown Address',
-              citizen: 'Anonymous Citizen',
-              phone: 'Not provided',
+              citizen: dbItem.citizenName || 'Anonymous Citizen',
+              phone: dbItem.phoneNumber || 'Not provided',
               reportedAt: new Date(dbItem.createdAt).getTime(),
               slaHours: dbItem.slaHours || 48,
               elapsedHours: (Date.now() - new Date(dbItem.createdAt).getTime()) / 3600000,
@@ -78,8 +96,17 @@ export default function GovernmentDashboard() {
               urgency: 0.85,
               rtiGenerated: false,
               hasAfter: !!dbItem.afterImageKey,
-              assignee: dbItem.targetDepartment || "Unassigned",
+              assignee: assignedBranch ? assignedBranch.name : "Unassigned",
+              recommendedDepartment: dbItem.targetDepartment || "Unclassified",
+              assignedTo: dbItem.assignedTo,
               imageUrl: dbItem.imageUrl,
+              evidenceUrls: dbItem.evidenceUrls || [],
+              fixedImageUrl: dbItem.fixedImageUrl,
+              fixedImageUrls: dbItem.fixedImageUrls || [],
+              history: dbItem.history || [],
+              successCriteria: dbItem.successCriteria || [],
+              officialDesignation: dbItem.officialDesignation || "Official",
+              score: dbItem.score || (dbItem.aiVerificationResult?.confidence ? Math.round(dbItem.aiVerificationResult.confidence * 100) : null),
             };
           });
           setGrievances(formatted);
@@ -88,7 +115,13 @@ export default function GovernmentDashboard() {
         console.error("Failed to fetch grievances", e);
       }
     }
+    
     fetchGrievances();
+
+    // Listen for custom update events from drawers
+    const handleRefresh = () => fetchGrievances();
+    window.addEventListener('grievanceUpdated', handleRefresh);
+    return () => window.removeEventListener('grievanceUpdated', handleRefresh);
   }, [authToken]);
 
   const bg = "#f8fafc"; // light slate-50
@@ -102,8 +135,29 @@ export default function GovernmentDashboard() {
   const filtered = React.useMemo(() => {
     return grievances.filter(g => {
       const q = search.toLowerCase();
-      const matchSearch = !q || g.title.toLowerCase().includes(q) || g.id.toLowerCase().includes(q) || g.citizen.toLowerCase().includes(q) || g.address.toLowerCase().includes(q);
-      const matchStatus = filterStatus === "all" || g.status === filterStatus;
+      const matchSearch = !q || 
+        g.title.toLowerCase().includes(q) || 
+        g.id.toLowerCase().includes(q) || 
+        g.citizen.toLowerCase().includes(q) || 
+        g.phone.toLowerCase().includes(q) || 
+        g.address.toLowerCase().includes(q) ||
+        g.category.toLowerCase().includes(q);
+      
+      let matchStatus = true;
+      if (filterStatus === "all") {
+        matchStatus = true; // Show EVERYTHING including closed and rejected
+      } else if (filterStatus === "new") {
+        matchStatus = g.status === "pending" || g.status === "critical";
+      } else if (filterStatus === "assigned") {
+        matchStatus = g.status === "assigned" || g.status === "in-progress";
+      } else if (filterStatus === "review") {
+        matchStatus = g.status === "verified";
+      } else if (filterStatus === "rejected") {
+        matchStatus = g.status === "rejected";
+      } else {
+        matchStatus = g.status === filterStatus;
+      }
+      
       return matchSearch && matchStatus;
     }).sort((a, b) => {
       if (sortBy === "urgency") {
@@ -120,10 +174,10 @@ export default function GovernmentDashboard() {
   }, [grievances, search, filterStatus, sortBy]);
 
   const NAV = [
-    { id: "overview", icon: "⬡", label: "Overview" },
-    { id: "grievances", icon: "◈", label: "Grievances" },
-    { id: "departments", icon: "◫", label: "Departments" },
-    { id: "settings", icon: "⊕", label: "Settings" },
+    { id: "overview", icon: LayoutDashboard, label: "Overview" },
+    { id: "grievances", icon: Inbox, label: "Grievances" },
+    { id: "departments", icon: Building2, label: "Departments" },
+    { id: "settings", icon: Settings, label: "Settings" },
   ];
 
   const NOTIFS = [
@@ -136,7 +190,9 @@ export default function GovernmentDashboard() {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-6 font-sans">
         <div className="bg-white p-10 rounded-2xl border border-gray-100 w-full max-w-md shadow-xl shadow-gray-200/50 text-center">
-          <div className="w-16 h-16 bg-gray-900 rounded-2xl flex items-center justify-center mx-auto mb-6 text-2xl">🛡️</div>
+          <div className="w-16 h-16 bg-gray-900 rounded-2xl flex items-center justify-center mx-auto mb-6">
+            <Shield className="w-8 h-8 text-white" />
+          </div>
           <h1 className="text-2xl font-bold text-gray-900 mb-2">Admin Access</h1>
           <p className="text-gray-500 text-sm mb-8">Secure portal for system administrators.</p>
           
@@ -188,12 +244,14 @@ export default function GovernmentDashboard() {
         activeNav={activeNav} setActiveNav={setActiveNav} 
         NAV={NAV} 
         grievancesCount={grievances.length}
+        onLogout={handleLogout}
       />
 
       {/* MAIN */}
       <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
         <TopNav 
           search={search} setSearch={setSearch} 
+          onLogout={handleLogout}
         />
 
         {/* CONTENT */}
@@ -209,7 +267,7 @@ export default function GovernmentDashboard() {
               filtered={filtered} setSelected={setSelected}
             />
           )}
-          {activeNav === "departments" && <DepartmentsView surface={surface} border={border} textSecondary={textSecondary} textPrimary={textPrimary} />}
+          {activeNav === "departments" && <DepartmentsView surface={surface} border={border} textSecondary={textSecondary} textPrimary={textPrimary} grievances={grievances} />}
           {activeNav === "settings" && <SettingsView surface={surface} border={border} textSecondary={textSecondary} textPrimary={textPrimary} accent={accent} />}
         </main>
       </div>
