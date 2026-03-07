@@ -7,7 +7,7 @@ CivicSentinel is a next-generation civic accountability platform built for the *
 ## Glossary
 
 - **CivicSentinel**: The unified digital platform for citizen grievance redressal and departmental oversight.
-- **AI_Agent**: The autonomous drafting system powered by **Amazon Bedrock (Claude 3.5 Sonnet)**.
+- **AI_Agent**: The autonomous drafting system powered by **Amazon Bedrock (Claude 4.5 Sonnet and Amazon Nova Pro)**.
 - **Vision_Auditor**: The AI component that compares "Before" and "After" photos to verify the quality of municipal work.
 - **SLA**: Service Level Agreement – the 48-hour legal response deadline for government officials.
 - **Doomsday_Clock**: The visual countdown timer on the citizen dashboard that tracks the 48-hour SLA.

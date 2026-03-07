@@ -2,7 +2,7 @@
 
 ## Overview
 
-CivicSentinel is a full-stack, serverless platform that leverages AWS Generative AI to automate the entire lifecycle of a civic grievance. The architecture is designed to handle high-concurrency reporting while providing deep analytical insights for municipal administrators. By utilizing **Amazon Bedrock (Claude 3.5 Sonnet)**, the system shifts from a simple database of complaints to an active "Sentinel" that drafts legal reports, verifies physical repairs via computer vision, and manages complex state transitions between citizens, admins, and department officials.
+CivicSentinel is a full-stack, serverless platform that leverages AWS Generative AI to automate the entire lifecycle of a civic grievance. The architecture is designed to handle high-concurrency reporting while providing deep analytical insights for municipal administrators. By utilizing **Amazon Bedrock (Claude 4.5 Sonnet and Amazon Nova Pro)**, the system shifts from a simple database of complaints to an active "Sentinel" that drafts legal reports, verifies physical repairs via computer vision, and manages complex state transitions between citizens, admins, and department officials.
 
 ## Architecture
 
@@ -47,7 +47,7 @@ graph TB
 - **Compute**: AWS Lambda (via Next.js API routes).
 - **Database**: Amazon DynamoDB (Single-table design for optimized grievance tracking).
 - **Storage**: Amazon S3 (Encrypted storage for citizen evidence).
-- **AI Agent**: Amazon Bedrock (Claude 3.5 Sonnet) for natural language processing and vision.
+- **AI Agent**: Amazon Bedrock (Claude 4.5 Sonnet and Amazon Nova Pro) for natural language processing and vision.
 - **Geospatial**: Amazon Location Service for precise municipal ward mapping.
 
 ## Components and Interfaces
