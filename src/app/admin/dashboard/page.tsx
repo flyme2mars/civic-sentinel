@@ -74,7 +74,7 @@ export default function GovernmentDashboard() {
               id: "CIV-" + dbItem.id.split('-')[0].toUpperCase(),
               rawId: dbItem.id,
               title: dbItem.title || "Untitled Grievance",
-              description: dbItem.summary || dbItem.originalDescription || "",
+              description: dbItem.originalDescription || dbItem.summary || "No description provided.",
               category: (dbItem.category || 'other').toLowerCase(),
               status: (dbItem.status || 'pending').toLowerCase(),
               priority: (dbItem.severity || 'medium').toLowerCase(),

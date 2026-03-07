@@ -87,9 +87,24 @@ export function OverviewView({ setSelected, border, surface, textSecondary, grie
                   <div className="w-10 h-10 rounded-lg bg-slate-50 flex items-center justify-center flex-shrink-0">
                     <Icon className="w-5 h-5 text-slate-900" />
                   </div>
-                  <div style={{ minWidth: 0 }}>
+                  <div style={{ minWidth: 0, flex: 1 }}>
                     <div style={{ fontSize: 14, fontWeight: 700, color: "#111827", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{g.title}</div>
-                    <div style={{ fontSize: 12, color: textSecondary, marginTop: 4, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{g.address} · {g.ward}</div>
+                    <div style={{ fontSize: 11, color: textSecondary, marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{g.address} · {g.ward}</div>
+                    {g.description && (
+                      <p style={{ 
+                        fontSize: 11, 
+                        color: textSecondary, 
+                        marginTop: 8, 
+                        display: "-webkit-box", 
+                        WebkitLineClamp: 2, 
+                        WebkitBoxOrient: "vertical", 
+                        overflow: "hidden", 
+                        lineHeight: 1.5,
+                        opacity: 0.8
+                      }}>
+                        {g.description}
+                      </p>
+                    )}
                   </div>
                 </div>
               );
