@@ -2,15 +2,34 @@
 import React from 'react';
 import { ScoreRing } from '../Atoms';
 import { DEPARTMENTS } from '@/lib/departments';
-import { Building2 } from 'lucide-react';
+import { Building2, Info } from 'lucide-react';
 
 export function DepartmentsView({ surface, border, textSecondary, textPrimary, grievances }: any) {
   return (
     <div style={{ animation: "fadeSlideUp 0.3s ease" }}>
-      <h2 style={{ fontSize: 24, fontWeight: 800, marginBottom: 20 }}>Departmental Branches</h2>
+      <h2 style={{ fontSize: 24, fontWeight: 800, marginBottom: 12 }}>Departmental Branches</h2>
+      
+      {/* Demo Notice */}
+      <div style={{ 
+        background: "rgba(15, 23, 42, 0.02)", 
+        border: `1px solid ${border}`, 
+        borderRadius: 12, 
+        padding: "12px 16px",
+        display: "flex",
+        alignItems: "center",
+        gap: 10,
+        maxWidth: "600px",
+        marginBottom: 24
+      }}>
+        <Info className="w-4 h-4 text-slate-400 shrink-0" />
+        <p style={{ fontSize: 11, color: textSecondary, fontWeight: 500, lineHeight: 1.4 }}>
+          <span style={{ fontWeight: 700, color: textPrimary }}>Note:</span> For the purpose of this prototype evaluation, we have only included a select number of municipal branches representing the core departments.
+        </p>
+      </div>
+
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))", gap: 16 }}>
         {DEPARTMENTS.map((dept, i) => {
-          // Calculate real metrics for this department
+          // ... (rest of the map logic remains the same)
           const deptGrievances = (grievances || []).filter((g: any) => g.assignedTo === dept.id);
           const active = deptGrievances.filter((g: any) => ['pending', 'in-progress', 'assigned', 'critical'].includes(g.status)).length;
           const resolved = deptGrievances.filter((g: any) => ['resolved', 'verified', 'closed'].includes(g.status)).length;

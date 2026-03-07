@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Camera, Mic, Square, Trash2, Send, Loader2, MapPin, X, AlertCircle, FileText, CheckCircle2, ShieldCheck, Check, Search, Upload, Play, Film } from 'lucide-react';
+import { Camera, Mic, Square, Trash2, Send, Loader2, MapPin, X, AlertCircle, FileText, CheckCircle2, ShieldCheck, Check, Search, Upload, Play, Film, ArrowRight } from 'lucide-react';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -224,6 +224,55 @@ export default function GrievanceForm({ onSuccess, onAuthSuccess, session: exter
     finally { setAuthLoading(false); }
   };
 
+  const handleScenarioSelect = async (scenario: any) => {
+    // 1. Set Description
+    setDescription(scenario.description);
+    
+    // 2. Set GPS
+    setLocation(scenario.location);
+    
+    // 3. Fetch the local image and convert to real File for S3 upload
+    try {
+      const response = await fetch(scenario.imagePath);
+      const blob = await response.blob();
+      const file = new File([blob], scenario.fileName, { type: 'image/jpeg' });
+      
+      const demoEvidence: Evidence = {
+        file: file,
+        type: 'image',
+        preview: URL.createObjectURL(blob)
+      };
+      setEvidence([demoEvidence]);
+    } catch (e) {
+      console.error("Failed to load demo image", e);
+      alert("Error loading demo evidence.");
+    }
+    
+    // Scroll to form
+    window.scrollTo({ top: 400, behavior: 'smooth' });
+  };
+
+  const DEMO_SCENARIOS = [
+    {
+      id: 'waste',
+      title: 'Campus Waste',
+      subtitle: 'CUSAT Campus',
+      imagePath: '/demo/waste_cusat.jpg',
+      fileName: 'waste_cusat.jpg',
+      description: 'A large amount of plastic and organic waste has been disposed of on the side of the internal road within the CUSAT campus. This is creating a foul smell and attracting stray animals.',
+      location: { lat: 10.0459227, lng: 76.3260968 }
+    },
+    {
+      id: 'pothole',
+      title: 'Road Pothole',
+      subtitle: 'Sanathana Hostel',
+      imagePath: '/demo/pothole_cusat.jpg',
+      fileName: 'pothole_cusat.jpg',
+      description: 'There is a deep pothole on the University road right in front of the Sanathana Hostel. It is dangerous for students on two-wheelers, especially at night as the street lighting is dim in this area.',
+      location: { lat: 10.0459227, lng: 76.3260968 }
+    }
+  ];
+
   const handleVerifyOtp = async () => {
     if (!otp) return;
     setAuthLoading(true);
@@ -332,6 +381,39 @@ export default function GrievanceForm({ onSuccess, onAuthSuccess, session: exter
 
   return (
     <div className="max-w-4xl mx-auto space-y-12 pb-20">
+      {/* DEMO SCENARIOS - Quick Start */}
+      <section className="space-y-4">
+        <div className="flex items-center gap-2 px-2">
+          <div className="w-1.5 h-1.5 rounded-full bg-slate-900 animate-pulse" />
+          <h2 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Demo Scenarios</h2>
+        </div>
+        <p className="px-2 text-[11px] text-slate-500 font-medium leading-relaxed max-w-lg">
+          While the system supports any real-time issue, you can use these pre-set scenarios if you are not currently on-site to experience the full flow.
+        </p>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {DEMO_SCENARIOS.map((s) => (
+            <button
+              key={s.id}
+              onClick={() => handleScenarioSelect(s)}
+              className="flex items-center justify-between p-3.5 bg-white border border-slate-100 rounded-2xl shadow-sm hover:shadow-md hover:border-slate-900 transition-all text-left group"
+            >
+              <div className="flex items-center gap-4">
+                <div className="w-14 h-14 rounded-xl overflow-hidden shrink-0 border border-slate-50 bg-slate-50">
+                  <img src={s.imagePath} alt={s.title} className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500" />
+                </div>
+                <div className="min-w-0">
+                  <h3 className="text-xs font-black text-slate-900 uppercase tracking-tight truncate">{s.title}</h3>
+                  <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">{s.subtitle}</p>
+                </div>
+              </div>
+              <div className="px-4 py-1.5 rounded-full bg-slate-50 text-[9px] font-black uppercase tracking-widest text-slate-400 group-hover:bg-slate-900 group-hover:text-white transition-all">
+                Select
+              </div>
+            </button>
+          ))}
+        </div>
+      </section>
+
       {/* CAMERA PORTAL */}
       {isCameraOpen && (
         <div className="fixed inset-0 bg-slate-900/90 backdrop-blur-xl z-[120] flex flex-col items-center justify-center p-6">
@@ -462,7 +544,7 @@ export default function GrievanceForm({ onSuccess, onAuthSuccess, session: exter
             <div className="space-y-3">
               <Label className="text-[10px] uppercase font-black tracking-widest text-slate-400">Complaint Title</Label>
               <Textarea 
-                value={agentDraft.title} 
+                value={agentDraft?.title || ""} 
                 onChange={(e) => setAgentDraft({...agentDraft, title: e.target.value})} 
                 className="min-h-[60px] text-xl font-black tracking-tight border-none bg-slate-50 p-4 rounded-xl focus-visible:ring-1 focus-visible:ring-slate-900 resize-none" 
               />
@@ -472,13 +554,13 @@ export default function GrievanceForm({ onSuccess, onAuthSuccess, session: exter
               <div className="space-y-6">
                 <div className="space-y-3">
                   <Label className="text-[10px] uppercase font-black tracking-widest text-slate-400">Target Department</Label>
-                  <Input value={agentDraft.target_department} onChange={(e) => setAgentDraft({...agentDraft, target_department: e.target.value})} className="h-12 text-sm font-bold border-none bg-slate-50 px-4 rounded-xl" />
+                  <Input value={agentDraft?.target_department || ""} onChange={(e) => setAgentDraft({...agentDraft, target_department: e.target.value})} className="h-12 text-sm font-bold border-none bg-slate-50 px-4 rounded-xl" />
                 </div>
                 <div className="space-y-3">
                   <Label className="text-[10px] uppercase font-black tracking-widest text-slate-400">Severity</Label>
                   <div className="grid grid-cols-4 gap-2">
                     {['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'].map((lvl) => (
-                      <button key={lvl} type="button" onClick={() => setAgentDraft({...agentDraft, severity: lvl})} className={cn("h-10 text-[10px] font-bold rounded-lg border transition-all", agentDraft.severity === lvl ? "bg-slate-900 text-white shadow-lg" : "bg-white text-slate-400 border-slate-100")}>{lvl}</button>
+                      <button key={lvl} type="button" onClick={() => setAgentDraft({...agentDraft, severity: lvl})} className={cn("h-10 text-[10px] font-bold rounded-lg border transition-all", agentDraft?.severity === lvl ? "bg-slate-900 text-white shadow-lg" : "bg-white text-slate-400 border-slate-100")}>{lvl}</button>
                     ))}
                   </div>
                 </div>
@@ -495,30 +577,30 @@ export default function GrievanceForm({ onSuccess, onAuthSuccess, session: exter
                 <div className="p-6 bg-slate-50 rounded-[2rem] border border-slate-100 space-y-4 shadow-sm">
                   <div className="space-y-1.5">
                     <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Nearby Landmark</span>
-                    <Input value={agentDraft.location.landmark} onChange={(e) => setAgentDraft({...agentDraft, location: {...agentDraft.location, landmark: e.target.value}})} className="h-10 text-sm font-bold border-none bg-white shadow-sm rounded-lg" />
+                    <Input value={agentDraft?.location?.landmark || ""} onChange={(e) => setAgentDraft({...agentDraft, location: {...(agentDraft?.location || {}), landmark: e.target.value}})} className="h-10 text-sm font-bold border-none bg-white shadow-sm rounded-lg" />
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-1.5">
                       <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Area / Ward</span>
-                      <Input value={agentDraft.location.area} onChange={(e) => setAgentDraft({...agentDraft, location: {...agentDraft.location, area: e.target.value}})} className="h-10 text-xs font-bold border-none bg-white shadow-sm rounded-lg" />
+                      <Input value={agentDraft?.location?.area || ""} onChange={(e) => setAgentDraft({...agentDraft, location: {...(agentDraft?.location || {}), area: e.target.value}})} className="h-10 text-xs font-bold border-none bg-white shadow-sm rounded-lg" />
                     </div>
                     <div className="space-y-1.5">
                       <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Pincode</span>
-                      <Input value={agentDraft.location.pincode} onChange={(e) => setAgentDraft({...agentDraft, location: {...agentDraft.location, pincode: e.target.value}})} className="h-10 text-xs font-bold border-none bg-white shadow-sm rounded-lg" />
+                      <Input value={agentDraft?.location?.pincode || ""} onChange={(e) => setAgentDraft({...agentDraft, location: {...(agentDraft?.location || {}), pincode: e.target.value}})} className="h-10 text-xs font-bold border-none bg-white shadow-sm rounded-lg" />
                     </div>
                   </div>
                   <div className="space-y-1.5">
                     <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">City / Town</span>
-                    <Input value={agentDraft.location.city} onChange={(e) => setAgentDraft({...agentDraft, location: {...agentDraft.location, city: e.target.value}})} className="h-10 text-xs font-bold border-none bg-white shadow-sm rounded-lg" />
+                    <Input value={agentDraft?.location?.city || ""} onChange={(e) => setAgentDraft({...agentDraft, location: {...(agentDraft?.location || {}), city: e.target.value}})} className="h-10 text-xs font-bold border-none bg-white shadow-sm rounded-lg" />
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-1.5">
                       <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">District</span>
-                      <Input value={agentDraft.location.district} onChange={(e) => setAgentDraft({...agentDraft, location: {...agentDraft.location, district: e.target.value}})} className="h-10 text-xs font-bold border-none bg-white shadow-sm rounded-lg" />
+                      <Input value={agentDraft?.location?.district || ""} onChange={(e) => setAgentDraft({...agentDraft, location: {...(agentDraft?.location || {}), district: e.target.value}})} className="h-10 text-xs font-bold border-none bg-white shadow-sm rounded-lg" />
                     </div>
                     <div className="space-y-1.5">
                       <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">State</span>
-                      <Input value={agentDraft.location.state} onChange={(e) => setAgentDraft({...agentDraft, location: {...agentDraft.location, state: e.target.value}})} className="h-10 text-xs font-bold border-none bg-white shadow-sm rounded-lg" />
+                      <Input value={agentDraft?.location?.state || ""} onChange={(e) => setAgentDraft({...agentDraft, location: {...(agentDraft?.location || {}), state: e.target.value}})} className="h-10 text-xs font-bold border-none bg-white shadow-sm rounded-lg" />
                     </div>
                   </div>
                 </div>
@@ -528,13 +610,13 @@ export default function GrievanceForm({ onSuccess, onAuthSuccess, session: exter
             <div className="space-y-6">
               <Label className="text-[10px] uppercase font-black tracking-widest text-slate-400">Resolution Requirements</Label>
               <div className="space-y-3">
-                {agentDraft.success_criteria.map((point: string, i: number) => (
+                {(agentDraft?.success_criteria || []).map((point: string, i: number) => (
                   <div key={i} className="flex items-start gap-4 p-5 bg-slate-50 rounded-2xl border border-slate-100 shadow-sm group hover:border-slate-900 transition-all">
                     <div className="bg-slate-900 p-1.5 rounded-full mt-0.5"><Check className="w-3 h-3 text-white" /></div>
                     <Textarea 
                       value={point} 
                       onChange={(e) => {
-                        const nc = [...agentDraft.success_criteria]; nc[i] = e.target.value;
+                        const nc = [...(agentDraft?.success_criteria || [])]; nc[i] = e.target.value;
                         setAgentDraft({...agentDraft, success_criteria: nc});
                       }}
                       className="text-sm font-bold text-slate-700 border-none bg-transparent h-auto p-0 min-h-[40px] focus-visible:ring-0 resize-none" 
