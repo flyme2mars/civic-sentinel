@@ -37,7 +37,7 @@ export function Sidebar({
             </div>
             <div className="text-left overflow-hidden">
               <div className="text-sm font-semibold truncate text-gray-900 tracking-tight">Sentinel Govt</div>
-              <div className="text-[10px] text-gray-500 truncate uppercase font-bold tracking-widest opacity-60">Verified Node</div>
+              <div className="text-[10px] text-gray-500 truncate uppercase font-bold tracking-widest opacity-60">Department Portal</div>
             </div>
           </div>
           <ChevronDown className="w-4 h-4 text-gray-400 group-hover:text-gray-600 transition-colors" />
@@ -68,11 +68,7 @@ export function Sidebar({
       </nav>
 
       {/* User / Bottom */}
-      <div className="p-4 border-t border-gray-100 space-y-2">
-        <button className="w-full flex items-center gap-3 px-3 py-2 text-sm text-gray-500 hover:text-gray-900 hover:bg-gray-50 rounded-md transition-colors">
-          <Search className="w-4 h-4 text-gray-400" />
-          Quick Search
-        </button>
+      <div className="p-4 border-t border-gray-100">
         {onLogout && (
           <button 
             onClick={onLogout}

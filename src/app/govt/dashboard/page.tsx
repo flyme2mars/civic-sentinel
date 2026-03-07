@@ -102,8 +102,8 @@ export default function GovtDashboard() {
               ward: dbItem.location?.area || 'Unknown Ward',
               zone: dbItem.location?.city || 'Unknown Zone',
               address: dbItem.location?.landmark || dbItem.location?.area || 'Unknown Address',
-              citizen: 'Anonymous Citizen',
-              phone: 'Not provided',
+              citizen: dbItem.citizenName || 'Anonymous Citizen',
+              phone: dbItem.phoneNumber || 'Not provided',
               reportedAt: reportedAt,
               deadline: reportedAt + (slaHours * 3600000),
               isEscalated: dbItem.isEscalated || false,
@@ -202,10 +202,24 @@ export default function GovtDashboard() {
             >
               Authorize Access
             </button>
+
+            <button 
+              type="button"
+              onClick={() => {
+                localStorage.setItem('govt_branch_id', 'PWD_KALAMASSERY');
+                localStorage.setItem('govt_authorized', 'true');
+                setBranchId('PWD_KALAMASSERY');
+                setIsAuthorized(true);
+              }}
+              className="w-full py-3.5 bg-white border-2 border-slate-100 text-slate-900 rounded-xl font-black text-[10px] uppercase tracking-[0.1em] hover:bg-slate-50 transition-all flex items-center justify-center gap-2"
+            >
+              <ShieldAlert className="w-4 h-4" />
+              Judge / Demo Access
+            </button>
           </form>
 
           <p className="mt-8 text-[10px] text-gray-400 font-bold uppercase tracking-widest text-center opacity-50">
-            Encrypted End-to-End Civil Oversight
+            Official Government Access
           </p>
         </div>
       </div>

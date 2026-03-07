@@ -137,7 +137,6 @@ export function DetailDrawer({ g, onClose }: { g: GrievanceType; onClose: () => 
             {[
               { id: "overview", label: "Overview", icon: Info },
               { id: "timeline", label: "Timeline", icon: Clock },
-              { id: "ai audit", label: "AI Audit", icon: ShieldCheck },
               { id: "actions", label: "Actions", icon: Zap }
             ].map(t => (
               <button 
@@ -312,6 +311,32 @@ export function DetailDrawer({ g, onClose }: { g: GrievanceType; onClose: () => 
                   </div>
                 </div>
 
+                {/* AI Resolution Quality Audit Result */}
+                {g.score != null && (
+                  <div className="pt-6 border-t border-gray-100 space-y-4">
+                    <div className={`p-4 rounded-2xl border ${borderColor} flex items-center gap-5 bg-gray-50`}>
+                      <ScoreRing score={g.score} size={60} />
+                      <div>
+                        <div className={`text-[10px] font-mono font-bold tracking-widest uppercase ${textSecondary}`}>AI Quality Score</div>
+                        <div className={`text-lg font-bold mt-1 ${g.score >= 80 ? 'text-green-600' : 'text-amber-600'}`}>
+                          {g.score >= 80 ? "Resolution Verified" : "Audit Flagged"}
+                        </div>
+                      </div>
+                    </div>
+                    {/* @ts-ignore */}
+                    {g.aiVerificationResult && !g.aiVerificationResult.verified && (
+                      <div className="p-4 rounded-xl bg-amber-50 border border-amber-200 flex gap-3">
+                        <AlertCircle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+                        <div>
+                          <div className="text-[10px] font-black uppercase tracking-widest text-amber-900 mb-1">AI Audit Observation</div>
+                          {/* @ts-ignore */}
+                          <p className="text-xs text-amber-800 leading-relaxed font-medium">{g.aiVerificationResult.reasoning}</p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 {g.assignee && (
                   <div className={`p-4 rounded-xl border ${borderColor} flex items-center gap-4 bg-gray-50`}>
                     <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-sm font-bold text-gray-900 border border-gray-200 uppercase">
@@ -325,71 +350,6 @@ export function DetailDrawer({ g, onClose }: { g: GrievanceType; onClose: () => 
                         {g.assignee === "Unassigned" ? ((g as any).recommendedDepartment || "Unclassified") : g.assignee}
                       </div>
                     </div>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {tab === "ai audit" && (
-              <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
-                <div className="p-5 rounded-2xl bg-gray-50 border border-gray-100">
-                  <div className="text-[10px] font-mono font-bold tracking-widest text-gray-900 uppercase mb-4 flex items-center gap-2">
-                    <ShieldCheck className="w-4 h-4" /> Bedrock AI Analysis
-                  </div>
-                  <div className="space-y-4">
-                    {[
-                      { label: "Confidence Score", value: `${Math.round(g.aiConfidence * 100)}%` },
-                      { label: "Urgency Rating", value: `${Math.round((g.urgency || 0) * 100)}%` },
-                      { label: "Detected Anomalies", value: "None" },
-                      { label: "Spatial Comparison", value: "98% Match" }
-                    ].map((item) => (
-                      <div key={item.label} className="flex justify-between items-center border-b border-gray-100 pb-2 last:border-0 last:pb-0">
-                        <span className={`text-xs ${textSecondary}`}>{item.label}</span>
-                        <span className={`text-xs font-bold font-mono ${textPrimary}`}>{item.value}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                <div className={`p-5 rounded-2xl border ${borderColor} bg-gray-50`}>
-                  <div className={`text-[10px] font-mono font-bold tracking-widest uppercase mb-4 ${textSecondary}`}>Audit Logic</div>
-                  <div className="space-y-3">
-                    {[
-                      "Image overlap analysis using Claude Vision",
-                      "Detection of repair artifacts (new asphalt, cleaned site)",
-                      "Verification against historical street view data",
-                      "Citizen cross-check mandatory for final closure"
-                    ].map((text, i) => (
-                      <div key={i} className="flex gap-3 items-start group">
-                        <div className="w-1.5 h-1.5 rounded-full bg-gray-900 mt-1.5 flex-shrink-0 group-hover:scale-125 transition-transform" />
-                        <span className={`text-xs leading-relaxed ${textSecondary}`}>{text}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {g.score != null && (
-                  <div className="space-y-3">
-                    <div className={`p-4 rounded-2xl border ${borderColor} flex items-center gap-5 bg-gray-100`}>
-                      <ScoreRing score={g.score} size={60} />
-                      <div>
-                        <div className={`text-[10px] font-mono font-bold tracking-widest uppercase ${textSecondary}`}>Resolution Quality</div>
-                        <div className={`text-lg font-bold mt-1 ${g.score >= 80 ? 'text-green-500' : 'text-amber-500'}`}>
-                          {g.score >= 80 ? "Superior Repair" : "Incomplete Resolution"}
-                        </div>
-                      </div>
-                    </div>
-                    {/* @ts-ignore */}
-                    {g.aiVerificationResult && !g.aiVerificationResult.verified && (
-                      <div className="p-4 rounded-xl bg-amber-50 border border-amber-200">
-                        <div className="flex items-center gap-2 mb-2">
-                          <AlertCircle className="w-4 h-4 text-amber-600" />
-                          <span className="text-sm font-bold text-amber-900">AI Auditor Warning</span>
-                        </div>
-                        {/* @ts-ignore */}
-                        <p className="text-xs text-amber-800 leading-relaxed">{g.aiVerificationResult.reasoning}</p>
-                      </div>
-                    )}
                   </div>
                 )}
               </div>

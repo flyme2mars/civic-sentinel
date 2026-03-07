@@ -158,6 +158,7 @@ export function DetailDrawer({
     setIsVerifying(true);
     setVerificationResult(null);
     try {
+      // 1. Save the keys to DB first so Vision Auditor can see them
       const res = await fetch('/api/grievance/resolve', {
         method: 'POST',
         headers: { 
@@ -200,10 +201,30 @@ export function DetailDrawer({
 
     setIsSubmitting(true);
     try {
-      onClose();
-      window.dispatchEvent(new CustomEvent('grievanceUpdated'));
+      // 1. Officially transition status to VERIFIED to move it to Admin queue
+      const res = await fetch('/api/grievance/assign', {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'x-govt-token': authToken || ''
+        },
+        body: JSON.stringify({
+          id: targetId,
+          status: 'VERIFIED',
+          note: "Resolution finalized by department and submitted for official audit review."
+        })
+      });
+      const data = await res.json();
+
+      if (data.success) {
+        onClose();
+        window.dispatchEvent(new CustomEvent('grievanceUpdated'));
+      } else {
+        alert(data.error || "Failed to finalize submission.");
+      }
     } catch (e) {
       console.error("Final submit failed", e);
+      alert("An unexpected error occurred during final submission.");
     } finally {
       setIsSubmitting(false);
     }

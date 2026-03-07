@@ -166,8 +166,8 @@ export default function CitizenPage() {
             <CheckCircle2 className="w-10 h-10 text-slate-900" />
           </div>
           <div className="space-y-4">
-            <h1 className="text-4xl font-black text-slate-900 tracking-tighter uppercase italic">Grievance <span className="text-slate-400 font-medium">Lodged</span></h1>
-            <p className="text-slate-500 font-medium leading-relaxed px-4">Your report has been officially recorded in the Sentinel network. The doomsday clock has started for the respective department.</p>
+            <h1 className="text-4xl font-black text-slate-900 tracking-tighter uppercase italic">Grievance <span className="text-slate-400 font-medium">Submitted</span></h1>
+            <p className="text-slate-500 font-medium leading-relaxed px-4">Your report has been successfully recorded in the system. The relevant department has been notified and the resolution timeframe has commenced.</p>
           </div>
           <div className="pt-4">
             <Button onClick={() => window.location.reload()} className="h-14 px-10 bg-slate-900 text-white rounded-2xl font-black text-xs uppercase tracking-[0.2em] shadow-xl shadow-slate-200 hover:scale-105 transition-transform active:scale-95">
@@ -187,8 +187,8 @@ export default function CitizenPage() {
             <div className="mx-auto w-10 h-10 md:w-12 md:h-12 bg-white rounded-xl md:rounded-2xl shadow-sm border border-slate-100 flex items-center justify-center mb-4 md:mb-6">
               <ShieldCheck className="w-5 h-5 md:w-6 md:h-6 text-slate-900" />
             </div>
-            <h1 className="text-2xl md:text-3xl font-black text-slate-900 tracking-tighter uppercase italic">Sentinel <span className="text-slate-400 font-medium">Passport</span></h1>
-            <p className="text-xs md:text-sm text-slate-400 font-medium tracking-tight px-4">Verify identity to access civil oversight tools.</p>
+            <h1 className="text-2xl md:text-3xl font-black text-slate-900 tracking-tighter uppercase italic">Civic <span className="text-slate-400 font-medium">Sentinel</span></h1>
+            <p className="text-xs md:text-sm text-slate-400 font-medium tracking-tight px-4">Secure citizen portal for grievance redressal and tracking.</p>
           </header>
 
           <div className="space-y-6 md:space-y-8">
@@ -226,7 +226,6 @@ export default function CitizenPage() {
                     <ShieldCheck className="w-4 h-4 text-slate-600 group-hover:text-white transition-colors" />
                     <span className="text-[11px] text-slate-900 group-hover:text-white font-black uppercase tracking-[0.1em]">Judge / Demo Access</span>
                   </button>
-                  <p className="text-[9px] text-slate-400 font-medium italic text-center">Instant bypass for hackathon judging.</p>
                 </div>
               </div>
             ) : (
@@ -251,7 +250,7 @@ export default function CitizenPage() {
           </div>
 
           <footer className="text-center">
-            <p className="text-[9px] text-slate-300 font-black uppercase tracking-[0.3em]">AI for Bharat • AWS Sentinel System</p>
+            <p className="text-[9px] text-slate-300 font-black uppercase tracking-[0.3em]">Transparency through accountability.</p>
           </footer>
         </div>
       </main>
@@ -342,7 +341,7 @@ export default function CitizenPage() {
                 return (
                   <div
                     key={g.id}
-                    onClick={() => router.push(`/grievance/${g.id}`)}
+                    onClick={() => router.push(`/citizen/grievance/${g.id}`)}
                     className="group bg-white p-4 md:p-6 rounded-2xl md:rounded-[2rem] border border-slate-100 shadow-sm hover:shadow-2xl hover:shadow-slate-200/60 transition-all duration-500 space-y-4 md:space-y-6 relative overflow-hidden cursor-pointer active:scale-[0.98]"
                   >
                     <div className="flex flex-col sm:flex-row justify-between items-start gap-4 relative z-10">

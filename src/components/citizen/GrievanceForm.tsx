@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Camera, Mic, Square, Trash2, Send, Loader2, Wand2, MapPin, X, AlertCircle, FileText, CheckCircle2, ShieldCheck, Check, Search, Upload, Play, Film } from 'lucide-react';
+import { Camera, Mic, Square, Trash2, Send, Loader2, MapPin, X, AlertCircle, FileText, CheckCircle2, ShieldCheck, Check, Search, Upload, Play, Film } from 'lucide-react';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -161,7 +161,7 @@ export default function GrievanceForm({ onSuccess, onAuthSuccess, session: exter
     e.preventDefault();
     const hasImage = evidence.some(ev => ev.type === 'image');
     if (!hasImage) {
-      alert("AI requires at least one photo to analyze the ward standards.");
+      alert("Verification requires at least one photo to identify location and issue.");
       return;
     }
 
@@ -172,24 +172,24 @@ export default function GrievanceForm({ onSuccess, onAuthSuccess, session: exter
     };
 
     try {
-      addLog('Uploading evidence vault to secure storage...', 'file');
+      addLog('Uploading evidence to secure servers...', 'file');
       const keys = await uploadFiles();
       setEvidenceKeys(keys);
 
-      addLog('Bedrock scanning multiple visual perspectives...', 'file');
-      setInvestigationStep('Scanning Images...');
+      addLog('AI analyzing visual evidence...', 'file');
+      setInvestigationStep('Analyzing...');
       await new Promise(r => setTimeout(r, 1000));
 
-      addLog('Detecting GPS & identifying municipal ward...', 'map');
-      setInvestigationStep('Locating GPS...');
+      addLog('Identifying location and municipal ward...', 'map');
+      setInvestigationStep('Locating...');
       await new Promise(r => setTimeout(r, 800));
 
-      addLog('Researching municipal SLAs & laws...', 'search');
-      setInvestigationStep('Researching Laws...');
+      addLog('Retrieving relevant citizen charters...', 'search');
+      setInvestigationStep('Checking Charters...');
       await new Promise(r => setTimeout(r, 1200));
 
-      addLog('Drafting formal grievance with Sentinel AI...', 'ai');
-      setInvestigationStep('Refining Complaint...');
+      addLog('Finalizing report details...', 'ai');
+      setInvestigationStep('Finalizing...');
 
       // Only send images to the drafting agent
       const imageKeys = keys.filter((k, i) => evidence[i].type === 'image');
@@ -202,7 +202,7 @@ export default function GrievanceForm({ onSuccess, onAuthSuccess, session: exter
       const result = await res.json();
       if (result.success) {
         setAgentDraft(result.data.draft);
-        addLog('Draft finalized by Sentinel Agent.', 'ai');
+        addLog('Draft ready for review.', 'ai');
       }
     } catch (e: any) { 
       alert("Failed to generate draft."); 
@@ -271,8 +271,8 @@ export default function GrievanceForm({ onSuccess, onAuthSuccess, session: exter
         <Card className="w-full max-w-sm border-none shadow-2xl bg-white overflow-hidden animate-in zoom-in-95 duration-300">
           <CardHeader className="bg-slate-900 text-white p-8 text-center space-y-2">
             <div className="mx-auto w-12 h-12 bg-white/10 rounded-full flex items-center justify-center mb-2"><ShieldCheck className="w-6 h-6 text-white" /></div>
-            <CardTitle className="text-xl font-black uppercase tracking-tighter">Sentinel Identity</CardTitle>
-            <CardDescription className="text-slate-400 text-xs font-medium">Verify your civic identity to continue.</CardDescription>
+            <CardTitle className="text-xl font-black uppercase tracking-tighter">Citizen Identity</CardTitle>
+            <CardDescription className="text-slate-400 text-xs font-medium">Verify your identity to continue.</CardDescription>
           </CardHeader>
           <CardContent className="p-8 space-y-6">
             {authStage === 'phone' ? (
@@ -429,7 +429,7 @@ export default function GrievanceForm({ onSuccess, onAuthSuccess, session: exter
                     <span className="uppercase tracking-widest text-[10px]">{investigationStep}</span>
                   </div>
                 ) : (
-                  <><Wand2 className="w-4 h-4" /> Analyze with Sentinel AI</>
+                  <><ShieldCheck className="w-4 h-4 mr-2" /> Review with AI Assistant</>
                 )}
               </Button>
               
@@ -438,7 +438,7 @@ export default function GrievanceForm({ onSuccess, onAuthSuccess, session: exter
                   <div className="flex items-center gap-2 overflow-hidden">
                     {agentLogs[agentLogs.length - 1].type === 'search' && <Search className="w-3 h-3 text-blue-500 animate-pulse" />}
                     {agentLogs[agentLogs.length - 1].type === 'map' && <MapPin className="w-3 h-3 text-emerald-500 animate-pulse" />}
-                    {agentLogs[agentLogs.length - 1].type === 'ai' && <Wand2 className="w-3 h-3 text-purple-500 animate-pulse" />}
+                    {agentLogs[agentLogs.length - 1].type === 'ai' && <ShieldCheck className="w-3 h-3 text-purple-500 animate-pulse" />}
                     {agentLogs[agentLogs.length - 1].type === 'file' && <Camera className="w-3 h-3 text-slate-500 animate-pulse" />}
                     <span className="text-[10px] font-black text-slate-500 uppercase tracking-tighter truncate max-w-[300px]">
                       {agentLogs[agentLogs.length - 1].msg}
@@ -455,7 +455,7 @@ export default function GrievanceForm({ onSuccess, onAuthSuccess, session: exter
       {agentDraft && (
         <Card className="border-none shadow-2xl bg-white ring-1 ring-slate-200 animate-in fade-in slide-in-from-bottom-4 duration-500 overflow-hidden max-w-2xl mx-auto">
           <div className="bg-slate-900 px-8 py-4 text-white text-center">
-            <span className="text-[11px] font-bold uppercase tracking-[0.2em]">Official Report Verification</span>
+            <span className="text-[11px] font-bold uppercase tracking-[0.2em]">Review Draft Details</span>
           </div>
 
           <CardContent className="space-y-10 pt-10 px-10">
@@ -547,9 +547,9 @@ export default function GrievanceForm({ onSuccess, onAuthSuccess, session: exter
 
           <CardFooter className="pb-12 pt-10 px-10 border-t border-slate-50 flex flex-col gap-4">
             <Button onClick={handleFinalSubmit} disabled={isSubmitting} className="w-full h-16 bg-slate-900 text-white hover:bg-slate-800 rounded-2xl font-black text-sm uppercase tracking-widest gap-2 shadow-2xl shadow-slate-200 transition-all active:scale-95">
-              {isSubmitting ? <><Loader2 className="w-5 h-5 animate-spin" /> Submitting...</> : <><ShieldCheck className="w-5 h-5" /> Lodge Official Grievance</>}
+              {isSubmitting ? <><Loader2 className="w-5 h-5 animate-spin" /> Submitting...</> : <><CheckCircle2 className="w-5 h-5" /> Submit Official Grievance</>}
             </Button>
-            <p className="text-[10px] text-slate-400 font-black uppercase tracking-[0.2em] text-center opacity-50">Authorized by Sentinel Oversight Protocol</p>
+            <p className="text-[10px] text-slate-400 font-black uppercase tracking-[0.2em] text-center opacity-50">Official Citizen Redressal Portal</p>
           </CardFooter>
         </Card>
       )}
