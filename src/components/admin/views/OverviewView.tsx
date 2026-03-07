@@ -13,7 +13,7 @@ import {
   Zap,
   Trash2,
   Building2,
-  CircleHelp
+  Circle
 } from 'lucide-react';
 
 const CATEGORY_ICONS: Record<string, any> = {
@@ -23,7 +23,7 @@ const CATEGORY_ICONS: Record<string, any> = {
   electricity: Zap,
   waste: Trash2,
   infrastructure: Building2,
-  other: CircleHelp
+  other: Circle
 };
 
 export function OverviewView({ setSelected, border, surface, textSecondary, grievances }: any) {

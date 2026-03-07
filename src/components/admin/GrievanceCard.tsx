@@ -10,7 +10,7 @@ import {
   Zap,
   Trash2,
   Building2,
-  CircleHelp,
+  Circle,
   MapPin,
   Twitter,
   Camera
@@ -23,7 +23,7 @@ const CATEGORY_ICONS: Record<string, any> = {
   electricity: Zap,
   waste: Trash2,
   infrastructure: Building2,
-  other: CircleHelp
+  other: Circle
 };
 
 export function GrievanceCard({ g, onClick, index }: { g: GrievanceType; onClick: (g: GrievanceType) => void; index: number }) {
