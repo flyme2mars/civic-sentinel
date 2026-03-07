@@ -15,14 +15,18 @@ export function DetailDrawer({ g, onClose }: { g: GrievanceType; onClose: () => 
   const [isAssigning, setIsAssigning] = useState(false);
   const [selectedBranch, setSelectedBranch] = useState("");
   
-  // Pre-select branch based on targetDepartment from AI
+  // Pre-select branch based on existing assignment or AI recommendation
   useEffect(() => {
-    const recommended = (g as any).recommendedDepartment;
-    if (recommended) {
-      const dept = DEPARTMENTS.find(d => d.department === recommended || d.name === recommended || d.id === recommended);
-      if (dept) setSelectedBranch(dept.id);
+    if ((g as any).assignedTo) {
+      setSelectedBranch((g as any).assignedTo);
+    } else {
+      const recommended = (g as any).recommendedDepartment;
+      if (recommended) {
+        const dept = DEPARTMENTS.find(d => d.department === recommended || d.name === recommended || d.id === recommended);
+        if (dept) setSelectedBranch(dept.id);
+      }
     }
-  }, [(g as any).recommendedDepartment]);
+  }, [g]);
 
   const handleUpdate = async (status: string, assignedBranchId?: string, note?: string) => {
     setIsAssigning(true);
@@ -453,7 +457,7 @@ export function DetailDrawer({ g, onClose }: { g: GrievanceType; onClose: () => 
                   </div>
 
                   {/* Initial Triage: Verify or Reject */}
-                  {(g.status === "pending" || g.status === "critical") ? (
+                  {(g.status === "pending" || g.status === "critical" || g.status === "OPEN") ? (
                     <div className="space-y-4">
                       <div className="bg-slate-50 border border-slate-100 rounded-xl p-3 flex items-center gap-3">
                         <div className="w-8 h-8 rounded-lg bg-white border border-slate-100 flex items-center justify-center">
@@ -489,7 +493,7 @@ export function DetailDrawer({ g, onClose }: { g: GrievanceType; onClose: () => 
                           onClick={() => handleUpdate("ASSIGNED", selectedBranch)}
                           className="flex-1 bg-gray-900 text-white py-3 rounded-xl text-sm font-bold hover:bg-black disabled:opacity-50 transition-all flex items-center justify-center gap-2"
                         >
-                          <Check className="w-4 h-4" /> {isAssigning ? "Processing..." : "Verify as Original"}
+                          <Check className="w-4 h-4" /> {isAssigning ? "Processing..." : "Verify & Assign"}
                         </button>
                         <button 
                           disabled={isAssigning}
@@ -501,7 +505,45 @@ export function DetailDrawer({ g, onClose }: { g: GrievanceType; onClose: () => 
                       </div>
                       {!selectedBranch && <p className="text-[9px] text-amber-600 font-mono text-center">※ Department branch selection required to verify issue</p>}
                     </div>
-                  ) : (g.status === "verified") ? (
+                  ) : (g.status === "ASSIGNED" || g.status === "assigned") ? (
+                    /* Active Assignment: Allow Re-dispatch if needed */
+                    <div className="space-y-6">
+                      <div className="p-4 rounded-xl bg-slate-50 border border-slate-100 text-center">
+                        <p className="text-xs text-slate-600 font-medium italic">This issue is currently being resolved by the assigned department.</p>
+                      </div>
+
+                      <div className="space-y-4 pt-4 border-t border-slate-100">
+                        <div className="flex items-center gap-2">
+                          <Building2 className="w-4 h-4 text-slate-400" />
+                          <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Re-route Assignment</span>
+                        </div>
+                        <p className="text-[10px] text-slate-500 leading-relaxed">If the current department is incorrect, you may re-dispatch this grievance to a different branch.</p>
+                        
+                        <div className="space-y-2">
+                          <select 
+                            value={selectedBranch}
+                            onChange={(e) => setSelectedBranch(e.target.value)}
+                            className="w-full bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-xs font-bold text-gray-900 outline-none focus:ring-2 focus:ring-gray-100 transition-all"
+                          >
+                            <option value="">Select New Branch...</option>
+                            {DEPARTMENTS.map(dept => (
+                              <option key={dept.id} value={dept.id}>
+                                {dept.name}
+                              </option>
+                            ))}
+                          </select>
+                          
+                          <button 
+                            disabled={!selectedBranch || isAssigning || selectedBranch === (g as any).assignedTo}
+                            onClick={() => handleUpdate("ASSIGNED", selectedBranch, `Re-dispatched to ${DEPARTMENTS.find(d => d.id === selectedBranch)?.name}`)}
+                            className="w-full bg-white border border-gray-900 text-gray-900 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-50 disabled:opacity-30 transition-all flex items-center justify-center gap-2"
+                          >
+                            <Send className="w-3 h-3" /> Re-Dispatch / Update
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (g.status === "verified" || g.status === "VERIFIED") ? (
                     /* Final Audit: Approve or Re-assign */
                     <div className="space-y-6">
                       <div className="text-center">
@@ -543,35 +585,8 @@ export function DetailDrawer({ g, onClose }: { g: GrievanceType; onClose: () => 
                   ) : (
                     <div className="text-center py-6 bg-gray-50 rounded-xl border border-gray-100">
                       <p className="text-xs text-gray-500 italic">Ticket is currently in {g.status.toUpperCase()} state. No pending administrative actions.</p>
-                      {g.status === "assigned" && (
-                        <p className="text-[10px] text-gray-400 mt-2 font-mono">Awaiting department branch resolution...</p>
-                      )}
                     </div>
                   )}
-                </div>
-
-                <div className="grid grid-cols-1 gap-4">
-                  <div className={`p-4 rounded-2xl border ${borderColor} bg-gray-50`}>
-                    <div className="flex items-center gap-3 mb-3">
-                       <Building2 className="w-5 h-5 text-gray-400" />
-                       <span className="text-xs font-bold uppercase tracking-wider">Assigned Branch Info</span>
-                    </div>
-                    {selectedBranch ? (
-                      <div>
-                        <div className="text-sm font-bold text-gray-900">{DEPARTMENTS.find(d => d.id === selectedBranch)?.name}</div>
-                        <div className="text-[10px] text-gray-500 mt-1">{DEPARTMENTS.find(d => d.id === selectedBranch)?.description}</div>
-                        <button 
-                          onClick={() => handleUpdate("ASSIGNED", selectedBranch)}
-                          disabled={isAssigning}
-                          className="mt-4 w-full py-2 bg-gray-900 text-white rounded-lg text-[10px] font-bold uppercase tracking-widest hover:bg-black transition-all flex items-center justify-center gap-2"
-                        >
-                          <Send className="w-3 h-3" /> Re-Dispatch / Update
-                        </button>
-                      </div>
-                    ) : (
-                      <div className="text-xs text-gray-400 italic">No branch selected.</div>
-                    )}
-                  </div>
                 </div>
               </div>
             )}
