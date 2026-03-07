@@ -21,7 +21,7 @@ export function DetailDrawer({ g, onClose }: { g: GrievanceType; onClose: () => 
     }
   }, [g.assignee]);
 
-  const handleUpdate = async (status: string, assignedBranchId?: string) => {
+  const handleUpdate = async (status: string, assignedBranchId?: string, note?: string) => {
     setIsAssigning(true);
     try {
       // Check which token key is used in this environment
@@ -36,7 +36,8 @@ export function DetailDrawer({ g, onClose }: { g: GrievanceType; onClose: () => 
         body: JSON.stringify({
           id: (g as any).rawId || g.id,
           status,
-          assignedTo: assignedBranchId
+          assignedTo: assignedBranchId,
+          note: note || `Grievance status changed to ${status.toUpperCase()}`
         })
       });
       const data = await res.json();
@@ -334,6 +335,39 @@ export function DetailDrawer({ g, onClose }: { g: GrievanceType; onClose: () => 
             )}
 
             {tab === "timeline" && (() => {
+              const historyItems = (g as any).history || [];
+              
+              if (historyItems.length > 0) {
+                return (
+                  <div className="space-y-0 pl-3">
+                    {historyItems.map((item: any, i: number) => (
+                      <div key={i} className="flex gap-6 relative group">
+                        {i < historyItems.length - 1 && (
+                          <div className="absolute left-[11px] top-6 bottom-0 w-[2px] bg-gray-900" />
+                        )}
+                        <div className="relative flex-shrink-0 mt-1">
+                          <div className="w-6 h-6 rounded-full flex items-center justify-center border-2 border-gray-900 bg-gray-900 scale-100 shadow-[0_0_10px_rgba(17,24,39,0.1)] transition-all duration-500">
+                            <Check className="w-3.5 h-3.5 text-white" />
+                          </div>
+                        </div>
+                        <div className="pb-8">
+                          <div className="text-[10px] font-mono font-bold uppercase mb-1 text-gray-500">
+                            {new Date(item.timestamp).toLocaleDateString()} {new Date(item.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          </div>
+                          <div className="text-sm font-bold text-gray-900">
+                            {item.action}
+                          </div>
+                          <div className="text-xs mt-1 text-gray-500">
+                            {item.note}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                );
+              }
+
+              // Fallback to static steps if no history
               const stepMap: Record<string, number> = {
                 pending: 0, "in-progress": 1, escalated: 1, critical: 0,
                 resolved: 2, verified: 3, 
@@ -437,19 +471,43 @@ export function DetailDrawer({ g, onClose }: { g: GrievanceType; onClose: () => 
                       {!selectedBranch && <p className="text-[9px] text-amber-400/80 font-mono text-center">※ Department branch selection required to verify issue</p>}
                     </div>
                   ) : (g.status === "verified") ? (
-                    /* Final Audit: Close */
-                    <div className="space-y-4 text-center">
-                      <div className="w-12 h-12 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-2">
-                        <Check className="w-6 h-6 text-green-500" />
+                    /* Final Audit: Close or Re-assign */
+                    <div className="space-y-6">
+                      <div className="text-center">
+                        <div className="w-12 h-12 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-3">
+                          <ShieldCheck className="w-6 h-6 text-green-500" />
+                        </div>
+                        <h4 className="text-lg font-bold">Awaiting Final Review</h4>
+                        <p className="text-xs text-gray-400 mt-1">AI Vision has verified the fix, but final administrative approval is required.</p>
                       </div>
-                      <h4 className="text-lg font-bold">Verified by AI Vision</h4>
-                      <p className="text-xs text-gray-400 mb-2">The repair has been visually verified. Close this ticket to finalize.</p>
-                      <button 
-                        onClick={() => handleUpdate("closed")}
-                        className="w-full bg-green-500 text-white py-4 rounded-xl text-sm font-black uppercase tracking-widest hover:bg-green-600 transition-all flex items-center justify-center gap-2 shadow-lg shadow-green-500/20"
-                      >
-                        <ShieldCheck className="w-5 h-5" /> Close & Notify Citizen
-                      </button>
+
+                      <div className="grid grid-cols-1 gap-3">
+                        <button 
+                          disabled={isAssigning}
+                          onClick={() => handleUpdate("closed")}
+                          className="w-full bg-green-500 text-white py-4 rounded-xl text-sm font-black uppercase tracking-widest hover:bg-green-600 transition-all flex items-center justify-center gap-2 shadow-lg shadow-green-500/20"
+                        >
+                          <Check className="w-5 h-5" /> Approve & Close Ticket
+                        </button>
+
+                        <div className="relative">
+                          <div className="absolute inset-0 flex items-center" aria-hidden="true">
+                            <div className="w-full border-t border-white/10"></div>
+                          </div>
+                          <div className="relative flex justify-center text-[10px] uppercase font-bold text-gray-500">
+                            <span className="bg-gray-900 px-2">Or if fix is unsatisfactory</span>
+                          </div>
+                        </div>
+
+                        <button 
+                          disabled={isAssigning}
+                          onClick={() => handleUpdate("assigned", (g as any).assignedTo, "Repair rejected by admin. Sent back for re-resolution.")}
+                          className="w-full bg-amber-500/10 text-amber-500 border border-amber-500/30 py-4 rounded-xl text-sm font-bold hover:bg-amber-500/20 transition-all flex items-center justify-center gap-2"
+                        >
+                          <Send className="w-5 h-5" /> Send Back to Department
+                        </button>
+                      </div>
+                      <p className="text-[9px] text-gray-500 text-center italic">※ Sending back will notify the assigned branch that the repair was rejected.</p>
                     </div>
                   ) : (
                     <div className="text-center py-6 bg-white/5 rounded-xl border border-white/5">

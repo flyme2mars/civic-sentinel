@@ -97,6 +97,7 @@ export default function GovernmentDashboard() {
               evidenceUrls: dbItem.evidenceUrls || [],
               fixedImageUrl: dbItem.fixedImageUrl,
               fixedImageUrls: dbItem.fixedImageUrls || [],
+              history: dbItem.history || [],
               score: dbItem.score || (dbItem.aiVerificationResult?.confidence ? Math.round(dbItem.aiVerificationResult.confidence * 100) : null),
             };
           });
