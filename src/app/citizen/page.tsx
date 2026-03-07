@@ -102,20 +102,26 @@ export default function CitizenPage() {
     try {
       const res = await fetch(`/api/grievance/mine?citizenId=${citizenId}`);
       const data = await res.json();
-      if (data.success) setMyGrievances(data.grievances);
-    } catch (e) { console.error(e); }
-    finally { setFetchingGrievances(false); }
+      if (data.success && Array.isArray(data.grievances)) {
+        setMyGrievances(data.grievances);
+      }
+    } catch (e) { 
+      console.error("Failed to fetch grievances:", e); 
+    } finally { 
+      setFetchingGrievances(false); 
+    }
   };
 
   useEffect(() => {
-    if (session) fetchMyGrievances(session.citizenId);
+    if (session?.citizenId) fetchMyGrievances(session.citizenId);
   }, [session]);
 
   const filteredGrievances = useMemo(() => {
-    if (filterStatus === 'all') return myGrievances;
-    if (filterStatus === 'active') return myGrievances.filter(g => g.status !== 'CLOSED');
-    if (filterStatus === 'closed') return myGrievances.filter(g => g.status === 'CLOSED');
-    return myGrievances;
+    const list = Array.isArray(myGrievances) ? myGrievances : [];
+    if (filterStatus === 'all') return list;
+    if (filterStatus === 'active') return list.filter(g => g && g.status !== 'CLOSED');
+    if (filterStatus === 'closed') return list.filter(g => g && g.status === 'CLOSED');
+    return list;
   }, [myGrievances, filterStatus]);
 
   const handleStart = async () => {

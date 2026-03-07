@@ -94,13 +94,19 @@ export default function GrievanceDetailPage() {
     try {
       const res = await fetch(`/api/grievance/mine?citizenId=${citizenId}`);
       const data = await res.json();
-      if (data.success) {
-        const found = data.grievances.find((item: any) => item.id === id);
+      if (data.success && Array.isArray(data.grievances)) {
+        const found = data.grievances.find((item: any) => item && item.id === id);
         if (found) setGrievance(found);
-        else router.push('/');
+        else router.push('/citizen');
+      } else {
+        router.push('/citizen');
       }
-    } catch (e) { console.error(e); }
-    finally { setLoading(false); }
+    } catch (e) { 
+      console.error("Grievance detail fetch failed:", e);
+      router.push('/citizen');
+    } finally { 
+      setLoading(false); 
+    }
   };
 
   const handleCitizenAction = async (action: 'CLOSED' | 'ESCALATED') => {

@@ -63,31 +63,14 @@ export async function POST(request: Request) {
     await dynamoDb.send(command);
 
     if (process.env.NODE_ENV === 'development') {
-      console.log(`[DynamoDB] Grievance ${id} marked as FIXED by official.`);
-    }
-
-    // TRIGGER VERIFICATION AUTOMATICALLY
-    // In a real production app, this might be a background job or Lambda trigger.
-    // For this prototype, we'll trigger it here to simplify the frontend flow.
-    try {
-      const verifyUrl = new URL('/api/grievance/verify', request.url).toString();
-      fetch(verifyUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-govt-token': 'sentinel2026'
-        },
-        body: JSON.stringify({ id })
-      }).catch(err => console.error("[Resolve API] Async Verify Trigger Failed:", err));
-    } catch (e) {
-      console.error("[Resolve API] Failed to trigger verification:", e);
+      console.log(`[DynamoDB] Grievance ${id} updated with resolution evidence.`);
     }
 
     return NextResponse.json({ 
       success: true, 
       id,
       updatedStatus: 'FIXED',
-      message: 'Resolution submitted. AI Vision Auditor verification initiated in background.'
+      message: 'Resolution evidence saved successfully.'
     });
 
   } catch (error: any) {
