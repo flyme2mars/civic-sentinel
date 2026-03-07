@@ -12,6 +12,7 @@ import { ReportsView } from "@/components/admin/views/ReportsView";
 import { SettingsView } from "@/components/admin/views/SettingsView";
 import { DetailDrawer } from "@/components/admin/DetailDrawer";
 import { GrievanceType } from "@/lib/mock-data";
+import { DEPARTMENTS } from "@/lib/departments";
 import { 
   LayoutDashboard, 
   Inbox, 
@@ -70,13 +71,17 @@ export default function GovernmentDashboard() {
           localStorage.setItem('govt_token', authToken!);
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const formatted = data.grievances.map((dbItem: any) => {
+            const assignedBranch = DEPARTMENTS.find(d => d.id === dbItem.assignedTo);
+            
             return {
               id: "CIV-" + dbItem.id.split('-')[0].toUpperCase(),
               rawId: dbItem.id,
               title: dbItem.title || "Untitled Grievance",
               description: dbItem.originalDescription || dbItem.summary || "No description provided.",
+              summary: dbItem.summary || "",
+              originalDescription: dbItem.originalDescription || "",
               category: (dbItem.category || 'other').toLowerCase(),
-              status: (dbItem.status || 'pending').toLowerCase(),
+              status: dbItem.status?.toLowerCase() === 'open' ? 'pending' : (dbItem.status || 'pending').toLowerCase(),
               priority: (dbItem.severity || 'medium').toLowerCase(),
               ward: dbItem.location?.area || 'Unknown Ward',
               zone: dbItem.location?.city || 'Unknown Zone',
@@ -91,13 +96,16 @@ export default function GovernmentDashboard() {
               urgency: 0.85,
               rtiGenerated: false,
               hasAfter: !!dbItem.afterImageKey,
-              assignee: dbItem.targetDepartment || "Unassigned",
+              assignee: assignedBranch ? assignedBranch.name : "Unassigned",
+              recommendedDepartment: dbItem.targetDepartment || "Unclassified",
               assignedTo: dbItem.assignedTo,
               imageUrl: dbItem.imageUrl,
               evidenceUrls: dbItem.evidenceUrls || [],
               fixedImageUrl: dbItem.fixedImageUrl,
               fixedImageUrls: dbItem.fixedImageUrls || [],
               history: dbItem.history || [],
+              successCriteria: dbItem.successCriteria || [],
+              officialDesignation: dbItem.officialDesignation || "Official",
               score: dbItem.score || (dbItem.aiVerificationResult?.confidence ? Math.round(dbItem.aiVerificationResult.confidence * 100) : null),
             };
           });
@@ -107,7 +115,13 @@ export default function GovernmentDashboard() {
         console.error("Failed to fetch grievances", e);
       }
     }
+    
     fetchGrievances();
+
+    // Listen for custom update events from drawers
+    const handleRefresh = () => fetchGrievances();
+    window.addEventListener('grievanceUpdated', handleRefresh);
+    return () => window.removeEventListener('grievanceUpdated', handleRefresh);
   }, [authToken]);
 
   const bg = "#f8fafc"; // light slate-50
@@ -253,7 +267,7 @@ export default function GovernmentDashboard() {
               filtered={filtered} setSelected={setSelected}
             />
           )}
-          {activeNav === "departments" && <DepartmentsView surface={surface} border={border} textSecondary={textSecondary} textPrimary={textPrimary} />}
+          {activeNav === "departments" && <DepartmentsView surface={surface} border={border} textSecondary={textSecondary} textPrimary={textPrimary} grievances={grievances} />}
           {activeNav === "settings" && <SettingsView surface={surface} border={border} textSecondary={textSecondary} textPrimary={textPrimary} accent={accent} />}
         </main>
       </div>

@@ -21,7 +21,7 @@ export async function GET(request: Request) {
     const scanParams: any = { 
       TableName: AWS_CONFIG.dynamodb.tableName,
       // 'status' and 'location' can be reserved; use ExpressionAttributeNames
-      ProjectionExpression: "id, createdAt, title, #st, severity, slaHours, #loc, imageKey, fixedImageKey, evidenceKeys, fixedImageKeys, assignedTo, targetDepartment, citizenName, phoneNumber, score, aiVerificationResult, originalDescription, summary, history",
+      ProjectionExpression: "id, createdAt, title, #st, severity, slaHours, #loc, imageKey, fixedImageKey, evidenceKeys, fixedImageKeys, assignedTo, targetDepartment, citizenName, phoneNumber, score, aiVerificationResult, originalDescription, summary, history, successCriteria, officialDesignation",
       ExpressionAttributeNames: {
         "#st": "status",
         "#loc": "location"

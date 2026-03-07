@@ -6,8 +6,10 @@ import { GrievanceType, PRIORITY_MAP, STATUS_MAP } from '@/lib/mock-data';
 import { X, ZoomIn, Camera, Check, User, Phone, MapPin, Info, Layout, Clock, Activity, ShieldCheck, Zap, Building2, Send } from 'lucide-react';
 import { ImageModal } from '../ui/ImageModal';
 import { DEPARTMENTS } from '@/lib/departments';
+import { useToast } from '@/hooks/use-toast';
 
 export function DetailDrawer({ g, onClose }: { g: GrievanceType; onClose: () => void }) {
+  const { toast } = useToast();
   const [tab, setTab] = useState("overview");
   const [visible, setVisible] = useState(false);
   const [isAssigning, setIsAssigning] = useState(false);
@@ -15,11 +17,12 @@ export function DetailDrawer({ g, onClose }: { g: GrievanceType; onClose: () => 
   
   // Pre-select branch based on targetDepartment from AI
   useEffect(() => {
-    if (g.assignee) {
-      const dept = DEPARTMENTS.find(d => d.department === g.assignee || d.name === g.assignee);
+    const recommended = (g as any).recommendedDepartment;
+    if (recommended) {
+      const dept = DEPARTMENTS.find(d => d.department === recommended || d.name === recommended || d.id === recommended);
       if (dept) setSelectedBranch(dept.id);
     }
-  }, [g.assignee]);
+  }, [(g as any).recommendedDepartment]);
 
   const handleUpdate = async (status: string, assignedBranchId?: string, note?: string) => {
     setIsAssigning(true);
@@ -42,18 +45,28 @@ export function DetailDrawer({ g, onClose }: { g: GrievanceType; onClose: () => 
       });
       const data = await res.json();
       if (data.success) {
-        alert(`Action Successful: Status changed to ${status.toUpperCase()}`);
+        toast({
+          title: "Action Successful",
+          description: `Status changed to ${status.toUpperCase()}`,
+          variant: "success",
+        });
         onClose();
         // Trigger a custom event to tell the dashboard to refetch
         window.dispatchEvent(new CustomEvent('grievanceUpdated'));
-        // Fallback if event is not handled
-        setTimeout(() => window.location.reload(), 500);
       } else {
-        alert(data.error || "Update failed. Check permissions.");
+        toast({
+          title: "Update Failed",
+          description: data.error || "Update failed. Check permissions.",
+          variant: "destructive",
+        });
       }
     } catch (e) {
       console.error(e);
-      alert("Network error: Could not connect to API.");
+      toast({
+        title: "Network Error",
+        description: "Could not connect to API.",
+        variant: "destructive",
+      });
     } finally {
       setIsAssigning(false);
     }
@@ -171,10 +184,41 @@ export function DetailDrawer({ g, onClose }: { g: GrievanceType; onClose: () => 
                   ))}
                 </div>
 
-                <div className={`p-4 rounded-xl border ${borderColor} bg-gray-50`}>
-                  <div className={`text-[9px] font-mono font-bold tracking-widest uppercase mb-2 ${textSecondary}`}>Description</div>
-                  <p className={`text-sm leading-relaxed text-gray-600`}>{g.description}</p>
+                <div className="space-y-4">
+                  <div className={`p-4 rounded-xl border ${borderColor} bg-gray-50`}>
+                    <div className={`text-[9px] font-mono font-bold tracking-widest uppercase mb-2 ${textSecondary}`}>Citizen Original Report</div>
+                    <p className={`text-sm leading-relaxed text-gray-600 italic`}>"{(g as any).originalDescription || g.description}"</p>
+                  </div>
+
+                  {(g as any).summary && (
+                    <div className={`p-4 rounded-xl border border-slate-900/10 bg-slate-900/[0.02]`}>
+                      <div className={`text-[9px] font-mono font-bold tracking-widest uppercase mb-2 text-slate-900 flex items-center gap-2`}>
+                        <Zap className="w-3 h-3" /> Sentinel AI Summary
+                      </div>
+                      <p className={`text-sm leading-relaxed text-gray-900 font-medium`}>{(g as any).summary}</p>
+                    </div>
+                  )}
                 </div>
+
+                {/* Success Criteria */}
+                {((g as any).successCriteria && (g as any).successCriteria.length > 0) && (
+                  <div>
+                    <div className={`text-[9px] font-mono font-bold tracking-widest uppercase mb-3 flex items-center gap-2 ${textSecondary}`}>
+                      <Check className="w-3 h-3" /> Resolution Success Criteria
+                    </div>
+                    <div className="bg-gray-50 border border-gray-100 rounded-xl p-4 space-y-3">
+                      {(g as any).successCriteria.map((criterion: string, idx: number) => (
+                        <div key={idx} className="flex gap-3 items-start group">
+                          <div className="mt-1 w-4 h-4 rounded-full border-2 border-gray-300 flex-shrink-0 flex items-center justify-center group-hover:border-gray-900 transition-colors">
+                            <div className="w-1.5 h-1.5 bg-gray-900 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                          </div>
+                          <span className="text-xs text-gray-600 leading-tight">{criterion}</span>
+                        </div>
+                      ))}
+                    </div>
+                    <p className="text-[9px] text-gray-400 mt-2 italic px-1">※ Admin must verify these criteria are met before final closure.</p>
+                  </div>
+                )}
 
                 <div>
                   <div className={`text-[9px] font-mono font-bold tracking-widest uppercase mb-4 ${textSecondary}`}>Photo Evidence</div>
@@ -270,12 +314,16 @@ export function DetailDrawer({ g, onClose }: { g: GrievanceType; onClose: () => 
 
                 {g.assignee && (
                   <div className={`p-4 rounded-xl border ${borderColor} flex items-center gap-4 bg-gray-50`}>
-                    <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-sm font-bold text-gray-900 border border-gray-200">
-                      {g.assignee.split(" ").map((n: string) => n[0]).join("")}
+                    <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-sm font-bold text-gray-900 border border-gray-200 uppercase">
+                      {g.assignee === "Unassigned" ? "?" : g.assignee.split(" ").filter((n: string) => n).map((n: string) => n[0]).join("").substring(0, 2)}
                     </div>
                     <div>
-                      <div className={`text-[9px] font-mono font-bold tracking-widest uppercase ${textSecondary}`}>Assigned To</div>
-                      <div className={`text-sm font-bold mt-0.5 ${textPrimary}`}>{g.assignee}</div>
+                      <div className={`text-[9px] font-mono font-bold tracking-widest uppercase ${textSecondary}`}>
+                        {g.assignee === "Unassigned" ? "Target Department (AI)" : "Assigned Branch"}
+                      </div>
+                      <div className={`text-sm font-bold mt-0.5 ${textPrimary}`}>
+                        {g.assignee === "Unassigned" ? ((g as any).recommendedDepartment || "Unclassified") : g.assignee}
+                      </div>
                     </div>
                   </div>
                 )}
@@ -434,6 +482,16 @@ export function DetailDrawer({ g, onClose }: { g: GrievanceType; onClose: () => 
                   {/* Initial Triage: Verify or Reject */}
                   {(g.status === "pending" || g.status === "critical") ? (
                     <div className="space-y-4">
+                      <div className="bg-slate-50 border border-slate-100 rounded-xl p-3 flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-lg bg-white border border-slate-100 flex items-center justify-center">
+                          <Zap className="w-4 h-4 text-slate-900" />
+                        </div>
+                        <div>
+                          <div className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">AI Recommendation</div>
+                          <div className="text-xs font-bold text-slate-900">{(g as any).recommendedDepartment || "No Recommendation"}</div>
+                        </div>
+                      </div>
+
                       <p className="text-xs text-gray-500">Step 1: Validate the report and assign to a branch for resolution.</p>
 
                       <div className="space-y-2">
@@ -471,23 +529,23 @@ export function DetailDrawer({ g, onClose }: { g: GrievanceType; onClose: () => 
                       {!selectedBranch && <p className="text-[9px] text-amber-600 font-mono text-center">※ Department branch selection required to verify issue</p>}
                     </div>
                   ) : (g.status === "verified") ? (
-                    /* Final Audit: Close or Re-assign */
+                    /* Final Audit: Approve or Re-assign */
                     <div className="space-y-6">
                       <div className="text-center">
                         <div className="w-12 h-12 bg-green-50/50 rounded-full flex items-center justify-center mx-auto mb-3">
                           <ShieldCheck className="w-6 h-6 text-green-600" />
                         </div>
-                        <h4 className="text-lg font-bold text-gray-900">Awaiting Final Review</h4>
-                        <p className="text-xs text-gray-500 mt-1">AI Vision has verified the fix, but final administrative approval is required.</p>
+                        <h4 className="text-lg font-bold text-gray-900">Final Quality Audit</h4>
+                        <p className="text-xs text-gray-500 mt-1">AI Vision has verified the fix. Grant final approval to notify the citizen for closure.</p>
                       </div>
 
                       <div className="grid grid-cols-1 gap-3">
                         <button 
                           disabled={isAssigning}
-                          onClick={() => handleUpdate("closed")}
+                          onClick={() => handleUpdate("resolved", undefined, "Final administrative approval granted. Citizen notified for final closure.")}
                           className="w-full bg-green-600 text-white py-4 rounded-xl text-sm font-black uppercase tracking-widest hover:bg-green-700 transition-all flex items-center justify-center gap-2 shadow-lg shadow-green-600/20"
                         >
-                          <Check className="w-5 h-5" /> Approve & Close Ticket
+                          <Check className="w-5 h-5" /> Grant Final Approval
                         </button>
 
                         <div className="relative">
@@ -507,7 +565,7 @@ export function DetailDrawer({ g, onClose }: { g: GrievanceType; onClose: () => 
                           <Send className="w-5 h-5" /> Send Back to Department
                         </button>
                       </div>
-                      <p className="text-[9px] text-gray-400 text-center italic">※ Sending back will notify the assigned branch that the repair was rejected.</p>
+                      <p className="text-[9px] text-gray-400 text-center italic">※ Final approval transitions ticket to 'RESOLVED' state. Final closure is handled by the citizen.</p>
                     </div>
                   ) : (
                     <div className="text-center py-6 bg-gray-50 rounded-xl border border-gray-100">
