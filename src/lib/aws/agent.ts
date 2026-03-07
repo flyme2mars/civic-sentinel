@@ -151,7 +151,7 @@ export async function processGrievanceAgent(params: {
       if (!outputMessage) throw new Error("No response");
       messages.push(outputMessage);
 
-      console.log(outputMessage)
+      console.log("[DEBUG] Agent message content:", outputMessage.content);
 
       if (response.stopReason === "tool_use") {
         const toolResultsContent: any[] = [];
@@ -176,11 +176,19 @@ export async function processGrievanceAgent(params: {
         }
       }
 
+      // If we reached here, it's NOT a tool use stop, or tool use failed to provide content
       const finalContent = outputMessage.content?.find(c => c.text)?.text;
       if (finalContent) {
         console.log("[DEBUG] Raw AI Final Text:", finalContent);
         const jsonMatch = finalContent.match(/\{[\s\S]*\}/);
-        return jsonMatch ? JSON.parse(jsonMatch[0]) : { error: "No JSON" };
+        if (jsonMatch) {
+          return JSON.parse(jsonMatch[0]);
+        }
+      }
+      
+      // If we are at the end of the loop and haven't found JSON, return what we have
+      if (i === 4) {
+        return { error: "Agent reached maximum steps without generating a formal draft.", raw: finalContent };
       }
     }
   } catch (error) { throw error; }

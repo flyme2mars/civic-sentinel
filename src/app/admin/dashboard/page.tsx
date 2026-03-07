@@ -9,7 +9,6 @@ import { DepartmentsView } from "@/components/admin/views/DepartmentsView";
 import { WardsView } from "@/components/admin/views/WardsView";
 import { AnalyticsView } from "@/components/admin/views/AnalyticsView";
 import { ReportsView } from "@/components/admin/views/ReportsView";
-import { SettingsView } from "@/components/admin/views/SettingsView";
 import { DetailDrawer } from "@/components/admin/DetailDrawer";
 import { GrievanceType } from "@/lib/mock-data";
 import { DEPARTMENTS } from "@/lib/departments";
@@ -17,7 +16,6 @@ import {
   LayoutDashboard, 
   Inbox, 
   Building2, 
-  Settings, 
   Shield 
 } from "lucide-react";
 
@@ -179,7 +177,6 @@ export default function GovernmentDashboard() {
     { id: "overview", icon: LayoutDashboard, label: "Overview" },
     { id: "grievances", icon: Inbox, label: "Grievances" },
     { id: "departments", icon: Building2, label: "Departments" },
-    { id: "settings", icon: Settings, label: "Settings" },
   ];
 
   const NOTIFS = [
@@ -281,7 +278,6 @@ export default function GovernmentDashboard() {
             />
           )}
           {activeNav === "departments" && <DepartmentsView surface={surface} border={border} textSecondary={textSecondary} textPrimary={textPrimary} grievances={grievances} />}
-          {activeNav === "settings" && <SettingsView surface={surface} border={border} textSecondary={textSecondary} textPrimary={textPrimary} accent={accent} />}
         </main>
       </div>
 

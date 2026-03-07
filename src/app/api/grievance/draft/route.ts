@@ -5,25 +5,29 @@ import { GetObjectCommand } from '@aws-sdk/client-s3';
 
 export async function POST(request: Request) {
   try {
-    const { imageKey, description, location } = await request.json();
+    const body = await request.json();
+    const { imageKey, imageKeys, description, location } = body;
+    
+    // Use the first key from imageKeys if imageKey is missing
+    const targetKey = imageKey || (imageKeys && imageKeys.length > 0 ? imageKeys[0] : null);
 
-    console.log('[Grievance API] Request received. Analyzing with Sentinel Agent...');
+    console.log(`[Grievance API] Request received for key: ${targetKey}. Analyzing with Sentinel Agent...`);
 
     let imageBytes: Uint8Array | undefined;
     let imageFormat: "png" | "jpeg" | "webp" = "jpeg";
 
     // 1. Fetch image from S3 if key provided
-    if (imageKey) {
+    if (targetKey) {
       const getObjCommand = new GetObjectCommand({
         Bucket: AWS_CONFIG.s3.bucketName,
-        Key: imageKey,
+        Key: targetKey,
       });
       const response = await s3Client.send(getObjCommand);
       const bytes = await response.Body?.transformToByteArray();
       if (bytes) {
         imageBytes = bytes;
-        imageFormat = imageKey.toLowerCase().endsWith('png') ? 'png' : 
-                      imageKey.toLowerCase().endsWith('webp') ? 'webp' : 'jpeg';
+        imageFormat = targetKey.toLowerCase().endsWith('png') ? 'png' : 
+                      targetKey.toLowerCase().endsWith('webp') ? 'webp' : 'jpeg';
       }
     }
 
