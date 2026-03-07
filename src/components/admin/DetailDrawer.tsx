@@ -426,26 +426,26 @@ export function DetailDrawer({ g, onClose }: { g: GrievanceType; onClose: () => 
             {tab === "actions" && (
               <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
                 {/* Official Verification Section */}
-                <div className="p-5 rounded-2xl bg-gray-900 text-white shadow-xl">
-                  <div className="text-[10px] font-mono font-bold tracking-widest uppercase mb-4 flex items-center gap-2 opacity-70">
+                <div className="p-5 rounded-2xl bg-white border border-gray-100 shadow-sm">
+                  <div className="text-[10px] font-mono font-bold tracking-widest uppercase mb-4 flex items-center gap-2 text-gray-500">
                     <ShieldCheck className="w-4 h-4" /> Administrative Control
                   </div>
-                  
+
                   {/* Initial Triage: Verify or Reject */}
                   {(g.status === "pending" || g.status === "critical") ? (
                     <div className="space-y-4">
-                      <p className="text-xs text-gray-400">Step 1: Validate the report and assign to a branch for resolution.</p>
-                      
+                      <p className="text-xs text-gray-500">Step 1: Validate the report and assign to a branch for resolution.</p>
+
                       <div className="space-y-2">
-                        <label className="text-[9px] font-mono font-bold uppercase text-gray-500">Target Department Branch</label>
+                        <label className="text-[9px] font-mono font-bold uppercase text-gray-400">Target Department Branch</label>
                         <select 
                           value={selectedBranch}
                           onChange={(e) => setSelectedBranch(e.target.value)}
-                          className="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-sm font-bold text-white outline-none focus:ring-2 focus:ring-white/20 transition-all appearance-none"
+                          className="w-full bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 text-sm font-bold text-gray-900 outline-none focus:ring-2 focus:ring-gray-200 transition-all appearance-none"
                         >
-                          <option value="" className="text-black">Choose a branch...</option>
+                          <option value="">Choose a branch...</option>
                           {DEPARTMENTS.map(dept => (
-                            <option key={dept.id} value={dept.id} className="text-black">
+                            <option key={dept.id} value={dept.id}>
                               {dept.name} ({dept.department})
                             </option>
                           ))}
@@ -456,64 +456,64 @@ export function DetailDrawer({ g, onClose }: { g: GrievanceType; onClose: () => 
                         <button 
                           disabled={!selectedBranch || isAssigning}
                           onClick={() => handleUpdate("assigned", selectedBranch)}
-                          className="flex-1 bg-white text-gray-900 py-3 rounded-xl text-sm font-bold hover:bg-gray-100 disabled:opacity-50 transition-all flex items-center justify-center gap-2"
+                          className="flex-1 bg-gray-900 text-white py-3 rounded-xl text-sm font-bold hover:bg-black disabled:opacity-50 transition-all flex items-center justify-center gap-2"
                         >
                           <Check className="w-4 h-4" /> {isAssigning ? "Processing..." : "Verify as Original"}
                         </button>
                         <button 
                           disabled={isAssigning}
                           onClick={() => handleUpdate("REJECTED")}
-                          className="flex-1 bg-red-500/20 text-red-400 border border-red-500/30 py-3 rounded-xl text-sm font-bold hover:bg-red-500/30 transition-all flex items-center justify-center gap-2"
+                          className="flex-1 bg-red-50 text-red-600 border border-red-100 py-3 rounded-xl text-sm font-bold hover:bg-red-100 transition-all flex items-center justify-center gap-2"
                         >
                           <X className="w-4 h-4" /> Reject as Fake
                         </button>
                       </div>
-                      {!selectedBranch && <p className="text-[9px] text-amber-400/80 font-mono text-center">※ Department branch selection required to verify issue</p>}
+                      {!selectedBranch && <p className="text-[9px] text-amber-600 font-mono text-center">※ Department branch selection required to verify issue</p>}
                     </div>
                   ) : (g.status === "verified") ? (
                     /* Final Audit: Close or Re-assign */
                     <div className="space-y-6">
                       <div className="text-center">
-                        <div className="w-12 h-12 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-3">
-                          <ShieldCheck className="w-6 h-6 text-green-500" />
+                        <div className="w-12 h-12 bg-green-50/50 rounded-full flex items-center justify-center mx-auto mb-3">
+                          <ShieldCheck className="w-6 h-6 text-green-600" />
                         </div>
-                        <h4 className="text-lg font-bold">Awaiting Final Review</h4>
-                        <p className="text-xs text-gray-400 mt-1">AI Vision has verified the fix, but final administrative approval is required.</p>
+                        <h4 className="text-lg font-bold text-gray-900">Awaiting Final Review</h4>
+                        <p className="text-xs text-gray-500 mt-1">AI Vision has verified the fix, but final administrative approval is required.</p>
                       </div>
 
                       <div className="grid grid-cols-1 gap-3">
                         <button 
                           disabled={isAssigning}
                           onClick={() => handleUpdate("closed")}
-                          className="w-full bg-green-500 text-white py-4 rounded-xl text-sm font-black uppercase tracking-widest hover:bg-green-600 transition-all flex items-center justify-center gap-2 shadow-lg shadow-green-500/20"
+                          className="w-full bg-green-600 text-white py-4 rounded-xl text-sm font-black uppercase tracking-widest hover:bg-green-700 transition-all flex items-center justify-center gap-2 shadow-lg shadow-green-600/20"
                         >
                           <Check className="w-5 h-5" /> Approve & Close Ticket
                         </button>
 
                         <div className="relative">
                           <div className="absolute inset-0 flex items-center" aria-hidden="true">
-                            <div className="w-full border-t border-white/10"></div>
+                            <div className="w-full border-t border-gray-100"></div>
                           </div>
-                          <div className="relative flex justify-center text-[10px] uppercase font-bold text-gray-500">
-                            <span className="bg-gray-900 px-2">Or if fix is unsatisfactory</span>
+                          <div className="relative flex justify-center text-[10px] uppercase font-bold text-gray-400">
+                            <span className="bg-white px-2">Or if fix is unsatisfactory</span>
                           </div>
                         </div>
 
                         <button 
                           disabled={isAssigning}
                           onClick={() => handleUpdate("assigned", (g as any).assignedTo, "Repair rejected by admin. Sent back for re-resolution.")}
-                          className="w-full bg-amber-500/10 text-amber-500 border border-amber-500/30 py-4 rounded-xl text-sm font-bold hover:bg-amber-500/20 transition-all flex items-center justify-center gap-2"
+                          className="w-full bg-white text-amber-600 border border-amber-200 py-4 rounded-xl text-sm font-bold hover:bg-amber-50 transition-all flex items-center justify-center gap-2"
                         >
                           <Send className="w-5 h-5" /> Send Back to Department
                         </button>
                       </div>
-                      <p className="text-[9px] text-gray-500 text-center italic">※ Sending back will notify the assigned branch that the repair was rejected.</p>
+                      <p className="text-[9px] text-gray-400 text-center italic">※ Sending back will notify the assigned branch that the repair was rejected.</p>
                     </div>
                   ) : (
-                    <div className="text-center py-6 bg-white/5 rounded-xl border border-white/5">
-                      <p className="text-xs text-gray-400 italic">Ticket is currently in {g.status.toUpperCase()} state. No pending administrative actions.</p>
+                    <div className="text-center py-6 bg-gray-50 rounded-xl border border-gray-100">
+                      <p className="text-xs text-gray-500 italic">Ticket is currently in {g.status.toUpperCase()} state. No pending administrative actions.</p>
                       {g.status === "assigned" && (
-                        <p className="text-[10px] text-gray-500 mt-2 font-mono">Awaiting department branch resolution...</p>
+                        <p className="text-[10px] text-gray-400 mt-2 font-mono">Awaiting department branch resolution...</p>
                       )}
                     </div>
                   )}
