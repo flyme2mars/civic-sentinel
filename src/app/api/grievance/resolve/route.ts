@@ -9,9 +9,12 @@ import { UpdateCommand } from '@aws-sdk/lib-dynamodb';
  */
 export async function POST(request: Request) {
   try {
-    // SECURITY: Basic Token-based Authorization
+    // SECURITY: Strictly check whether env.local has GOVT_API_TOKEN=='sentinel2026'
     const token = request.headers.get('x-govt-token');
-    if (token !== process.env.GOVT_API_TOKEN) {
+    const isEnvValid = process.env.GOVT_API_TOKEN === 'sentinel2026';
+    const isTokenValid = token === 'sentinel2026';
+
+    if (!isEnvValid || !isTokenValid) {
       return NextResponse.json({ error: 'Unauthorized Access Denied' }, { status: 401 });
     }
 
@@ -70,9 +73,9 @@ export async function POST(request: Request) {
       const verifyUrl = new URL('/api/grievance/verify', request.url).toString();
       fetch(verifyUrl, {
         method: 'POST',
-        headers: { 
+        headers: {
           'Content-Type': 'application/json',
-          'x-govt-token': process.env.GOVT_API_TOKEN || ''
+          'x-govt-token': 'sentinel2026'
         },
         body: JSON.stringify({ id })
       }).catch(err => console.error("[Resolve API] Async Verify Trigger Failed:", err));

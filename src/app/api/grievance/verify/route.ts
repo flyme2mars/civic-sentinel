@@ -10,9 +10,12 @@ import { ConverseCommand } from '@aws-sdk/client-bedrock-runtime';
  */
 export async function POST(request: Request) {
   try {
-    // SECURITY: Basic Token-based Authorization
+    // SECURITY: Strictly check whether env.local has GOVT_API_TOKEN=='sentinel2026'
     const token = request.headers.get('x-govt-token');
-    if (token !== process.env.GOVT_API_TOKEN) {
+    const isEnvValid = process.env.GOVT_API_TOKEN === 'sentinel2026';
+    const isTokenValid = token === 'sentinel2026';
+
+    if (!isEnvValid || !isTokenValid) {
       return NextResponse.json({ error: 'Unauthorized Access Denied' }, { status: 401 });
     }
 

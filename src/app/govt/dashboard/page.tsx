@@ -6,7 +6,8 @@ import { GrievancesView } from '@/components/govt/views/GrievancesView';
 import { AnalyticsView } from '@/components/govt/views/AnalyticsView';
 import { DetailDrawer } from '@/components/govt/DetailDrawer';
 import { CivicIssue } from '@/lib/types';
-import { Search } from 'lucide-react';
+import { Search, ShieldAlert, Lock, User as UserIcon } from 'lucide-react';
+import { DEPARTMENTS } from '@/lib/departments';
 
 export default function GovtDashboard() {
   const [activeTab, setActiveTab] = useState('inbox');
@@ -15,42 +16,74 @@ export default function GovtDashboard() {
   const [grievances, setGrievances] = useState<CivicIssue[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   
-  // SECURITY: Basic Token-based Authorization for Hackathon
-  const [authToken, setAuthToken] = useState<string | null>(null);
+  // LOGIN STATE
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
   const [isAuthorized, setIsAuthorized] = useState(false);
+  const [branchId, setBranchId] = useState<string | null>(null);
+
+  // For the API call, we still need the actual token from env (hardcoded for hackathon demo if needed)
+  const GOVT_TOKEN = "sentinel2026"; // Matches process.env.GOVT_API_TOKEN in dev
 
   useEffect(() => {
-    const savedToken = localStorage.getItem('govt_token');
-    if (savedToken) {
-      setAuthToken(savedToken);
+    const savedBranch = localStorage.getItem('govt_branch_id');
+    const authStatus = localStorage.getItem('govt_authorized');
+    if (savedBranch && authStatus === 'true') {
+      setBranchId(savedBranch);
       setIsAuthorized(true);
     }
   }, []);
 
+  const handleLogin = (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+
+    const dept = DEPARTMENTS.find(d => d.id.toUpperCase() === username.toUpperCase());
+    
+    if (!dept) {
+      setError('Invalid Branch ID. Please check your credentials.');
+      return;
+    }
+
+    if (password !== '123456') {
+      setError('Incorrect password. Access denied.');
+      return;
+    }
+
+    // Success
+    localStorage.setItem('govt_branch_id', dept.id);
+    localStorage.setItem('govt_authorized', 'true');
+    setBranchId(dept.id);
+    setIsAuthorized(true);
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('govt_branch_id');
+    localStorage.removeItem('govt_authorized');
+    setIsAuthorized(false);
+    setBranchId(null);
+  };
+
   useEffect(() => {
-    if (!authToken) return;
+    if (!isAuthorized || !branchId) return;
 
     async function fetchGrievances() {
       setIsLoading(true);
       try {
-        const res = await fetch('/api/grievance/list', {
-          headers: { 'x-govt-token': authToken! }
+        // Pass the branch ID to filter the grievances
+        const res = await fetch(`/api/grievance/list?branch=${branchId}`, {
+          headers: { 'x-govt-token': GOVT_TOKEN }
         });
         const data = await res.json();
         
         if (res.status === 401) {
-          setIsAuthorized(false);
-          localStorage.removeItem('govt_token');
+          handleLogout();
           return;
         }
 
         if (data.success && data.grievances) {
-          console.log("[Dashboard] Raw grievances from API:", data.grievances);
-          setIsAuthorized(true);
-          localStorage.setItem('govt_token', authToken!);
-          
           const formatted: CivicIssue[] = data.grievances.map((dbItem: any) => {
-            console.log("[Dashboard] Mapping item:", dbItem.id);
             const reportedAt = dbItem.createdAt ? new Date(dbItem.createdAt).getTime() : Date.now();
             const slaHours = dbItem.slaHours || 48;
             return {
@@ -91,7 +124,7 @@ export default function GovtDashboard() {
       }
     }
     fetchGrievances();
-  }, [authToken]);
+  }, [isAuthorized, branchId]);
 
   const filteredIssues = useMemo(() => {
     return grievances.filter(issue => {
@@ -107,41 +140,76 @@ export default function GovtDashboard() {
 
   if (!isAuthorized) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-6 font-inter">
-        <div className="bg-white p-10 rounded-2xl border border-gray-100 w-full max-w-md shadow-xl shadow-gray-200/50 text-center">
-          <div className="w-16 h-16 bg-gray-900 rounded-2xl flex items-center justify-center mx-auto mb-6 text-2xl">🛡️</div>
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">Government Access</h1>
-          <p className="text-gray-500 text-sm mb-8">Secure portal for authorized civil auditors.</p>
+      <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center p-6 font-inter">
+        <div className="bg-white p-8 md:p-10 rounded-3xl border border-gray-200 w-full max-w-md shadow-2xl shadow-gray-200/50">
+          <div className="w-16 h-16 bg-gray-900 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-xl shadow-gray-900/20">
+            <Lock className="w-8 h-8 text-white" />
+          </div>
           
-          <input 
-            type="password" 
-            placeholder="Enter Government Access Token"
-            className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm mb-4 outline-none focus:ring-4 focus:ring-gray-100 transition-all"
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') {
-                setAuthToken((e.target as HTMLInputElement).value);
-                setIsAuthorized(true);
-              }
-            }}
-          />
-          <button 
-            onClick={(e) => {
-              const input = (e.currentTarget.previousSibling as HTMLInputElement);
-              setAuthToken(input.value);
-              setIsAuthorized(true);
-            }}
-            className="w-full py-3 bg-gray-900 text-white rounded-xl font-bold text-sm hover:bg-black transition-colors"
-          >
-            VERIFY IDENTITY
-          </button>
+          <div className="text-center mb-8">
+            <h1 className="text-2xl font-black text-gray-900 tracking-tight uppercase">Govt Sentinel</h1>
+            <p className="text-gray-500 text-sm font-medium mt-1">Branch Authorization Protocol</p>
+          </div>
+
+          <form onSubmit={handleLogin} className="space-y-4">
+            <div className="space-y-1.5">
+              <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Branch Identity ID</label>
+              <div className="relative">
+                <UserIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <input 
+                  type="text" 
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  placeholder="e.g. PWD_KALAMASSERY"
+                  className="w-full pl-11 pr-4 py-3.5 bg-gray-50 border border-gray-200 rounded-xl text-sm outline-none focus:ring-4 focus:ring-gray-100 focus:border-gray-300 transition-all font-medium text-gray-900 placeholder:text-gray-300"
+                  required
+                />
+              </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Access Credentials</label>
+              <div className="relative">
+                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <input 
+                  type="password" 
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Enter Passcode"
+                  className="w-full pl-11 pr-4 py-3.5 bg-gray-50 border border-gray-200 rounded-xl text-sm outline-none focus:ring-4 focus:ring-gray-100 focus:border-gray-300 transition-all font-medium text-gray-900 placeholder:text-gray-300"
+                  required
+                />
+              </div>
+            </div>
+
+            {error && (
+              <div className="bg-red-50 border border-red-100 p-3.5 rounded-xl flex items-center gap-3 animate-in fade-in slide-in-from-top-2 duration-300">
+                <ShieldAlert className="w-4 h-4 text-red-500 shrink-0" />
+                <p className="text-[11px] text-red-600 font-bold leading-tight uppercase tracking-tighter">{error}</p>
+              </div>
+            )}
+
+            <button 
+              type="submit"
+              className="w-full py-4 bg-gray-900 text-white rounded-xl font-black text-xs uppercase tracking-[0.2em] hover:bg-black transition-all shadow-lg shadow-gray-900/20 active:scale-[0.98] mt-4"
+            >
+              Authorize Access
+            </button>
+          </form>
+
+          <p className="mt-8 text-[10px] text-gray-400 font-bold uppercase tracking-widest text-center opacity-50">
+            Encrypted End-to-End Civil Oversight
+          </p>
         </div>
       </div>
     );
   }
 
+  const currentDept = DEPARTMENTS.find(d => d.id === branchId);
+
   return (
     <div className="flex h-screen bg-white text-gray-900 font-inter selection:bg-blue-100 selection:text-blue-900">
-      <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
+      <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} onLogout={handleLogout} />
 
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         {/* Top Header */}
@@ -159,11 +227,13 @@ export default function GovtDashboard() {
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
-            <div className="flex items-center gap-2 pl-2 cursor-pointer hover:opacity-80 transition-opacity">
-              <div className="w-7 h-7 rounded-full bg-gradient-to-tr from-gray-200 to-gray-100 border border-gray-200 flex items-center justify-center text-[10px] font-bold">
-                JD
-              </div>
+          <div className="flex items-center gap-3">
+            <div className="text-right hidden sm:block">
+              <p className="text-xs font-black text-gray-900 uppercase tracking-tighter">{currentDept?.name}</p>
+              <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">{currentDept?.department}</p>
+            </div>
+            <div className="w-8 h-8 rounded-xl bg-gray-900 flex items-center justify-center text-[10px] font-black text-white shadow-lg shadow-gray-200">
+              {branchId?.substring(0, 2)}
             </div>
           </div>
         </header>
@@ -190,7 +260,7 @@ export default function GovtDashboard() {
           />
           <DetailDrawer 
             issue={selectedIssue} 
-            authToken={authToken}
+            authToken={GOVT_TOKEN}
             onClose={() => setSelectedIssue(null)} 
           />
         </>
