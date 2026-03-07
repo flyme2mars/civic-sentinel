@@ -12,6 +12,13 @@ import { ReportsView } from "@/components/admin/views/ReportsView";
 import { SettingsView } from "@/components/admin/views/SettingsView";
 import { DetailDrawer } from "@/components/admin/DetailDrawer";
 import { GrievanceType } from "@/lib/mock-data";
+import { 
+  LayoutDashboard, 
+  Inbox, 
+  Building2, 
+  Settings, 
+  Shield 
+} from "lucide-react";
 
 export default function GovernmentDashboard() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -27,6 +34,12 @@ export default function GovernmentDashboard() {
   // SECURITY: Basic Token-based Authorization for Hackathon
   const [authToken, setAuthToken] = useState<string | null>(null);
   const [isAuthorized, setIsAuthorized] = useState(false);
+
+  const handleLogout = () => {
+    localStorage.removeItem('govt_token');
+    setAuthToken(null);
+    setIsAuthorized(false);
+  };
 
   useEffect(() => {
     const savedToken = localStorage.getItem('govt_token');
@@ -68,8 +81,8 @@ export default function GovernmentDashboard() {
               ward: dbItem.location?.area || 'Unknown Ward',
               zone: dbItem.location?.city || 'Unknown Zone',
               address: dbItem.location?.landmark || dbItem.location?.area || 'Unknown Address',
-              citizen: 'Anonymous Citizen',
-              phone: 'Not provided',
+              citizen: dbItem.citizenName || 'Anonymous Citizen',
+              phone: dbItem.phoneNumber || 'Not provided',
               reportedAt: new Date(dbItem.createdAt).getTime(),
               slaHours: dbItem.slaHours || 48,
               elapsedHours: (Date.now() - new Date(dbItem.createdAt).getTime()) / 3600000,
@@ -81,6 +94,10 @@ export default function GovernmentDashboard() {
               assignee: dbItem.targetDepartment || "Unassigned",
               assignedTo: dbItem.assignedTo,
               imageUrl: dbItem.imageUrl,
+              evidenceUrls: dbItem.evidenceUrls || [],
+              fixedImageUrl: dbItem.fixedImageUrl,
+              fixedImageUrls: dbItem.fixedImageUrls || [],
+              score: dbItem.score || (dbItem.aiVerificationResult?.confidence ? Math.round(dbItem.aiVerificationResult.confidence * 100) : null),
             };
           });
           setGrievances(formatted);
@@ -103,7 +120,13 @@ export default function GovernmentDashboard() {
   const filtered = React.useMemo(() => {
     return grievances.filter(g => {
       const q = search.toLowerCase();
-      const matchSearch = !q || g.title.toLowerCase().includes(q) || g.id.toLowerCase().includes(q) || g.citizen.toLowerCase().includes(q) || g.address.toLowerCase().includes(q);
+      const matchSearch = !q || 
+        g.title.toLowerCase().includes(q) || 
+        g.id.toLowerCase().includes(q) || 
+        g.citizen.toLowerCase().includes(q) || 
+        g.phone.toLowerCase().includes(q) || 
+        g.address.toLowerCase().includes(q) ||
+        g.category.toLowerCase().includes(q);
       
       let matchStatus = true;
       if (filterStatus === "all") {
@@ -136,10 +159,10 @@ export default function GovernmentDashboard() {
   }, [grievances, search, filterStatus, sortBy]);
 
   const NAV = [
-    { id: "overview", icon: "⬡", label: "Overview" },
-    { id: "grievances", icon: "◈", label: "Grievances" },
-    { id: "departments", icon: "◫", label: "Departments" },
-    { id: "settings", icon: "⊕", label: "Settings" },
+    { id: "overview", icon: LayoutDashboard, label: "Overview" },
+    { id: "grievances", icon: Inbox, label: "Grievances" },
+    { id: "departments", icon: Building2, label: "Departments" },
+    { id: "settings", icon: Settings, label: "Settings" },
   ];
 
   const NOTIFS = [
@@ -152,7 +175,9 @@ export default function GovernmentDashboard() {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-6 font-sans">
         <div className="bg-white p-10 rounded-2xl border border-gray-100 w-full max-w-md shadow-xl shadow-gray-200/50 text-center">
-          <div className="w-16 h-16 bg-gray-900 rounded-2xl flex items-center justify-center mx-auto mb-6 text-2xl">🛡️</div>
+          <div className="w-16 h-16 bg-gray-900 rounded-2xl flex items-center justify-center mx-auto mb-6">
+            <Shield className="w-8 h-8 text-white" />
+          </div>
           <h1 className="text-2xl font-bold text-gray-900 mb-2">Admin Access</h1>
           <p className="text-gray-500 text-sm mb-8">Secure portal for system administrators.</p>
           
@@ -204,12 +229,14 @@ export default function GovernmentDashboard() {
         activeNav={activeNav} setActiveNav={setActiveNav} 
         NAV={NAV} 
         grievancesCount={grievances.length}
+        onLogout={handleLogout}
       />
 
       {/* MAIN */}
       <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
         <TopNav 
           search={search} setSearch={setSearch} 
+          onLogout={handleLogout}
         />
 
         {/* CONTENT */}

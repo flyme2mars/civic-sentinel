@@ -177,47 +177,93 @@ export function DetailDrawer({ g, onClose }: { g: GrievanceType; onClose: () => 
 
                 <div>
                   <div className={`text-[9px] font-mono font-bold tracking-widest uppercase mb-4 ${textSecondary}`}>Photo Evidence</div>
-                  <div className="grid grid-cols-2 gap-4">
-                    {["BEFORE", "AFTER"].map(label => {
-                      const isBefore = label === "BEFORE";
-                      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                      const hasImage = isBefore ? !!(g as any).imageUrl : g.hasAfter;
-                      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                      const imgSrc = isBefore ? (g as any).imageUrl : null;
-                      
-                      return (
-                        <div key={label} className="group flex flex-col gap-2">
-                          <div className={`aspect-video rounded-xl border ${borderColor} relative overflow-hidden flex flex-col items-center justify-center gap-2 bg-gray-50`}>
-                            {hasImage && isBefore ? (
-                              <>
-                                <img 
-                                  src={imgSrc} 
-                                  alt={label} 
-                                  className="w-full h-full object-cover cursor-zoom-in transition-transform duration-500 group-hover:scale-110" 
-                                  onClick={() => openModal(imgSrc, `${label} Evidence`)} 
-                                />
-                                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
-                                  <ZoomIn className="w-6 h-6 text-white" />
-                                </div>
-                                <div className="absolute bottom-2 right-2 px-2 py-1 bg-black/60 backdrop-blur-md rounded-md text-[9px] font-bold text-white flex items-center gap-1">
-                                  {label}
-                                </div>
-                              </>
-                            ) : (
-                              <>
-                                <Camera className={`w-8 h-8 opacity-20 ${textPrimary}`} />
-                                <div className={`text-[10px] font-mono font-bold tracking-widest uppercase opacity-40 ${textPrimary}`}>{label}</div>
-                                {label === "AFTER" && g.hasAfter && (
-                                  <div className="absolute top-2 right-2 flex items-center gap-1 text-[10px] text-green-500 font-bold font-mono">
-                                    <Check className="w-3 h-3" /> VERIFIED
-                                  </div>
-                                )}
-                              </>
-                            )}
+                  
+                  {/* Before Images */}
+                  <div className="mb-6">
+                    <div className="text-[10px] font-bold text-gray-400 mb-2 uppercase tracking-tight">Before (Reported Evidence)</div>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                      {(g as any).evidenceUrls && (g as any).evidenceUrls.length > 0 ? (
+                        (g as any).evidenceUrls.map((url: string, idx: number) => (
+                          <div key={`before-${idx}`} className="group relative aspect-video rounded-xl border border-gray-100 overflow-hidden bg-gray-50">
+                            <img 
+                              src={url} 
+                              alt={`Before ${idx + 1}`} 
+                              className="w-full h-full object-cover cursor-zoom-in transition-transform duration-500 group-hover:scale-110" 
+                              onClick={() => openModal(url, `Before Evidence ${idx + 1}`)} 
+                            />
+                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
+                              <ZoomIn className="w-5 h-5 text-white" />
+                            </div>
+                          </div>
+                        ))
+                      ) : (g as any).imageUrl ? (
+                        <div className="group relative aspect-video rounded-xl border border-gray-100 overflow-hidden bg-gray-50">
+                          <img 
+                            src={(g as any).imageUrl} 
+                            alt="Before" 
+                            className="w-full h-full object-cover cursor-zoom-in transition-transform duration-500 group-hover:scale-110" 
+                            onClick={() => openModal((g as any).imageUrl, `Before Evidence`)} 
+                          />
+                          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
+                            <ZoomIn className="w-5 h-5 text-white" />
                           </div>
                         </div>
-                      );
-                    })}
+                      ) : (
+                        <div className="aspect-video rounded-xl border border-gray-100 flex flex-col items-center justify-center gap-2 bg-gray-50 opacity-50">
+                          <Camera className="w-6 h-6 text-gray-400" />
+                          <span className="text-[10px] font-bold text-gray-400">NO BEFORE PHOTO</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* After Images */}
+                  <div>
+                    <div className="text-[10px] font-bold text-gray-400 mb-2 uppercase tracking-tight">After (Resolution Proof)</div>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                      {(g as any).fixedImageUrls && (g as any).fixedImageUrls.length > 0 ? (
+                        (g as any).fixedImageUrls.map((url: string, idx: number) => (
+                          <div key={`after-${idx}`} className="group relative aspect-video rounded-xl border border-gray-100 overflow-hidden bg-gray-50">
+                            <img 
+                              src={url} 
+                              alt={`After ${idx + 1}`} 
+                              className="w-full h-full object-cover cursor-zoom-in transition-transform duration-500 group-hover:scale-110" 
+                              onClick={() => openModal(url, `After Evidence ${idx + 1}`)} 
+                            />
+                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
+                              <ZoomIn className="w-5 h-5 text-white" />
+                            </div>
+                            {idx === 0 && g.status.toLowerCase() === 'verified' && (
+                              <div className="absolute top-2 right-2 px-1.5 py-0.5 bg-green-500 rounded text-[8px] font-black text-white flex items-center gap-1 shadow-lg">
+                                <Check className="w-2 h-2" /> VERIFIED
+                              </div>
+                            )}
+                          </div>
+                        ))
+                      ) : (g as any).fixedImageUrl ? (
+                        <div className="group relative aspect-video rounded-xl border border-gray-100 overflow-hidden bg-gray-50">
+                          <img 
+                            src={(g as any).fixedImageUrl} 
+                            alt="After" 
+                            className="w-full h-full object-cover cursor-zoom-in transition-transform duration-500 group-hover:scale-110" 
+                            onClick={() => openModal((g as any).fixedImageUrl, `After Evidence`)} 
+                          />
+                          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
+                            <ZoomIn className="w-5 h-5 text-white" />
+                          </div>
+                          {g.status.toLowerCase() === 'verified' && (
+                            <div className="absolute top-2 right-2 px-1.5 py-0.5 bg-green-500 rounded text-[8px] font-black text-white flex items-center gap-1 shadow-lg">
+                              <Check className="w-2 h-2" /> VERIFIED
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <div className="aspect-video rounded-xl border border-gray-100 flex flex-col items-center justify-center gap-2 bg-gray-50 opacity-50">
+                          <Camera className="w-6 h-6 text-gray-400" />
+                          <span className="text-[10px] font-bold text-gray-400">NO AFTER PHOTO</span>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
 

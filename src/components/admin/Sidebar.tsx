@@ -3,12 +3,18 @@ import React from 'react';
 import { 
   Building2,
   ChevronDown,
-  Search
+  LogOut
 } from 'lucide-react';
+import { DEPARTMENTS as ACTUAL_DEPARTMENTS } from '@/lib/departments';
 
-export function Sidebar({ activeNav, setActiveNav, NAV, grievancesCount }: any) {
+export function Sidebar({ activeNav, setActiveNav, NAV, grievancesCount, onLogout }: any) {
   const DEPARTMENTS = [
     { id: 'admin-sentinel', name: 'Sentinel Admin', location: 'System Oversight' },
+    ...ACTUAL_DEPARTMENTS.map(d => ({
+      id: d.id,
+      name: d.name,
+      location: d.department
+    }))
   ];
 
   return (
@@ -59,14 +65,6 @@ export function Sidebar({ activeNav, setActiveNav, NAV, grievancesCount }: any) 
           ))}
         </div>
       </nav>
-
-      {/* User / Bottom */}
-      <div className="p-4 border-t border-gray-100 space-y-2">
-        <button className="w-full flex items-center gap-3 px-3 py-2 text-sm text-gray-500 hover:text-gray-900 hover:bg-gray-50 rounded-md transition-colors">
-          <Search className="w-4 h-4 text-gray-400" />
-          Quick Search
-        </button>
-      </div>
     </aside>
   );
 }
