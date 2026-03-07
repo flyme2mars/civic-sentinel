@@ -21,28 +21,28 @@ export async function POST(request: Request) {
         // 1. Generate the tweet text
         const postText = await generateSocialPost(grievance);
 
-        // 2. Safely grab the raw key from DynamoDB
-        const targetKey = grievance.imageKey || (grievance.evidenceKeys && grievance.evidenceKeys[0]);
-        let imageUrl = '';
-
-        // 3. Generate the S3 Presigned URL if a key exists
-        if (targetKey) {
+        // 2. Generate signed URLs for all evidence images
+        const keys = grievance.evidenceKeys || (grievance.imageKey ? [grievance.imageKey] : []);
+        const imageUrls = await Promise.all(keys.map(async (key: string) => {
             try {
                 const command = new GetObjectCommand({
                     Bucket: AWS_CONFIG.s3.bucketName,
-                    Key: targetKey,
+                    Key: key,
                 });
-                // Create a temporary secure URL valid for 1 hour
-                imageUrl = await getSignedUrl(s3Client, command, { expiresIn: 3600 });
+                return await getSignedUrl(s3Client, command, { expiresIn: 3600 });
             } catch (e) {
-                console.error("[S3 Error] Could not generate signed URL:", e);
+                console.error("[S3 Error] Could not generate signed URL for key:", key, e);
+                return null;
             }
-        }
+        }));
+
+        const filteredUrls = imageUrls.filter(url => url !== null);
 
         return NextResponse.json({
             success: true,
             postText,
-            imageUrl
+            imageUrl: filteredUrls.length > 0 ? filteredUrls[0] : '', // for backward compatibility
+            imageUrls: filteredUrls
         });
 
     } catch (error: any) {
