@@ -11,6 +11,7 @@ import {
   Users,
   Zap,
   Lock,
+  Clock,
   Eye,
   Menu,
   X,
@@ -243,6 +244,153 @@ const MockGovtAnalytics = () => (
     </div>
   </div>
 );
+
+const ProtocolStepper = () => {
+  const [activeStep, setActiveStep] = useState(0);
+
+  const steps = [
+    {
+      title: "Multimodal Capture",
+      desc: "Sentinel processes natural speech, raw audio, and high-res imagery. Advanced STT (Speech-to-Text) captures nuances that traditional text forms miss.",
+      icon: <Eye className="w-5 h-5" />,
+      viz: (
+        <div className="relative w-48 h-48 border border-white/5 rounded-2xl flex flex-col items-center justify-center bg-white/[0.01]">
+          <div className="flex gap-1 items-end h-12 mb-4">
+            {[0.4, 0.7, 0.2, 0.9, 0.5, 0.8, 0.3].map((h, i) => (
+              <div key={i} className="w-1.5 bg-white/20 rounded-full animate-pulse" style={{ height: `${h * 100}%`, animationDelay: `${i * 0.1}s` }} />
+            ))}
+          </div>
+          <div className="text-[8px] font-mono text-white/20 tracking-[0.3em]">AUDIO_STREAM_DETECTED</div>
+        </div>
+      )
+    },
+    {
+      title: "Sentinel AI Synthesis",
+      desc: "Our proprietary Sentinel AI classifies issues across departments and generates a high-fidelity formal complaint, mapping multimodal evidence into structured legal data.",
+      icon: <Cpu className="w-5 h-5" />,
+      viz: (
+        <div className="relative w-48 h-48 border border-white/5 rounded-2xl p-4 bg-white/[0.01] overflow-hidden">
+          <div className="space-y-2 opacity-20 font-mono text-[7px] text-white">
+            <div className="text-indigo-400">{">>"} ANALYZING_VECTORS...</div>
+            <div>CATEGORY: INFRASTRUCTURE</div>
+            <div>SEVERITY: CRITICAL [0.98]</div>
+            <div>DEPT_TARGET: PWD_ROADS</div>
+            <div className="h-px bg-white/10 my-2" />
+            <div className="animate-pulse">GENERATING_FORMAL_SUMMARY...</div>
+          </div>
+          <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent" />
+        </div>
+      )
+    },
+    {
+      title: "Doomsday Hard-Lock",
+      desc: "Sentinel AI hard-codes a legal SLA deadline into the grievance hash. This 'Doomsday Clock' ensures the municipal branch is held to a non-negotiable resolution window.",
+      icon: <Clock className="w-5 h-5" />,
+      viz: (
+        <div className="relative w-48 h-48 border border-white/5 rounded-full flex flex-col items-center justify-center bg-white/[0.01]">
+          <div className="text-4xl font-light tracking-tighter text-white/80 tabular-nums">47:59:59</div>
+          <div className="text-[7px] font-black text-white/10 uppercase tracking-[0.4em] mt-2">SLA_TICKING</div>
+        </div>
+      )
+    },
+    {
+      title: "Vision AI Auditing",
+      desc: "Upon repair, vision models execute a structural audit by comparing before/after imagery. We verify the resolution pixel-by-pixel to ensure it meets engineering standards.",
+      icon: <ShieldCheck className="w-5 h-5" />,
+      viz: (
+        <div className="relative w-48 h-48 border border-white/5 rounded-xl overflow-hidden bg-white/[0.01]">
+          <div className="absolute inset-0 flex">
+            <div className="flex-1 bg-white/[0.02] border-r border-white/5" />
+            <div className="flex-1 bg-white/[0.01]" />
+          </div>
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="w-32 h-20 border border-white/10 rounded bg-black/60 backdrop-blur-md flex items-center justify-center">
+              <span className="text-[8px] font-mono text-white/40">MATCH_CONFIDENCE: 99.4%</span>
+            </div>
+          </div>
+          <div className="absolute h-full w-px bg-white/40 animate-[move_4s_linear_infinite]" />
+        </div>
+      )
+    },
+    {
+      title: "RTI Automation",
+      desc: "If the Doomsday Clock expires, Sentinel AI automatically constructs a formal RTI PDF using the audit trail, ready for legal submission without human intervention.",
+      icon: <AlertCircle className="w-5 h-5" />,
+      viz: (
+        <div className="relative w-48 h-48 border border-white/5 rounded-2xl flex items-center justify-center bg-white/[0.01]">
+          <div className="w-24 h-32 bg-white/5 border border-white/10 rounded p-3 flex flex-col gap-2 relative">
+            <div className="w-full h-1.5 bg-white/20 rounded-full" />
+            <div className="w-2/3 h-1 bg-white/10 rounded-full" />
+            <div className="mt-auto flex justify-between items-center">
+              <div className="w-8 h-8 rounded-full border border-white/10" />
+              <div className="w-10 h-3 bg-indigo-500/20 rounded" />
+            </div>
+            <div className="absolute -top-2 -right-2 px-2 py-1 bg-white text-black text-[7px] font-black rounded uppercase">RTI_BUILDER</div>
+          </div>
+        </div>
+      )
+    }
+  ];
+
+  const nextStep = () => setActiveStep((prev) => (prev + 1) % steps.length);
+  const prevStep = () => setActiveStep((prev) => (prev - 1 + steps.length) % steps.length);
+
+  return (
+    <div className="space-y-12">
+      {/* Horizontal Nav - Neutralized Colors */}
+      <div className="flex items-center justify-between gap-4 overflow-x-auto pb-4 no-scrollbar">
+        {steps.map((s, i) => (
+          <button
+            key={i}
+            onClick={() => setActiveStep(i)}
+            className={`flex-1 min-w-[140px] group relative py-4 transition-all ${i === activeStep ? 'opacity-100' : 'opacity-20 hover:opacity-40'}`}
+          >
+            <div className="flex flex-col items-center gap-3">
+              <div className={`w-10 h-10 rounded-xl border flex items-center justify-center transition-all ${i === activeStep ? 'bg-white text-black border-white shadow-[0_0_30px_rgba(255,255,255,0.1)]' : 'bg-white/5 border-white/5 text-white/40'}`}>
+                {s.icon}
+              </div>
+              <div className="text-[9px] font-bold uppercase tracking-widest text-center px-2">{s.title}</div>
+            </div>
+            {i === activeStep && (
+              <div className="absolute bottom-0 left-0 right-0 h-px bg-white/40" />
+            )}
+          </button>
+        ))}
+      </div>
+
+      {/* Main Content Area - Linear Aesthetic */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center bg-[#080808] border border-white/5 rounded-[32px] p-8 md:p-16 relative">
+        <button onClick={prevStep} className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full border border-white/5 flex items-center justify-center text-white/10 hover:text-white transition-all z-20">
+          <ChevronRight className="w-4 h-4 rotate-180" />
+        </button>
+        <button onClick={nextStep} className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full border border-white/5 flex items-center justify-center text-white/10 hover:text-white transition-all z-20">
+          <ChevronRight className="w-4 h-4" />
+        </button>
+
+        <div className="flex justify-center animate-in fade-in duration-700" key={`viz-${activeStep}`}>
+          {steps[activeStep].viz}
+        </div>
+
+        <div className="space-y-6 animate-in fade-in duration-700" key={`txt-${activeStep}`}>
+          <div className="inline-flex px-3 py-1 bg-white/5 border border-white/10 rounded-full text-[9px] font-bold text-neutral-400 uppercase tracking-widest">
+            Protocol_Step_0{activeStep + 1}
+          </div>
+          <h3 className="text-2xl font-medium tracking-tight text-white italic uppercase">
+            {steps[activeStep].title}
+          </h3>
+          <p className="text-neutral-500 leading-relaxed text-base font-normal max-w-md">
+            {steps[activeStep].desc}
+          </p>
+          <div className="pt-4 flex gap-2">
+            {steps.map((_, i) => (
+              <div key={i} className={`h-0.5 rounded-full transition-all duration-500 ${i === activeStep ? 'w-8 bg-white/60' : 'w-2 bg-white/10'}`} />
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 export default function LandingPage() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -527,20 +675,16 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Vertical Stats Divider */}
-      <section className="py-20 border-y border-white/5 bg-white/[0.01]">
-        <div className="max-w-7xl mx-auto px-6 grid grid-cols-2 md:grid-cols-4 gap-12">
-          {[
-            { label: 'Network Uptime', val: '99.99%' },
-            { label: 'Cities Deployed', val: '18+' },
-            { label: 'Active Sessions', val: '4.2k' },
-            { label: 'AI Resolution', val: '94.2%' }
-          ].map((stat, i) => (
-            <div key={i} className="space-y-1">
-              <div className="text-[10px] font-medium text-neutral-600 uppercase tracking-[0.3em] italic">{stat.label}</div>
-              <div className="text-2xl md:text-3xl font-medium tracking-tight">{stat.val}</div>
-            </div>
-          ))}
+      {/* Protocol Lifecycle Stepper */}
+      <section className="py-24 md:py-48 px-6 relative overflow-hidden bg-white/[0.01]">
+        <div className="max-w-6xl mx-auto space-y-16">
+          <div className="text-center space-y-4">
+            <div className="text-[10px] font-black text-indigo-500 uppercase tracking-[0.3em]">Operational Flow</div>
+            <h2 className="text-3xl md:text-5xl font-medium tracking-tight text-white italic uppercase tracking-tighter">The Sentinel Protocol</h2>
+            <p className="text-neutral-500 max-w-xl mx-auto text-sm">A systematic approach to municipal accountability, enforced by AI and legal frameworks.</p>
+          </div>
+
+          <ProtocolStepper />
         </div>
       </section>
 
