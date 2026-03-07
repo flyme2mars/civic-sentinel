@@ -149,22 +149,22 @@ export async function POST(request: Request) {
 
     const timestamp = new Date().toISOString();
 
-    // 4. Update DynamoDB with AI findings
+    // 4. Update DynamoDB with AI findings (ALWAYS set to VERIFIED to pass to Admin, but attach the AI's skepticism)
     const updateCommand = new UpdateCommand({
       TableName: AWS_CONFIG.dynamodb.tableName,
       Key: { id },
       UpdateExpression: "SET #st = :status, aiVerificationResult = :result, verifiedAt = :time, history = list_append(if_not_exists(history, :empty_list), :historyEntry)",
       ExpressionAttributeNames: { "#st": "status" },
       ExpressionAttributeValues: {
-        ":status": result.status,
+        ":status": 'VERIFIED',
         ":result": result,
         ":time": timestamp,
         ":empty_list": [],
         ":historyEntry": [
           {
-            action: result.status,
+            action: 'VERIFIED',
             timestamp: timestamp,
-            note: `Vision Auditor Result: ${result.reasoning}`
+            note: `Vision Auditor Assessed: ${result.reasoning}`
           }
         ]
       },

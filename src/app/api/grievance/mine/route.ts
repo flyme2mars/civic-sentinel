@@ -22,7 +22,7 @@ export async function GET(request: Request) {
         ":cid": citizenId
       },
       // Use alises for reserved keywords
-      ProjectionExpression: "id, createdAt, title, #st, severity, slaHours, #loc, evidenceKeys, deadline",
+      ProjectionExpression: "id, createdAt, title, #st, severity, slaHours, #loc, evidenceKeys, deadline, targetDepartment, officialDesignation, summary, fixedImageKeys, fixedImageKey, aiVerificationResult",
       ExpressionAttributeNames: {
         "#st": "status",
         "#loc": "location"
@@ -45,10 +45,40 @@ export async function GET(request: Request) {
         }
       }));
 
+      const fixedImageUrls = await Promise.all((item.fixedImageKeys || []).map(async (key: string) => {
+        try {
+          const command = new GetObjectCommand({
+            Bucket: AWS_CONFIG.s3.bucketName,
+            Key: key,
+          });
+          return await getSignedUrl(s3Client, command, { expiresIn: 3600 });
+        } catch (e) {
+          console.error("Error signing fixed image URL", e);
+          return null;
+        }
+      }));
+
+      // Backward compatibility for single fixedImageKey
+      let fixedImageUrl = null;
+      if (item.fixedImageKey && fixedImageUrls.length === 0) {
+        try {
+          const command = new GetObjectCommand({
+            Bucket: AWS_CONFIG.s3.bucketName,
+            Key: item.fixedImageKey,
+          });
+          fixedImageUrl = await getSignedUrl(s3Client, command, { expiresIn: 3600 });
+          fixedImageUrls.push(fixedImageUrl);
+        } catch (e) {
+          console.error("Error signing single fixed image URL", e);
+        }
+      }
+
       return { 
         ...item, 
         evidenceUrls: evidenceUrls.filter(url => url !== null),
-        imageUrl: evidenceUrls.length > 0 ? evidenceUrls[0] : null // for backward compatibility
+        imageUrl: evidenceUrls.length > 0 ? evidenceUrls[0] : null, // for backward compatibility
+        fixedImageUrls: fixedImageUrls.filter(url => url !== null),
+        fixedImageUrl: fixedImageUrl || (fixedImageUrls.length > 0 ? fixedImageUrls[0] : null)
       };
     }));
 

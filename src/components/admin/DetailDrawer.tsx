@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { Pill, PriorityDot, SLARing, SLABar, ScoreRing } from './Atoms';
 import { GrievanceType, PRIORITY_MAP, STATUS_MAP } from '@/lib/mock-data';
-import { X, ZoomIn, Camera, Check, User, Phone, MapPin, Info, Layout, Clock, Activity, ShieldCheck, Zap, Building2, Send } from 'lucide-react';
+import { X, ZoomIn, Camera, Check, User, Phone, MapPin, Info, Layout, Clock, Activity, ShieldCheck, Zap, Building2, Send, AlertCircle } from 'lucide-react';
 import { ImageModal } from '../ui/ImageModal';
 import { DEPARTMENTS } from '@/lib/departments';
 import { useToast } from '@/hooks/use-toast';
@@ -369,14 +369,27 @@ export function DetailDrawer({ g, onClose }: { g: GrievanceType; onClose: () => 
                 </div>
 
                 {g.score != null && (
-                  <div className={`p-4 rounded-2xl border ${borderColor} flex items-center gap-5 bg-gray-100`}>
-                    <ScoreRing score={g.score} size={60} />
-                    <div>
-                      <div className={`text-[10px] font-mono font-bold tracking-widest uppercase ${textSecondary}`}>Resolution Quality</div>
-                      <div className={`text-lg font-bold mt-1 ${g.score >= 80 ? 'text-green-500' : 'text-amber-500'}`}>
-                        {g.score >= 80 ? "Superior Repair" : "Incomplete Resolution"}
+                  <div className="space-y-3">
+                    <div className={`p-4 rounded-2xl border ${borderColor} flex items-center gap-5 bg-gray-100`}>
+                      <ScoreRing score={g.score} size={60} />
+                      <div>
+                        <div className={`text-[10px] font-mono font-bold tracking-widest uppercase ${textSecondary}`}>Resolution Quality</div>
+                        <div className={`text-lg font-bold mt-1 ${g.score >= 80 ? 'text-green-500' : 'text-amber-500'}`}>
+                          {g.score >= 80 ? "Superior Repair" : "Incomplete Resolution"}
+                        </div>
                       </div>
                     </div>
+                    {/* @ts-ignore */}
+                    {g.aiVerificationResult && !g.aiVerificationResult.verified && (
+                      <div className="p-4 rounded-xl bg-amber-50 border border-amber-200">
+                        <div className="flex items-center gap-2 mb-2">
+                          <AlertCircle className="w-4 h-4 text-amber-600" />
+                          <span className="text-sm font-bold text-amber-900">AI Auditor Warning</span>
+                        </div>
+                        {/* @ts-ignore */}
+                        <p className="text-xs text-amber-800 leading-relaxed">{g.aiVerificationResult.reasoning}</p>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
@@ -513,7 +526,7 @@ export function DetailDrawer({ g, onClose }: { g: GrievanceType; onClose: () => 
                       <div className="flex gap-3">
                         <button 
                           disabled={!selectedBranch || isAssigning}
-                          onClick={() => handleUpdate("assigned", selectedBranch)}
+                          onClick={() => handleUpdate("ASSIGNED", selectedBranch)}
                           className="flex-1 bg-gray-900 text-white py-3 rounded-xl text-sm font-bold hover:bg-black disabled:opacity-50 transition-all flex items-center justify-center gap-2"
                         >
                           <Check className="w-4 h-4" /> {isAssigning ? "Processing..." : "Verify as Original"}
@@ -542,7 +555,7 @@ export function DetailDrawer({ g, onClose }: { g: GrievanceType; onClose: () => 
                       <div className="grid grid-cols-1 gap-3">
                         <button 
                           disabled={isAssigning}
-                          onClick={() => handleUpdate("resolved", undefined, "Final administrative approval granted. Citizen notified for final closure.")}
+                          onClick={() => handleUpdate("RESOLVED", undefined, "Final administrative approval granted. Citizen notified for final closure.")}
                           className="w-full bg-green-600 text-white py-4 rounded-xl text-sm font-black uppercase tracking-widest hover:bg-green-700 transition-all flex items-center justify-center gap-2 shadow-lg shadow-green-600/20"
                         >
                           <Check className="w-5 h-5" /> Grant Final Approval
@@ -559,7 +572,7 @@ export function DetailDrawer({ g, onClose }: { g: GrievanceType; onClose: () => 
 
                         <button 
                           disabled={isAssigning}
-                          onClick={() => handleUpdate("assigned", (g as any).assignedTo, "Repair rejected by admin. Sent back for re-resolution.")}
+                          onClick={() => handleUpdate("ASSIGNED", (g as any).assignedTo, "Repair rejected by admin. Sent back for re-resolution.")}
                           className="w-full bg-white text-amber-600 border border-amber-200 py-4 rounded-xl text-sm font-bold hover:bg-amber-50 transition-all flex items-center justify-center gap-2"
                         >
                           <Send className="w-5 h-5" /> Send Back to Department
@@ -588,7 +601,7 @@ export function DetailDrawer({ g, onClose }: { g: GrievanceType; onClose: () => 
                         <div className="text-sm font-bold text-gray-900">{DEPARTMENTS.find(d => d.id === selectedBranch)?.name}</div>
                         <div className="text-[10px] text-gray-500 mt-1">{DEPARTMENTS.find(d => d.id === selectedBranch)?.description}</div>
                         <button 
-                          onClick={() => handleUpdate("assigned", selectedBranch)}
+                          onClick={() => handleUpdate("ASSIGNED", selectedBranch)}
                           disabled={isAssigning}
                           className="mt-4 w-full py-2 bg-gray-900 text-white rounded-lg text-[10px] font-bold uppercase tracking-widest hover:bg-black transition-all flex items-center justify-center gap-2"
                         >

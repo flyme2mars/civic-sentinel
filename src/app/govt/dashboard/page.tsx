@@ -15,6 +15,7 @@ export default function GovtDashboard() {
   const [searchQuery, setSearchQuery] = useState('');
   const [grievances, setGrievances] = useState<CivicIssue[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [refreshKey, setRefreshKey] = useState(0);
   
   // LOGIN STATE
   const [username, setUsername] = useState('');
@@ -92,11 +93,11 @@ export default function GovtDashboard() {
               title: dbItem.title || "Untitled Grievance",
               description: dbItem.summary || dbItem.originalDescription || "No description provided.",
               category: (dbItem.category || 'other').toLowerCase(),
-              status: dbItem.status === 'OPEN' ? 'pending' : 
-                      dbItem.status === 'IN_PROGRESS' ? 'in-progress' : 
-                      dbItem.status === 'FIXED' ? 'resolved' : 
-                      dbItem.status === 'VERIFIED' ? 'verified' : 
-                      dbItem.status === 'REJECTED' || dbItem.status === 'ESCALATED' ? 'escalated' : 'pending',
+              status: (dbItem.status === 'OPEN' || dbItem.status === 'ASSIGNED') ? 'pending' :
+                      dbItem.status === 'IN_PROGRESS' ? 'in-progress' :
+                      (dbItem.status === 'FIXED' || dbItem.status === 'RESOLVED' || dbItem.status === 'CLOSED') ? 'resolved' :
+                      dbItem.status === 'VERIFIED' ? 'verified' :
+                      (dbItem.status === 'REJECTED' || dbItem.status === 'ESCALATED') ? 'escalated' : 'pending',
               priority: (dbItem.severity || 'medium').toLowerCase() as any,
               ward: dbItem.location?.area || 'Unknown Ward',
               zone: dbItem.location?.city || 'Unknown Zone',
@@ -112,7 +113,9 @@ export default function GovtDashboard() {
               fixedImageUrl: dbItem.fixedImageUrl,
               evidenceUrls: dbItem.evidenceUrls || [],
               evidenceKeys: dbItem.evidenceKeys || [],
+              fixedImageUrls: dbItem.fixedImageUrls || [],
               assignee: dbItem.targetDepartment || "Unassigned",
+              aiVerificationResult: dbItem.aiVerificationResult,
             };
           });
           setGrievances(formatted);
@@ -124,7 +127,11 @@ export default function GovtDashboard() {
       }
     }
     fetchGrievances();
-  }, [isAuthorized, branchId]);
+
+    const handleUpdate = () => setRefreshKey(prev => prev + 1);
+    window.addEventListener('grievanceUpdated', handleUpdate);
+    return () => window.removeEventListener('grievanceUpdated', handleUpdate);
+  }, [isAuthorized, branchId, refreshKey]);
 
   const filteredIssues = useMemo(() => {
     return grievances.filter(issue => {
