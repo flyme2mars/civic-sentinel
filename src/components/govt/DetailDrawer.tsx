@@ -15,7 +15,8 @@ import {
   Zap,
   Loader2,
   Trash2,
-  ShieldCheck
+  ShieldCheck,
+  AlertCircle
 } from 'lucide-react';
 import { StatusIcon, PriorityIcon } from './Atoms';
 import { formatDate, cn } from '@/lib/utils';
@@ -69,7 +70,10 @@ export function DetailDrawer({
   const [dragActive, setDragActive] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [isVerifying, setIsVerifying] = useState(false);
+  const [isReturning, setIsReturning] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [resolutionEvidence, setResolutionEvidence] = useState<{ key: string, preview: string }[]>([]);
+
   const [verificationResult, setVerificationResult] = useState<{
     success: boolean;
     verified?: boolean;
@@ -95,7 +99,6 @@ export function DetailDrawer({
     setIsUploading(true);
     const localPreview = URL.createObjectURL(file);
     try {
-      // 1. Get Presigned URL
       const res = await fetch('/api/upload-url', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -103,7 +106,6 @@ export function DetailDrawer({
       });
       const { uploadUrl, key } = await res.json();
 
-      // 2. Upload to S3
       await fetch(uploadUrl, {
         method: 'PUT',
         headers: { 'Content-Type': file.type },
@@ -111,7 +113,6 @@ export function DetailDrawer({
       });
 
       setResolutionEvidence(prev => [...prev, { key, preview: localPreview }]);
-      console.log("Uploaded resolution image to S3:", key);
     } catch (e) {
       console.error("Upload failed", e);
       URL.revokeObjectURL(localPreview);
@@ -145,12 +146,10 @@ export function DetailDrawer({
     }
   };
 
-  const handleSubmitResolution = async () => {
+  const handleRunAudit = async () => {
     const targetId = issue.rawId || issue.id;
     const keys = resolutionEvidence.map(e => e.key);
-    console.log("[DetailDrawer] Submitting resolution for targetId:", targetId);
-    console.log("[DetailDrawer] Resolution keys from state:", keys);
-
+    
     if (keys.length === 0 || !targetId) {
       setVerificationResult({ success: false, error: "Missing ID or Image Evidence." });
       return;
@@ -159,7 +158,6 @@ export function DetailDrawer({
     setIsVerifying(true);
     setVerificationResult(null);
     try {
-      // 1. Submit the resolution to the database
       const res = await fetch('/api/grievance/resolve', {
         method: 'POST',
         headers: { 
@@ -169,13 +167,12 @@ export function DetailDrawer({
         body: JSON.stringify({
           id: targetId,
           resolvedImageKeys: keys,
-          note: "Issue resolved and image evidence uploaded via official dashboard."
+          note: "Draft resolution images uploaded for AI pre-audit."
         })
       });
       const data = await res.json();
       
       if (data.success) {
-        // 2. Trigger the AI Vision Auditor
         const verifyRes = await fetch('/api/grievance/verify', {
           method: 'POST',
           headers: { 
@@ -187,13 +184,67 @@ export function DetailDrawer({
         const verifyData = await verifyRes.json();
         setVerificationResult(verifyData);
       } else {
-        setVerificationResult({ success: false, error: data.error || "Failed to mark as fixed." });
+        setVerificationResult({ success: false, error: data.error || "Failed to update resolution data." });
       }
     } catch (e: unknown) {
-      console.error("Resolution submit failed", e);
+      console.error("Audit failed", e);
       setVerificationResult({ success: false, error: (e as Error).message || "An unexpected error occurred." });
     } finally {
       setIsVerifying(false);
+    }
+  };
+
+  const handleFinalSubmit = async () => {
+    const targetId = issue.rawId || issue.id;
+    if (!targetId) return;
+
+    setIsSubmitting(true);
+    try {
+      onClose();
+      window.dispatchEvent(new CustomEvent('grievanceUpdated'));
+    } catch (e) {
+      console.error("Final submit failed", e);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleReturnToAdmin = async () => {
+    const targetId = issue.rawId || issue.id;
+    if (!targetId) return;
+
+    if (!window.confirm("Are you sure this issue does not belong to your department? It will be returned to the Admin queue.")) {
+      return;
+    }
+
+    setIsReturning(true);
+    try {
+      const res = await fetch('/api/grievance/assign', {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'x-govt-token': authToken || ''
+        },
+        body: JSON.stringify({
+          id: targetId,
+          status: 'OPEN',
+          assignedTo: 'UNASSIGNED',
+          note: "Returned to Admin by department official: Not our department."
+        })
+      });
+      const data = await res.json();
+      
+      if (data.success) {
+        onClose();
+        window.dispatchEvent(new CustomEvent('grievanceUpdated'));
+      } else {
+        alert(data.error || "Failed to return issue to Admin.");
+      }
+    } catch (e: unknown) {
+      console.error("Return failed", e);
+      alert((e as Error).message || "An unexpected error occurred.");
+    } finally {
+      setIsReturning(false);
     }
   };
 
@@ -348,8 +399,21 @@ export function DetailDrawer({
                     />
                   )}
                 </div>
+
+                {/* Show AI Summary in Resolved View */}
+                {(issue as any).aiVerificationResult && (
+                  <div className="p-4 rounded-xl bg-gray-50 border border-gray-100 space-y-2">
+                    <div className="flex items-center gap-2">
+                      <ShieldCheck className="w-3.5 h-3.5 text-gray-400" />
+                      <span className="text-[10px] font-bold uppercase tracking-widest text-gray-500">AI Quality Assessment</span>
+                    </div>
+                    <p className="text-xs text-gray-600 leading-relaxed italic">
+                      "{(issue as any).aiVerificationResult.resolutionSummary || (issue as any).aiVerificationResult.reasoning}"
+                    </p>
+                  </div>
+                )}
                 
-                {issue.status === 'resolved' && !verificationResult && (
+                {issue.status === 'resolved' && !verificationResult && !(issue as any).aiVerificationResult && (
                   <button
                     onClick={handleVerifyOnly}
                     disabled={isVerifying}
@@ -425,23 +489,23 @@ export function DetailDrawer({
 
           {/* AI Auditor Result Section */}
           {verificationResult && (
-            <div className={`p-4 rounded-xl border ${verificationResult.verified ? 'bg-green-50 border-green-100' : 'bg-red-50 border-red-100'} animate-in fade-in slide-in-from-bottom-2 duration-500`}>
+            <div className={`p-4 rounded-xl border ${verificationResult.verified ? 'bg-emerald-50 border-emerald-100' : 'bg-amber-50 border-amber-100'} animate-in fade-in slide-in-from-bottom-2 duration-500`}>
               <div className="flex items-center gap-2 mb-2">
                 {verificationResult.verified ? (
-                  <CheckCircle className="w-4 h-4 text-green-600" />
+                  <CheckCircle className="w-4 h-4 text-emerald-600" />
                 ) : (
-                  <X className="w-4 h-4 text-red-600" />
+                  <AlertCircle className="w-4 h-4 text-amber-600" />
                 )}
-                <span className={`text-sm font-bold ${verificationResult.verified ? 'text-green-900' : 'text-red-900'}`}>
-                  AI Auditor {verificationResult.verified ? 'Verified' : 'Rejected'}
+                <span className={`text-sm font-bold ${verificationResult.verified ? 'text-emerald-900' : 'text-amber-900'}`}>
+                  AI Auditor {verificationResult.verified ? 'Verified' : 'Flagged'}
                 </span>
               </div>
-              <p className={`text-xs leading-relaxed ${verificationResult.verified ? 'text-green-700' : 'text-red-700'}`}>
-                {verificationResult.reasoning || verificationResult.error || "Verification failed."}
+              <p className={`text-xs leading-relaxed ${verificationResult.verified ? 'text-emerald-700' : 'text-amber-700'}`}>
+                {verificationResult.reasoning || verificationResult.error || "Verification completed."}
               </p>
               {!verificationResult.verified && (
-                <p className="text-[10px] text-red-500 mt-2 italic font-medium">
-                  Manual auditing required. Please re-upload clearer evidence or re-examine the site.
+                <p className="text-[10px] text-amber-600 mt-2 italic font-medium">
+                  Note: The AI found potential issues. You can still submit if you believe the work is complete, or re-upload better evidence.
                 </p>
               )}
             </div>
@@ -451,24 +515,53 @@ export function DetailDrawer({
 
       {/* Footer Actions */}
       {issue.status !== 'resolved' && issue.status !== 'verified' && (
-        <div className="p-6 border-t border-gray-100 bg-gray-50/50 flex items-center gap-3">
-          <button 
-            onClick={handleSubmitResolution}
-            disabled={isVerifying || resolutionEvidence.length === 0}
-            className="flex-1 bg-gray-900 hover:bg-black text-white px-6 py-3 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-gray-200"
-          >
-            {isVerifying ? (
-              <>
-                <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" />
-                Submitting Resolution...
-              </>
-            ) : (
-              <>
-                Submit to Vision Auditor
-                <ArrowRight className="w-4 h-4" />
-              </>
-            )}
-          </button>
+        <div className="p-6 border-t border-gray-100 bg-gray-50/50 flex flex-col gap-3">
+          {!verificationResult ? (
+            <>
+              <button 
+                onClick={handleRunAudit}
+                disabled={isVerifying || isReturning || resolutionEvidence.length === 0}
+                className="w-full bg-gray-900 hover:bg-black text-white px-6 py-3 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-gray-200"
+              >
+                {isVerifying ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+                    Running AI Quality Audit...
+                  </>
+                ) : (
+                  <>
+                    Run AI Quality Audit
+                    <Zap className="w-4 h-4 text-amber-400" />
+                  </>
+                )}
+              </button>
+              <button 
+                onClick={handleReturnToAdmin}
+                disabled={isVerifying || isReturning}
+                className="w-full bg-white border border-gray-200 text-gray-700 hover:bg-red-50 hover:text-red-600 hover:border-red-200 px-6 py-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-all disabled:opacity-50 shadow-sm"
+              >
+                {isReturning ? <Loader2 className="w-4 h-4 animate-spin" /> : <X className="w-4 h-4" />}
+                Not My Department (Return to Admin)
+              </button>
+            </>
+          ) : (
+            <div className="space-y-3">
+              <button 
+                onClick={handleFinalSubmit}
+                disabled={isSubmitting}
+                className="w-full bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-4 rounded-xl text-sm font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-all shadow-lg shadow-emerald-600/20"
+              >
+                {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle className="w-4 h-4" />}
+                Confirm & Submit to Admin
+              </button>
+              <button 
+                onClick={() => setVerificationResult(null)}
+                className="w-full bg-white border border-gray-200 text-gray-500 py-2 rounded-lg text-[10px] font-bold uppercase tracking-widest hover:bg-gray-50 transition-all"
+              >
+                Cancel / Edit Images
+              </button>
+            </div>
+          )}
         </div>
       )}
 

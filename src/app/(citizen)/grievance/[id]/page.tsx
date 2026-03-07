@@ -11,11 +11,18 @@ import { cn } from '@/lib/utils';
 import RtiEditor from '@/components/citizen/RtiEditor';
 import SocialEditor from '@/components/citizen/SocialEditor';
 
-function DoomsdayClock({ deadline, large, onExpire }: { deadline: string, large?: boolean, onExpire?: () => void }) {
+function DoomsdayClock({ deadline, status, large, onExpire }: { deadline: string, status: string, large?: boolean, onExpire?: () => void }) {
   const [timeLeft, setTimeLeft] = useState('');
   const [isExpired, setIsExpired] = useState(false);
 
   useEffect(() => {
+    const isStopped = status === 'RESOLVED' || status === 'CLOSED' || status === 'VERIFIED';
+    
+    if (isStopped) {
+      setTimeLeft('SLA HALTED');
+      return;
+    }
+
     const timer = setInterval(() => {
       const now = new Date().getTime();
       const target = new Date(deadline).getTime();
@@ -37,16 +44,28 @@ function DoomsdayClock({ deadline, large, onExpire }: { deadline: string, large?
       setTimeLeft(`${hours}h ${minutes}m ${seconds}s`);
     }, 1000);
     return () => clearInterval(timer);
-  }, [deadline, isExpired, onExpire]);
+  }, [deadline, isExpired, onExpire, status]);
+
+  const isStopped = status === 'RESOLVED' || status === 'CLOSED' || status === 'VERIFIED';
 
   return (
     <div className={cn(
-      "flex items-center gap-2 rounded-xl font-black tracking-widest uppercase transition-all duration-500 whitespace-nowrap shrink-0",
+      "flex items-center gap-2 rounded-xl font-black tracking-widest uppercase transition-all duration-500 whitespace-nowrap shrink-0 relative overflow-hidden",
       large ? "px-6 py-4 text-sm shadow-xl min-w-[180px] justify-center" : "px-4 py-2 text-[10px] shadow-sm min-w-[120px] justify-center",
-      isExpired ? "bg-red-50 text-red-600 animate-pulse border border-red-100" : "bg-slate-900 text-white shadow-slate-200"
+      isStopped 
+        ? "bg-slate-50 text-slate-400 border border-slate-200 shadow-none" 
+        : isExpired 
+          ? "bg-white text-rose-600 border border-rose-200 shadow-[0_0_20px_rgba(225,29,72,0.15)] ring-1 ring-rose-50" 
+          : "bg-slate-900 text-white shadow-slate-200"
     )}>
-      <Clock className={large ? "w-5 h-5" : "w-3 h-3"} />
-      <span className="font-mono tabular-nums tracking-tighter leading-none">{timeLeft}</span>
+      {isExpired && !isStopped && (
+        <div className="absolute top-0 left-0 w-1 h-full bg-rose-500" />
+      )}
+      <Clock className={cn(large ? "w-5 h-5" : "w-3 h-3", isExpired && !isStopped ? "text-rose-500" : "")} />
+      <span className="font-mono tabular-nums tracking-tighter leading-none relative z-10">{timeLeft}</span>
+      {isExpired && !isStopped && (
+        <div className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse ml-1 shrink-0" />
+      )}
     </div>
   );
 }
@@ -59,6 +78,7 @@ export default function GrievanceDetailPage() {
   const [session, setSession] = useState<CitizenSession | null>(null);
   const [activeIndex, setActiveIndex] = useState(0);
   const [isExpired, setIsExpired] = useState(false);
+  const [actionLoading, setActionLoading] = useState(false);
 
   useEffect(() => {
     const s = authProvider.getSession();
@@ -83,6 +103,29 @@ export default function GrievanceDetailPage() {
     finally { setLoading(false); }
   };
 
+  const handleCitizenAction = async (action: 'CLOSED' | 'ESCALATED') => {
+    if (!session) return;
+    setActionLoading(true);
+    try {
+      const res = await fetch('/api/grievance/citizen-action', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, citizenId: session.citizenId, action })
+      });
+      const data = await res.json();
+      if (data.success) {
+        setGrievance((prev: any) => ({ ...prev, status: data.updatedStatus }));
+      } else {
+        alert(data.error || 'Failed to update grievance.');
+      }
+    } catch (e) {
+      console.error(e);
+      alert('An error occurred.');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   if (loading) return (
     <div className="min-h-screen bg-white flex items-center justify-center">
       <Loader2 className="w-8 h-8 text-slate-200 animate-spin" />
@@ -93,7 +136,8 @@ export default function GrievanceDetailPage() {
 
   const media = g.evidenceUrls || [];
   const isAlreadyExpired = new Date().getTime() > new Date(g.deadline).getTime();
-  const showEscalation = isAlreadyExpired || isExpired;
+  const isStopped = g.status === 'RESOLVED' || g.status === 'CLOSED' || g.status === 'VERIFIED';
+  const showEscalation = (isAlreadyExpired || isExpired) && !isStopped;
 
   return (
     <main className="min-h-screen bg-slate-50 font-sans">
@@ -186,6 +230,90 @@ export default function GrievanceDetailPage() {
                 </div>
               </div>
             </div>
+
+            {/* RESOLUTION REVIEW PANEL */}
+            {(g.status === 'RESOLVED' || g.status === 'CLOSED' || g.status === 'VERIFIED') && g.fixedImageUrl && (
+              <div className="p-6 md:p-10 bg-white rounded-2xl shadow-sm border border-slate-100 space-y-6 md:space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <ShieldCheck className="w-5 h-5 text-slate-900" />
+                    <h3 className="text-lg md:text-xl font-bold uppercase tracking-tighter text-slate-900">Department Resolution</h3>
+                  </div>
+                  <p className="text-xs md:text-sm text-slate-500 font-medium leading-relaxed">
+                    The department has reported this issue as resolved. Please review the evidence provided.
+                  </p>
+                </div>
+
+                <div className="aspect-video relative rounded-xl overflow-hidden border border-slate-100 bg-slate-50 group shadow-sm">
+                  <img src={g.fixedImageUrl} alt="Resolution Evidence" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
+                  <div className="absolute top-4 right-4 px-3 py-1 bg-white/90 backdrop-blur-md rounded-full border border-slate-200 text-[9px] font-bold uppercase tracking-widest text-slate-900 flex items-center gap-1.5 shadow-sm">
+                    <CheckCircle2 className="w-3 h-3" /> Post-Repair
+                  </div>
+                </div>
+
+                {g.aiVerificationResult && (
+                  <div className={cn(
+                    "p-4 rounded-xl border flex items-start gap-3",
+                    g.aiVerificationResult.verified 
+                      ? "bg-emerald-50 border-emerald-100" 
+                      : "bg-amber-50 border-amber-200"
+                  )}>
+                    {g.aiVerificationResult.verified ? (
+                      <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
+                    ) : (
+                      <AlertCircle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+                    )}
+                    <div className="space-y-1">
+                      <p className={cn(
+                        "text-xs font-bold uppercase tracking-widest",
+                        g.aiVerificationResult.verified ? "text-emerald-900" : "text-amber-900"
+                      )}>
+                        AI Quality Audit: {g.aiVerificationResult.verified ? "Verified" : "Warning - Flagged"}
+                      </p>
+                      <p className={cn(
+                        "text-xs leading-relaxed font-medium",
+                        g.aiVerificationResult.verified ? "text-emerald-700" : "text-amber-800"
+                      )}>
+                        {g.aiVerificationResult.reasoning || "The AI system reviewed the post-repair image."}
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {g.status !== 'CLOSED' ? (
+                  <div className="pt-4 border-t border-slate-50 space-y-4">
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 text-center">Final Verification Required</p>
+                    <div className="flex flex-col sm:flex-row gap-3">
+                      <Button 
+                        onClick={() => handleCitizenAction('CLOSED')}
+                        disabled={actionLoading}
+                        className="flex-1 h-14 bg-slate-900 hover:bg-slate-800 text-white rounded-xl font-bold text-xs uppercase tracking-[0.1em] gap-2 shadow-lg shadow-slate-200 transition-all active:scale-95"
+                      >
+                        {actionLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
+                        Confirm Resolution
+                      </Button>
+                      <Button 
+                        onClick={() => handleCitizenAction('ESCALATED')}
+                        disabled={actionLoading}
+                        variant="outline"
+                        className="flex-1 h-14 bg-white border-slate-200 text-slate-700 hover:bg-slate-50 hover:text-slate-900 rounded-xl font-bold text-xs uppercase tracking-[0.1em] gap-2 transition-all active:scale-95 shadow-sm"
+                      >
+                        {actionLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <X className="w-4 h-4" />}
+                        Dispute Verification
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="pt-4 border-t border-slate-50 flex flex-col items-center gap-2">
+                    <div className="w-12 h-12 bg-slate-50 rounded-full flex items-center justify-center border border-slate-100">
+                      <CheckCircle2 className="w-6 h-6 text-slate-900" />
+                    </div>
+                    <p className="text-xs font-bold uppercase tracking-widest text-slate-900">Issue Officially Closed</p>
+                    <p className="text-[10px] text-slate-500 font-medium">You have confirmed the resolution of this grievance.</p>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           {/* RIGHT SIDEBAR: STATUS & CLOCK (4 Cols) */}
@@ -193,21 +321,35 @@ export default function GrievanceDetailPage() {
             <div className="space-y-3">
               <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 ml-2">Resolution Countdown</span>
               <div className="p-6 md:p-8 bg-white rounded-2xl shadow-md border border-slate-100 flex flex-col items-center gap-4 md:gap-6">
-                <DoomsdayClock deadline={g.deadline} large onExpire={() => setIsExpired(true)} />
+                <DoomsdayClock deadline={g.deadline} status={g.status} large onExpire={() => setIsExpired(true)} />
                 <p className="text-[9px] md:text-[10px] text-slate-400 font-bold uppercase tracking-widest text-center leading-relaxed max-w-[200px]">Estimated timeframe for department resolution</p>
               </div>
             </div>
 
-            <div className="p-6 md:p-8 bg-slate-900 rounded-2xl text-white space-y-4 md:space-y-6 relative overflow-hidden group shadow-md shadow-slate-200">
+            <div className="p-6 md:p-8 bg-white rounded-2xl border border-slate-100 space-y-4 md:space-y-6 shadow-sm relative overflow-hidden group">
               <div className="relative z-10 space-y-3 md:space-y-4">
                 <span className="text-[9px] font-bold uppercase tracking-[0.2em] text-slate-400">Responsible Department</span>
                 <div className="space-y-1">
-                  <h4 className="text-sm font-bold uppercase tracking-tight">{g.targetDepartment}</h4>
-                  <p className="text-xs text-slate-400 font-medium">{g.officialDesignation}</p>
+                  <h4 className="text-sm font-bold uppercase tracking-tight text-slate-900">{g.targetDepartment || "Unassigned"}</h4>
+                  <p className="text-xs text-slate-500 font-medium">{g.officialDesignation || "Pending Assignment"}</p>
                 </div>
-                <div className="pt-4 flex items-center gap-2 border-t border-white/5 mt-4">
-                  <div className="w-1.5 h-1.5 bg-amber-500 rounded-full animate-pulse" />
-                  <span className="text-[9px] md:text-[10px] font-bold uppercase tracking-widest text-white/80">Awaiting Verification</span>
+                <div className="pt-4 flex items-center gap-2 border-t border-slate-50 mt-4">
+                  {g.status === 'CLOSED' ? (
+                    <>
+                      <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                      <span className="text-[9px] md:text-[10px] font-bold uppercase tracking-widest text-emerald-600">Case Closed</span>
+                    </>
+                  ) : g.status === 'RESOLVED' || g.status === 'VERIFIED' ? (
+                    <>
+                      <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
+                      <span className="text-[9px] md:text-[10px] font-bold uppercase tracking-widest text-emerald-600">Pending Citizen Approval</span>
+                    </>
+                  ) : (
+                    <>
+                      <div className="w-1.5 h-1.5 bg-amber-500 rounded-full animate-pulse" />
+                      <span className="text-[9px] md:text-[10px] font-bold uppercase tracking-widest text-amber-600">Awaiting Resolution</span>
+                    </>
+                  )}
                 </div>
               </div>
             </div>

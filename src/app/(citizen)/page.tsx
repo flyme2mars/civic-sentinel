@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import GrievanceForm from '@/components/citizen/GrievanceForm';
 import { authProvider, CitizenSession } from '@/lib/aws/auth';
@@ -11,11 +11,18 @@ import { ShieldCheck, Loader2, CheckCircle2, Clock, MapPin, ChevronRight, X } fr
 import { cn } from '@/lib/utils';
 import RtiButton from '@/components/citizen/RtiButton';
 
-function DoomsdayClock({ deadline, large, onExpire }: { deadline: string, large?: boolean, onExpire?: () => void }) {
+function DoomsdayClock({ deadline, status, large, onExpire }: { deadline: string, status: string, large?: boolean, onExpire?: () => void }) {
   const [timeLeft, setTimeLeft] = useState('');
   const [isExpired, setIsExpired] = useState(false);
 
   useEffect(() => {
+    const isStopped = status === 'RESOLVED' || status === 'CLOSED' || status === 'VERIFIED';
+    
+    if (isStopped) {
+      setTimeLeft('SLA HALTED');
+      return;
+    }
+
     const timer = setInterval(() => {
       const now = new Date().getTime();
       const target = new Date(deadline).getTime();
@@ -37,16 +44,28 @@ function DoomsdayClock({ deadline, large, onExpire }: { deadline: string, large?
       setTimeLeft(`${hours}h ${minutes}m ${seconds}s`);
     }, 1000);
     return () => clearInterval(timer);
-  }, [deadline, isExpired, onExpire]);
+  }, [deadline, isExpired, onExpire, status]);
+
+  const isStopped = status === 'RESOLVED' || status === 'CLOSED' || status === 'VERIFIED';
 
   return (
     <div className={cn(
-      "flex items-center gap-2 rounded-xl font-black tracking-widest uppercase transition-all duration-500 whitespace-nowrap shrink-0",
+      "flex items-center gap-2 rounded-xl font-black tracking-widest uppercase transition-all duration-500 whitespace-nowrap shrink-0 relative overflow-hidden",
       large ? "px-6 py-4 text-sm shadow-xl min-w-[180px] justify-center" : "px-4 py-2 text-[10px] shadow-sm min-w-[120px] justify-center",
-      isExpired ? "bg-red-50 text-red-600 animate-pulse border border-red-100" : "bg-slate-900 text-white shadow-slate-200"
+      isStopped 
+        ? "bg-slate-50 text-slate-400 border border-slate-200 shadow-none" 
+        : isExpired 
+          ? "bg-white text-rose-600 border border-rose-200 shadow-[0_0_20px_rgba(225,29,72,0.15)] ring-1 ring-rose-50" 
+          : "bg-slate-900 text-white shadow-slate-200"
     )}>
-      <Clock className={large ? "w-5 h-5" : "w-3 h-3"} />
-      <span className="font-mono tabular-nums tracking-tighter leading-none">{timeLeft}</span>
+      {isExpired && !isStopped && (
+        <div className="absolute top-0 left-0 w-1 h-full bg-rose-500" />
+      )}
+      <Clock className={cn(large ? "w-5 h-5" : "w-3 h-3", isExpired && !isStopped ? "text-rose-500" : "")} />
+      <span className="font-mono tabular-nums tracking-tighter leading-none relative z-10">{timeLeft}</span>
+      {isExpired && !isStopped && (
+        <div className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse ml-1 shrink-0" />
+      )}
     </div>
   );
 }
@@ -64,6 +83,7 @@ export default function CitizenPage() {
   const [myGrievances, setMyGrievances] = useState<any[]>([]);
   const [fetchingGrievances, setFetchingGrievances] = useState(false);
   const [expiredIds, setExpiredIds] = useState<Set<string>>(new Set());
+  const [filterStatus, setFilterStatus] = useState<string>('all');
 
   useEffect(() => {
     const s = authProvider.getSession();
@@ -90,6 +110,13 @@ export default function CitizenPage() {
   useEffect(() => {
     if (session) fetchMyGrievances(session.citizenId);
   }, [session]);
+
+  const filteredGrievances = useMemo(() => {
+    if (filterStatus === 'all') return myGrievances;
+    if (filterStatus === 'active') return myGrievances.filter(g => g.status !== 'CLOSED');
+    if (filterStatus === 'closed') return myGrievances.filter(g => g.status === 'CLOSED');
+    return myGrievances;
+  }, [myGrievances, filterStatus]);
 
   const handleStart = async () => {
     if (!citizenName || !phoneNumber) return;
@@ -263,11 +290,29 @@ export default function CitizenPage() {
 
         {/* Status Preview / Doomsday Clock Panel */}
         <section className="pt-6 md:pt-10 space-y-4 md:space-y-6">
-          <div className="flex items-center justify-between px-2">
-            <h2 className="text-[9px] md:text-xs font-black uppercase tracking-[0.2em] md:tracking-[0.3em] text-slate-400">Personal Oversight Panel</h2>
-            <div className="flex items-center gap-2">
-              <div className="w-1 h-1 bg-green-500 rounded-full animate-pulse" />
-              <span className="text-[9px] font-bold uppercase tracking-widest text-slate-500">Live Network</span>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 px-2">
+            <h2 className="text-xs md:text-sm font-bold text-slate-900 tracking-tight">Reported Issues</h2>
+            
+            {/* Minimal shadcn-style Filter */}
+            <div className="flex items-center p-1 bg-slate-100/50 border border-slate-200/60 rounded-lg self-start sm:self-auto">
+              {[
+                { id: 'all', label: 'All' },
+                { id: 'active', label: 'Active' },
+                { id: 'closed', label: 'Closed' }
+              ].map((tab) => (
+                <button
+                  key={tab.id}
+                  onClick={() => setFilterStatus(tab.id)}
+                  className={cn(
+                    "px-3 py-1.5 text-[10px] font-semibold tracking-wide rounded-md transition-all duration-200",
+                    filterStatus === tab.id 
+                      ? "bg-white text-slate-900 shadow-sm" 
+                      : "text-slate-500 hover:text-slate-700 hover:bg-slate-200/50"
+                  )}
+                >
+                  {tab.label}
+                </button>
+              ))}
             </div>
           </div>
 
@@ -276,7 +321,7 @@ export default function CitizenPage() {
               <div className="h-32 flex items-center justify-center bg-white rounded-3xl border border-slate-100 shadow-sm">
                 <Loader2 className="w-5 h-5 text-slate-200 animate-spin" />
               </div>
-            ) : myGrievances.length === 0 ? (
+            ) : filteredGrievances.length === 0 ? (
               <div className="p-8 md:p-10 bg-white rounded-3xl md:rounded-[2.5rem] border border-slate-100 shadow-sm text-center space-y-4 group overflow-hidden relative transition-all duration-500 hover:shadow-xl hover:shadow-slate-200/50">
                 <div className="absolute top-0 right-0 p-6 opacity-[0.03] group-hover:scale-110 transition-transform duration-1000">
                   <ShieldCheck className="w-24 md:w-32 h-24 md:h-32 text-slate-900" />
@@ -290,7 +335,7 @@ export default function CitizenPage() {
                 </div>
               </div>
             ) : (
-              myGrievances.map((g) => {
+              filteredGrievances.map((g) => {
                 const isAlreadyExpired = new Date().getTime() > new Date(g.deadline).getTime();
                 const showRtiButton = isAlreadyExpired || expiredIds.has(g.id);
 
@@ -317,6 +362,7 @@ export default function CitizenPage() {
                       <div className="flex flex-col items-end gap-2 md:gap-3 shrink-0 self-end sm:self-auto">
                         <DoomsdayClock
                           deadline={g.deadline}
+                          status={g.status}
                           onExpire={() => setExpiredIds(prev => new Set(prev).add(g.id))}
                         />
                       </div>

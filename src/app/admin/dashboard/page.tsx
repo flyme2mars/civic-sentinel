@@ -106,6 +106,7 @@ export default function GovernmentDashboard() {
               history: dbItem.history || [],
               successCriteria: dbItem.successCriteria || [],
               officialDesignation: dbItem.officialDesignation || "Official",
+              aiVerificationResult: dbItem.aiVerificationResult,
               score: dbItem.score || (dbItem.aiVerificationResult?.confidence ? Math.round(dbItem.aiVerificationResult.confidence * 100) : null),
             };
           });
