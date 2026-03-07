@@ -7,7 +7,7 @@ import {
 } from 'lucide-react';
 import { DEPARTMENTS as ACTUAL_DEPARTMENTS } from '@/lib/departments';
 
-export function Sidebar({ activeNav, setActiveNav, NAV, grievancesCount, onLogout }: any) {
+export function Sidebar({ activeNav, setActiveNav, NAV, grievancesCount, onLogout, id }: any) {
   const DEPARTMENTS = [
     { id: 'admin-sentinel', name: 'Sentinel Admin', location: 'System Oversight' },
     ...ACTUAL_DEPARTMENTS.map(d => ({
@@ -18,7 +18,7 @@ export function Sidebar({ activeNav, setActiveNav, NAV, grievancesCount, onLogou
   ];
 
   return (
-    <aside className="w-64 h-screen border-r border-gray-100 flex flex-col bg-white select-none sticky top-0">
+    <aside id={id} className="w-64 h-screen border-r border-gray-100 flex flex-col bg-white select-none sticky top-0">
       {/* Department Switcher */}
       <div className="p-4 border-b border-gray-100">
         <button className="w-full flex items-center justify-between p-2 rounded-lg hover:bg-gray-50 transition-colors border border-transparent hover:border-gray-200 group">

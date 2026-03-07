@@ -382,7 +382,7 @@ export default function GrievanceForm({ onSuccess, onAuthSuccess, session: exter
   return (
     <div className="max-w-4xl mx-auto space-y-12 pb-20">
       {/* DEMO SCENARIOS - Quick Start */}
-      <section className="space-y-4">
+      <section id="tour-scenarios" className="space-y-4">
         <div className="flex items-center gap-2 px-2">
           <div className="w-1.5 h-1.5 rounded-full bg-slate-900 animate-pulse" />
           <h2 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Demo Scenarios</h2>
@@ -503,7 +503,7 @@ export default function GrievanceForm({ onSuccess, onAuthSuccess, session: exter
             </div>
           </CardContent>
           <CardFooter className="pb-10">
-            <div className="w-full space-y-4">
+            <div id="tour-ai-review" className="w-full space-y-4">
               <Button type="submit" disabled={isDrafting || evidence.length === 0 || !evidence.some(e => e.type === 'image')} className="w-full h-14 bg-slate-900 text-white rounded-2xl font-black text-xs uppercase tracking-[0.2em] relative overflow-hidden group shadow-xl shadow-slate-200">
                 {isDrafting ? (
                   <div className="flex items-center gap-2 animate-in fade-in duration-300">
