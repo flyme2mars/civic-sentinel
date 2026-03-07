@@ -27,7 +27,7 @@ export default function GovernmentDashboard() {
   const [selected, setSelected] = useState<GrievanceType | null>(null);
   const [search, setSearch] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
-  const [sortBy, setSortBy] = useState("urgency");
+  const [sortBy, setSortBy] = useState("recent");
   const [viewMode, setViewMode] = useState("grid");
   const [notifOpen, setNotifOpen] = useState(false);
   const [grievances, setGrievances] = useState<GrievanceType[]>([]);
@@ -89,6 +89,7 @@ export default function GovernmentDashboard() {
               citizen: dbItem.citizenName || 'Anonymous Citizen',
               phone: dbItem.phoneNumber || 'Not provided',
               reportedAt: new Date(dbItem.createdAt).getTime(),
+              updatedAt: dbItem.updatedAt ? new Date(dbItem.updatedAt).getTime() : null,
               slaHours: dbItem.slaHours || 48,
               elapsedHours: (Date.now() - new Date(dbItem.createdAt).getTime()) / 3600000,
               aiConfidence: 0.94,
@@ -214,9 +215,20 @@ export default function GovernmentDashboard() {
               setAuthToken(input.value);
               setIsAuthorized(true);
             }}
-            className="w-full py-3 bg-gray-900 text-white rounded-xl font-bold text-sm hover:bg-black transition-colors"
+            className="w-full py-3 bg-gray-900 text-white rounded-xl font-bold text-sm hover:bg-black transition-colors mb-4"
           >
             VERIFY IDENTITY
+          </button>
+
+          <button 
+            onClick={() => {
+              setAuthToken("sentinel2026");
+              setIsAuthorized(true);
+            }}
+            className="w-full py-3 bg-white border border-gray-200 text-gray-600 rounded-xl font-bold text-sm hover:bg-gray-50 transition-colors flex items-center justify-center gap-2"
+          >
+            <Shield className="w-4 h-4" />
+            JUDGE / DEMO ACCESS
           </button>
         </div>
       </div>

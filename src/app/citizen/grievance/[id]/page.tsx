@@ -145,7 +145,7 @@ export default function GrievanceDetailPage() {
       <nav className="sticky top-0 z-50 bg-white border-b border-slate-100 px-4 md:px-12 py-4 md:py-8 shadow-sm">
         <div className="max-w-7xl mx-auto flex justify-between items-center">
           <Link
-            href="/"
+            href="/citizen"
             className="group flex items-center gap-2 md:gap-3 text-slate-500 hover:text-slate-900 transition-all"
           >
             <ChevronLeft className="w-4 h-4 md:w-5 md:h-5 transition-transform group-hover:-translate-x-1" />

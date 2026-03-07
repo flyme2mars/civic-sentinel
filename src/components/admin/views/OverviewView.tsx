@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React from 'react';
 import { StatCard } from '../StatCard';
-import { STATS } from '@/lib/mock-data';
 import { 
   FileText, 
   Clock, 
@@ -27,6 +26,42 @@ const CATEGORY_ICONS: Record<string, any> = {
 };
 
 export function OverviewView({ setSelected, border, surface, textSecondary, grievances }: any) {
+  const stats = React.useMemo(() => {
+    const all = grievances || [];
+    const total = all.length;
+    
+    const pendingCount = all.filter((g: any) => ['pending', 'critical', 'open'].includes(g.status?.toLowerCase())).length;
+    const inProgressCount = all.filter((g: any) => ['assigned', 'in-progress'].includes(g.status?.toLowerCase())).length;
+    const resolvedCount = all.filter((g: any) => ['resolved', 'verified', 'closed'].includes(g.status?.toLowerCase())).length;
+    const escalatedCount = all.filter((g: any) => g.status?.toLowerCase() === 'escalated').length;
+    const criticalCount = all.filter((g: any) => g.priority?.toLowerCase() === 'critical').length;
+    
+    // Today's new (last 24h)
+    const twentyFourHoursAgo = Date.now() - (24 * 60 * 60 * 1000);
+    const todayNew = all.filter((g: any) => g.reportedAt > twentyFourHoursAgo).length;
+    
+    // Average resolution time
+    const resolvedIssues = all.filter((g: any) => ['resolved', 'verified', 'closed', 'fixed'].includes(g.status?.toLowerCase()) && g.updatedAt);
+    const avgResolution = resolvedIssues.length > 0
+      ? Math.round(resolvedIssues.reduce((acc: number, g: any) => acc + (g.updatedAt - g.reportedAt), 0) / (resolvedIssues.length * 3600000))
+      : 24;
+    
+    // SLA Compliance (simplified: % not escalated)
+    const slaCompliance = total > 0 ? Math.round(((total - escalatedCount) / total) * 100) : 100;
+    
+    return {
+      total,
+      pending: pendingCount,
+      inProgress: inProgressCount,
+      resolved: resolvedCount,
+      escalated: escalatedCount,
+      critical: criticalCount,
+      todayNew,
+      slaCompliance,
+      avgResolution
+    };
+  }, [grievances]);
+
   return (
     <div style={{ animation: "fadeSlideUp 0.3s ease" }}>
       <h2 style={{ fontSize: 24, fontWeight: 800, marginBottom: 20 }}>Overview Dashboard</h2>
@@ -34,32 +69,32 @@ export function OverviewView({ setSelected, border, surface, textSecondary, grie
       <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16, marginBottom: 24 }}>
         <StatCard 
           label="TOTAL GRIEVANCES" 
-          value={grievances?.length || 0} 
-          sub={`+${STATS.todayNew} today`} 
+          value={stats.total} 
+          sub={`+${stats.todayNew} today`} 
           accent={"#0f172a"} 
           icon={<FileText className="w-5 h-5 text-slate-900" />} 
           delay={0} 
         />
         <StatCard 
           label="PENDING" 
-          value={STATS.pending} 
-          sub={`${STATS.inProgress} in progress`} 
+          value={stats.pending} 
+          sub={`${stats.inProgress} in progress`} 
           accent={"#0f172a"} 
           icon={<Clock className="w-5 h-5 text-slate-900" />} 
           delay={80} 
         />
         <StatCard 
           label="SLA COMPLIANCE" 
-          value={`${STATS.slaCompliance}%`} 
-          sub={`${STATS.avgResolution}h avg resolution`} 
+          value={`${stats.slaCompliance}%`} 
+          sub={`${stats.avgResolution}h avg resolution`} 
           accent={"#0f172a"} 
           icon={<ShieldCheck className="w-5 h-5 text-slate-900" />} 
           delay={160} 
         />
         <StatCard 
           label="ESCALATED / CRITICAL" 
-          value={STATS.escalated} 
-          sub={`${STATS.critical} critical active`} 
+          value={stats.escalated} 
+          sub={`${stats.critical} critical active`} 
           accent={"#ef4444"} 
           icon={<AlertTriangle className="w-5 h-5 text-red-600" />} 
           delay={240} 
@@ -69,7 +104,11 @@ export function OverviewView({ setSelected, border, surface, textSecondary, grie
         <div style={{ background: surface, border: `1px solid ${border}`, borderRadius: 16, padding: 24 }}>
           <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 20 }}>Recent Critical Issues</h3>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: 20 }}>
-            {(grievances || []).filter((g: any) => g.priority === 'critical' || g.priority === 'high').slice(0, 6).map((g: any, i: number) => {
+            {(grievances || [])
+              .filter((g: any) => g.priority === 'critical' || g.priority === 'high')
+              .sort((a: any, b: any) => b.reportedAt - a.reportedAt)
+              .slice(0, 6)
+              .map((g: any, i: number) => {
               const Icon = CATEGORY_ICONS[g.category as keyof typeof CATEGORY_ICONS] || CATEGORY_ICONS.other;
               return (
                 <div key={g.rawId} onClick={() => setSelected(g)} style={{ 

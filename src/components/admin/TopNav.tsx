@@ -48,7 +48,6 @@ export function TopNav({
         >
           <div className="flex flex-col items-end mr-2">
             <div className="text-[11px] font-bold text-gray-900 leading-none">System Admin</div>
-            <div className="text-[9px] text-gray-500 mt-1 uppercase tracking-tighter">Superuser</div>
           </div>
           <div className="w-8 h-8 rounded-full bg-slate-900 border border-gray-200 flex items-center justify-center text-[10px] font-bold text-white relative">
             AD

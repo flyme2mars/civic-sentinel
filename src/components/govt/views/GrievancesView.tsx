@@ -39,11 +39,6 @@ export function GrievancesView({
             {issues.length}
           </span>
         </div>
-        <div className="flex items-center gap-2">
-          <button className="text-xs font-medium text-gray-500 hover:text-gray-900 px-3 py-1.5 rounded hover:bg-gray-50 transition-colors border border-gray-100 shadow-sm">
-            View Settings
-          </button>
-        </div>
       </div>
 
       {/* List */}

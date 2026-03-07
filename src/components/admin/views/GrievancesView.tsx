@@ -20,7 +20,7 @@ export function GrievancesView({
         <div style={{ display: "flex", gap: 6, flex: 1, flexWrap: "wrap" }}>
           {[
             { id: "all", label: "Full History" },
-            { id: "new", label: "New / Triage" },
+            { id: "new", label: "New" },
             { id: "assigned", label: "In Progress" },
             { id: "review", label: "Awaiting Review" },
             { id: "rejected", label: "Rejected" },
