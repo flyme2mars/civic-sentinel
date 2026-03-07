@@ -3,7 +3,7 @@ import React from 'react';
 import { GrievanceCard } from '../GrievanceCard';
 import { Pill, PriorityDot, SLARing, SLABar, ScoreRing } from '../Atoms';
 import { STATUS_MAP, PRIORITY_MAP } from '@/lib/mock-data';
-import { LayoutGrid, List } from 'lucide-react';
+import { LayoutGrid, List, Camera } from 'lucide-react';
 
 export function GrievancesView({ 
   surface, border, textSecondary, textPrimary, accent, 
@@ -99,7 +99,15 @@ export function GrievancesView({
               onMouseEnter={e => { e.currentTarget.style.background = "rgba(0,0,0,0.025)"; }}
               onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}>
               <div style={{ minWidth: 0 }}>
-                <div style={{ fontSize: 10, color: textSecondary, fontFamily: "'DM Mono', monospace" }}>{g.id}</div>
+                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                  <div style={{ fontSize: 10, color: textSecondary, fontFamily: "'DM Mono', monospace" }}>{g.id}</div>
+                  {(g.evidenceUrls?.length > 0 || g.imageUrl) && (
+                    <div style={{ display: "flex", alignItems: "center", gap: 2, background: "rgba(0,0,0,0.05)", padding: "1px 4px", borderRadius: 4 }}>
+                      <Camera className="w-2.5 h-2.5 text-gray-400" />
+                      <span style={{ fontSize: 9, fontWeight: 700, color: textSecondary }}>{g.evidenceUrls?.length || 1}</span>
+                    </div>
+                  )}
+                </div>
                 <div style={{ fontSize: 13, fontWeight: 600, color: textPrimary, marginTop: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{g.title}</div>
               </div>
               <div style={{ display: "flex" }}>

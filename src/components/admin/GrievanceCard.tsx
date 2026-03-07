@@ -74,9 +74,9 @@ export function GrievanceCard({ g, onClick, index }: { g: GrievanceType; onClick
 
       <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 14 }}>
         <Pill status={g.status as keyof typeof STATUS_MAP} />
-        {(g as any).evidenceUrls && (g as any).evidenceUrls.length > 1 && (
+        {((g as any).evidenceUrls?.length > 0 || g.imageUrl) && (
           <span style={{ background: "rgba(17,24,39,0.05)", color: "#111827", border: `1px solid rgba(17,24,39,0.1)`, padding: "3px 8px", borderRadius: 999, fontSize: 10, fontWeight: 700 }}>
-            <Camera className="w-3 h-3 inline mr-1" /> {(g as any).evidenceUrls.length}
+            <Camera className="w-3 h-3 inline mr-1" /> {(g as any).evidenceUrls?.length || 1}
           </span>
         )}
         {g.rtiGenerated && (
