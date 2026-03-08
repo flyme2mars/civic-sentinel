@@ -248,6 +248,7 @@ export default function GovernmentDashboard() {
       `}</style>
 
       <Sidebar 
+        id="tour-nav"
         activeNav={activeNav} setActiveNav={setActiveNav} 
         NAV={NAV} 
         grievancesCount={grievances.length}
