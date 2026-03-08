@@ -18,10 +18,8 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
         }
 
-        // 1. Generate the tweet text
         const postText = await generateSocialPost(grievance);
 
-        // 2. Generate signed URLs for all evidence images
         const keys = grievance.evidenceKeys || (grievance.imageKey ? [grievance.imageKey] : []);
         const imageUrls = await Promise.all(keys.map(async (key: string) => {
             try {

@@ -13,14 +13,13 @@ interface RtiEditorProps {
 export default function RtiEditor({ grievance, citizenId }: RtiEditorProps) {
     const [stage, setStage] = useState<'idle' | 'drafting' | 'editing' | 'generating'>('idle');
 
-    // 1. Expand the state to include all the new fields!
     const [formData, setFormData] = useState({
         applicantName: grievance.citizen || '',
-        applicantAddress: '', // Citizen types their home address here
+        applicantAddress: '', 
         applicantPhoneNumber: grievance.phone || '',
         applicantEMailAddress: '',
         departmentName: grievance.targetDepartment || grievance.target_department || '',
-        departmentAddress: '', // The location of the issue
+        departmentAddress: '', 
         submissionPlace: grievance.location?.city || grievance.location?.district || '',
         submissionDate: new Date().toLocaleDateString('en-IN'),
         questions: ''
@@ -42,7 +41,6 @@ export default function RtiEditor({ grievance, citizenId }: RtiEditorProps) {
             const fullAddress = [locObj.landmark, locObj.area, locObj.city, locObj.district, locObj.state]
                 .filter(Boolean).join(', ');
 
-            // Pre-fill the data returned from the DB and AI
             setFormData(prev => ({
                 ...prev,
                 departmentName: data.departmentName || prev.departmentName,
@@ -61,7 +59,6 @@ export default function RtiEditor({ grievance, citizenId }: RtiEditorProps) {
     const handleGeneratePdf = async () => {
         setStage('generating');
         try {
-            // Send the fully edited data object to the backend
             const response = await fetch('/api/rti/build-pdf', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -107,7 +104,6 @@ export default function RtiEditor({ grievance, citizenId }: RtiEditorProps) {
         );
     }
 
-    // THE EDITING UI
     return (
         <div className="space-y-6 w-full bg-white p-6 rounded-2xl border border-slate-200 shadow-sm animate-in fade-in zoom-in-95">
             <div className="flex items-center gap-2 border-b border-slate-100 pb-4">

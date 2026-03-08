@@ -9,7 +9,6 @@ export function PersonaSwitcher() {
   const pathname = usePathname();
   const router = useRouter();
 
-  // Define personas and their base paths
   const personas = [
     { id: 'citizen', label: 'Citizen View', path: '/citizen', icon: User },
     { id: 'admin', label: 'Admin Portal', path: '/admin/dashboard', icon: Shield },

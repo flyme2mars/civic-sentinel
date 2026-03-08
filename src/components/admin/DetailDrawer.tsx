@@ -15,7 +15,6 @@ export function DetailDrawer({ g, onClose }: { g: GrievanceType; onClose: () => 
   const [isAssigning, setIsAssigning] = useState(false);
   const [selectedBranch, setSelectedBranch] = useState("");
   
-  // Pre-select branch based on existing assignment or AI recommendation
   useEffect(() => {
     if ((g as any).assignedTo) {
       setSelectedBranch((g as any).assignedTo);
@@ -31,7 +30,6 @@ export function DetailDrawer({ g, onClose }: { g: GrievanceType; onClose: () => 
   const handleUpdate = async (status: string, assignedBranchId?: string, note?: string) => {
     setIsAssigning(true);
     try {
-      // Check which token key is used in this environment
       const token = localStorage.getItem('govt_token') || localStorage.getItem('admin_token');
       
       const res = await fetch('/api/grievance/assign', {
@@ -55,7 +53,6 @@ export function DetailDrawer({ g, onClose }: { g: GrievanceType; onClose: () => 
           variant: "success",
         });
         onClose();
-        // Trigger a custom event to tell the dashboard to refetch
         window.dispatchEvent(new CustomEvent('grievanceUpdated'));
       } else {
         toast({
@@ -392,7 +389,6 @@ export function DetailDrawer({ g, onClose }: { g: GrievanceType; onClose: () => 
                 );
               }
 
-              // Fallback to static steps if no history
               const stepMap: Record<string, number> = {
                 pending: 0, "in-progress": 1, escalated: 1, critical: 0,
                 resolved: 2, verified: 3, 
@@ -506,7 +502,6 @@ export function DetailDrawer({ g, onClose }: { g: GrievanceType; onClose: () => 
                       {!selectedBranch && <p className="text-[9px] text-amber-600 font-mono text-center">※ Department branch selection required to verify issue</p>}
                     </div>
                   ) : (g.status === "ASSIGNED" || g.status === "assigned") ? (
-                    /* Active Assignment: Allow Re-dispatch if needed */
                     <div className="space-y-6">
                       <div className="p-4 rounded-xl bg-slate-50 border border-slate-100 text-center">
                         <p className="text-xs text-slate-600 font-medium italic">This issue is currently being resolved by the assigned department.</p>
@@ -544,7 +539,6 @@ export function DetailDrawer({ g, onClose }: { g: GrievanceType; onClose: () => 
                       </div>
                     </div>
                   ) : (g.status === "verified" || g.status === "VERIFIED") ? (
-                    /* Final Audit: Approve or Re-assign */
                     <div className="space-y-6">
                       <div className="text-center">
                         <div className="w-12 h-12 bg-green-50/50 rounded-full flex items-center justify-center mx-auto mb-3">

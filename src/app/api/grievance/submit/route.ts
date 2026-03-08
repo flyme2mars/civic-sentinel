@@ -15,18 +15,16 @@ export async function POST(request: Request) {
     const id = uuidv4();
     const createdAt = new Date().toISOString();
     
-    // Calculate deadline based on legal_sla_hours (default to 48 if not provided)
     const slaHours = draft.legal_sla_hours || 48;
     const deadline = new Date(Date.now() + slaHours * 60 * 60 * 1000).toISOString();
 
-    // Primary image for backward compatibility (first item in the list)
     const primaryImage = Array.isArray(evidenceKeys) && evidenceKeys.length > 0 ? evidenceKeys[0] : null;
 
     const item = {
       id,
       createdAt,
       deadline,
-      status: 'OPEN', // OPEN, IN_PROGRESS, FIXED, VERIFIED, EXPIRED
+      status: 'OPEN', 
       imageKey: primaryImage,
       evidenceKeys: evidenceKeys || [],
       originalDescription,
@@ -34,8 +32,8 @@ export async function POST(request: Request) {
       citizenName: citizenName || 'Anonymous Citizen',
       phoneNumber: phoneNumber || 'Not provided',
       location: {
-        ...location, // raw GPS
-        ...draft.location // AI fused location
+        ...location, 
+        ...draft.location 
       },
       title: draft.title,
       category: draft.category,

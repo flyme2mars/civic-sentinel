@@ -21,7 +21,6 @@ export async function GET(request: Request) {
       ExpressionAttributeValues: {
         ":cid": citizenId
       },
-      // Use alises for reserved keywords
       ProjectionExpression: "id, createdAt, title, #st, severity, slaHours, #loc, evidenceKeys, deadline, targetDepartment, officialDesignation, summary, fixedImageKeys, fixedImageKey, aiVerificationResult",
       ExpressionAttributeNames: {
         "#st": "status",
@@ -58,7 +57,6 @@ export async function GET(request: Request) {
         }
       }));
 
-      // Backward compatibility for single fixedImageKey
       let fixedImageUrl = null;
       if (item.fixedImageKey && fixedImageUrls.length === 0) {
         try {
@@ -76,13 +74,12 @@ export async function GET(request: Request) {
       return { 
         ...item, 
         evidenceUrls: evidenceUrls.filter(url => url !== null),
-        imageUrl: evidenceUrls.length > 0 ? evidenceUrls[0] : null, // for backward compatibility
+        imageUrl: evidenceUrls.length > 0 ? evidenceUrls[0] : null,
         fixedImageUrls: fixedImageUrls.filter(url => url !== null),
         fixedImageUrl: fixedImageUrl || (fixedImageUrls.length > 0 ? fixedImageUrls[0] : null)
       };
     }));
 
-    // Sort by created date descending
     items.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
     return NextResponse.json({ success: true, grievances: items });

@@ -36,17 +36,14 @@ export function OverviewView({ setSelected, border, surface, textSecondary, grie
     const escalatedCount = all.filter((g: any) => g.status?.toLowerCase() === 'escalated').length;
     const criticalCount = all.filter((g: any) => g.priority?.toLowerCase() === 'critical').length;
     
-    // Today's new (last 24h)
     const twentyFourHoursAgo = Date.now() - (24 * 60 * 60 * 1000);
     const todayNew = all.filter((g: any) => g.reportedAt > twentyFourHoursAgo).length;
     
-    // Average resolution time
     const resolvedIssues = all.filter((g: any) => ['resolved', 'verified', 'closed', 'fixed'].includes(g.status?.toLowerCase()) && g.updatedAt);
     const avgResolution = resolvedIssues.length > 0
       ? Math.round(resolvedIssues.reduce((acc: number, g: any) => acc + (g.updatedAt - g.reportedAt), 0) / (resolvedIssues.length * 3600000))
       : 24;
     
-    // SLA Compliance (simplified: % not escalated)
     const slaCompliance = total > 0 ? Math.round(((total - escalatedCount) / total) * 100) : 100;
     
     return {

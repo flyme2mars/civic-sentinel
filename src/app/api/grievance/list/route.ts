@@ -9,7 +9,6 @@ export const dynamic = 'force-dynamic';
 
 export async function GET(request: Request) {
   try {
-    // SECURITY: Basic Token-based Authorization for Hackathon
     const { searchParams } = new URL(request.url);
     const token = request.headers.get('x-govt-token') || searchParams.get('token');
     const branch = searchParams.get('branch');
@@ -23,7 +22,6 @@ export async function GET(request: Request) {
 
     const scanParams: any = { 
       TableName: AWS_CONFIG.dynamodb.tableName,
-      // 'status' and 'location' can be reserved; use ExpressionAttributeNames
       ProjectionExpression: "id, createdAt, title, #st, severity, slaHours, #loc, imageKey, fixedImageKey, evidenceKeys, fixedImageKeys, assignedTo, targetDepartment, citizenName, phoneNumber, score, aiVerificationResult, originalDescription, summary, history, successCriteria, officialDesignation",
       ExpressionAttributeNames: {
         "#st": "status",
@@ -42,7 +40,6 @@ export async function GET(request: Request) {
     
     const rawItems = (data.Items || []) as Record<string, any>[];
     
-    // Generate signed URLs for images
     const items = await Promise.all(rawItems.map(async (item) => {
       let imageUrl = null;
       if (item.imageKey) {
@@ -51,7 +48,6 @@ export async function GET(request: Request) {
             Bucket: AWS_CONFIG.s3.bucketName,
             Key: item.imageKey,
           });
-          // URL valid for 1 hour
           imageUrl = await getSignedUrl(s3Client, command, { expiresIn: 3600 });
         } catch (e) {
           console.error("Error signing URL for", item.imageKey, e);
@@ -106,7 +102,6 @@ export async function GET(request: Request) {
       return { ...item, imageUrl, fixedImageUrl, evidenceUrls, fixedImageUrls };
     }));
 
-    // Sort by created date descending
     items.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
     return NextResponse.json({ success: true, grievances: items });

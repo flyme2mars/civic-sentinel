@@ -17,7 +17,6 @@ export default function RtiButton({ grievanceId, citizenId }: { grievanceId: str
 
             if (!response.ok) throw new Error('Failed to generate RTI');
 
-            // Handle the binary file download (PDF or ZIP)
             const blob = await response.blob();
             const contentDisposition = response.headers.get('Content-Disposition');
             const filenameMatch = contentDisposition?.match(/filename="(.+)"/);

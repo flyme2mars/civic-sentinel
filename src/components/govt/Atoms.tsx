@@ -76,7 +76,7 @@ export function DoomsdayClock({ reportedAt, slaHours, status }: { reportedAt: nu
   }
 
   if (!isMounted) {
-    return <div className="h-5" />; // Placeholder to avoid layout shift
+    return <div className="h-5" />; 
   }
 
   return (
