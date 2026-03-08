@@ -3,7 +3,6 @@ import { bedrockClient, AWS_CONFIG } from './config';
 
 export async function generateSocialPost(grievance: any) {
     const title = grievance.title || "Civil Issue";
-    // We use summary because the description is raw citizen input, summary is the professional version
     const description = grievance.summary || grievance.description || "";
     const targetDept = grievance.targetDepartment || grievance.target_department || "the responsible authorities";
 

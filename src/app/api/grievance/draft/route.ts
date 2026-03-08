@@ -27,7 +27,7 @@ export async function POST(request: Request) {
         const lowKey = targetKey.toLowerCase();
         if (lowKey.endsWith('.png')) imageFormat = "png";
         else if (lowKey.endsWith('.webp')) imageFormat = "webp";
-        else imageFormat = "jpeg"; // default for .jpg, .jpeg
+        else imageFormat = "jpeg"; 
       }
     }
 

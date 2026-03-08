@@ -7,7 +7,6 @@ import { GeoPlacesClient } from "@aws-sdk/client-geo-places";
 import { GeoMapsClient } from "@aws-sdk/client-geo-maps";
 import { GeoRoutesClient } from "@aws-sdk/client-geo-routes";
 
-// AWS Configuration and SDK Clients
 export const AWS_CONFIG = {
   region: process.env.NEXT_PUBLIC_AWS_REGION || 'ap-south-1',
   s3: {
@@ -38,12 +37,10 @@ const credentials = {
   secretAccessKey,
 };
 
-// Initialize AWS Clients
 export const s3Client = new S3Client({ region: AWS_CONFIG.region, credentials });
 export const bedrockClient = new BedrockRuntimeClient({ region: AWS_CONFIG.region, credentials });
 export const transcribeClient = new TranscribeClient({ region: AWS_CONFIG.region, credentials });
 
-// Modern Resourceless Location Clients
 export const geoPlacesClient = new GeoPlacesClient({ region: AWS_CONFIG.region, credentials });
 export const geoMapsClient = new GeoMapsClient({ region: AWS_CONFIG.region, credentials });
 export const geoRoutesClient = new GeoRoutesClient({ region: AWS_CONFIG.region, credentials });

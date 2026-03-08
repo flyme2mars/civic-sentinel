@@ -5,7 +5,6 @@ import { PDFDocument } from 'pdf-lib';
 import fs from 'fs/promises';
 import path from 'path';
 
-// 1. Fetch the exact grievance
 export async function getGrievanceById(id: string) {
   const command = new GetCommand({
     TableName: AWS_CONFIG.dynamodb.tableName,
@@ -16,20 +15,16 @@ export async function getGrievanceById(id: string) {
   return response.Item;
 }
 
-// 2. Ask Bedrock ONLY for the questions
 export async function generateRTIQuestions(grievance: any) {
-  // 1. Map the schema correctly based on your Auditor Agent's output
   const title = grievance.title || "Civil Issue";
   const description = grievance.summary || grievance.description || "No description provided.";
   const targetDept = grievance.target_department || grievance.targetDepartment || grievance.category || 'Concerned Public Authority';
 
-  // 2. Flatten the location object into a readable string for the LLM
   const locObj = grievance.location || {};
   const fullAddress = [locObj.landmark, locObj.area, locObj.city, locObj.district, locObj.state, locObj.pincode]
-    .filter(Boolean) // Removes undefined/null values
+    .filter(Boolean) 
     .join(', ');
 
-  // Debugging logs to verify the fix
   console.log("=== DATA SENT TO NOVA ===");
   console.log("Department:", targetDept);
   console.log("Title:", title);
@@ -64,7 +59,6 @@ Output ONLY the numbered list of questions. Do not include any introductory text
   return content.trim();
 }
 
-// 3. Stamp the single PDF using the exact fields from the UI editor
 export async function buildRTIPdfs(grievance: any, editedData: {
   applicantName: string,
   applicantAddress: string,
@@ -86,7 +80,7 @@ export async function buildRTIPdfs(grievance: any, editedData: {
     try {
       const field = form.getTextField(name);
       if (field) {
-        field.setText(val || ''); // Provide empty string fallback to avoid crashes
+        field.setText(val || ''); 
         if (fontSize) field.setFontSize(fontSize);
       }
     } catch (e) {
@@ -94,7 +88,6 @@ export async function buildRTIPdfs(grievance: any, editedData: {
     }
   };
 
-  // Map the new fields directly from editedData!
   fill('departmentName', editedData.departmentName, 12);
   fill('departmentAddress', editedData.departmentAddress, 12);
   fill('novaQuestions', editedData.questions, 12);

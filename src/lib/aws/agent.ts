@@ -152,7 +152,6 @@ export async function processGrievanceAgent(params: {
 
       const response = await bedrockClient.send(command);
       
-      // Benchmarking usage
       if (response.usage) {
         totalInputTokens += response.usage.inputTokens || 0;
         totalOutputTokens += response.usage.outputTokens || 0;
@@ -187,7 +186,6 @@ export async function processGrievanceAgent(params: {
         }
       }
 
-      // If we reached here, it's NOT a tool use stop, or tool use failed to provide content
       const finalContent = outputMessage.content?.find(c => c.text)?.text;
       if (finalContent) {
         console.log("[DEBUG] Raw AI Final Text:", finalContent);
@@ -202,7 +200,6 @@ export async function processGrievanceAgent(params: {
         }
       }
       
-      // If we are at the end of the loop and haven't found JSON, return what we have
       if (i === 4) {
         benchmark.end("Bedrock Agent Drafting (FAILED)", startTime, {
           input: totalInputTokens,
@@ -235,7 +232,6 @@ async function tavilySearch(query: string) {
 
     if (!data.results) throw new Error("No results from Tavily");
 
-    // Return the direct answer if available, otherwise join snippets
     const content = data.answer || data.results.map((r: any) => `${r.title}: ${r.content}`).join("\n\n");
 
     return { results: content };
@@ -248,7 +244,7 @@ async function tavilySearch(query: string) {
 async function reverseGeocode(lat: number, lng: number) {
   try {
     const command = new ReverseGeocodeCommand({
-      QueryPosition: [lng, lat], // Amazon Location uses [lng, lat]
+      QueryPosition: [lng, lat], 
       MaxResults: 1
     });
 
@@ -257,7 +253,6 @@ async function reverseGeocode(lat: number, lng: number) {
 
     if (!place) throw new Error("No results");
 
-    // Robust collection of all unique address components
     const allParts: string[] = [];
     const collect = (val: any) => {
       let str = "";
@@ -274,28 +269,22 @@ async function reverseGeocode(lat: number, lng: number) {
       });
     };
 
-    // Priority order: Locality -> District -> SubRegion -> Region
     collect(place.Locality);
     collect(place.District);
     collect(place.SubRegion);
     collect(place.Region);
 
-    // Heuristic for India mapping: [Locality/Town, District, State]
-    // Analyzing typical Amazon Location patterns for Bharat
     let city = "";
     let district = "";
     let state = "";
 
-    // 1. Identify District (usually in SubRegion or sometimes in Locality)
     const subRegionStr = typeof place.SubRegion === 'string' ? place.SubRegion : place.SubRegion?.Name || "";
     const localityStr = place.Locality || "";
     const districtStr = typeof place.District === 'string' ? place.District : "";
 
-    // In Kerala/India, the larger name (Ernakulam, Kollam, etc) is the District.
-    // If Locality and SubRegion both exist and are the same, that's usually the District.
     if (localityStr && subRegionStr && localityStr === subRegionStr) {
       district = localityStr;
-      city = districtStr; // The "District" field in Amazon Location often actually contains the Town name
+      city = districtStr; 
     } else {
       city = localityStr || districtStr || (allParts.length >= 1 ? allParts[0] : "");
       district = subRegionStr || (allParts.length >= 2 ? allParts[1] : "");
@@ -303,7 +292,6 @@ async function reverseGeocode(lat: number, lng: number) {
 
     state = place.Region?.Name || place.Region?.Code || (allParts.length >= 3 ? allParts[2] : "");
 
-    // Final scrub: ensure no commas remain in individual fields
     const scrub = (s: string) => String(s || "").split(',')[0].trim();
 
     const result = {

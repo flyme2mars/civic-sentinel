@@ -2,8 +2,8 @@ export type Priority = 'low' | 'medium' | 'high' | 'critical';
 export type Status = 'pending' | 'in-progress' | 'resolved' | 'escalated' | 'critical' | 'verified' | 'assigned' | 'closed' | 'rejected' | 'OPEN' | 'ASSIGNED' | 'VERIFIED' | 'RESOLVED' | 'FIXED' | 'CLOSED';
 
 export interface CivicIssue {
-  id: string;      // Display ID (e.g., CIV-21D48F3E)
-  rawId: string;   // Database UUID (e.g., 21d48f3e-...)
+  id: string;      
+  rawId: string;   
   title: string;
   description: string;
   category: string;
@@ -14,8 +14,8 @@ export interface CivicIssue {
   address: string;
   citizen: string;
   phone: string;
-  reportedAt: number; // timestamp
-  deadline: number;   // timestamp
+  reportedAt: number; 
+  deadline: number;   
   isEscalated: boolean;
   slaHours: number;
   aiConfidence: number;
@@ -26,10 +26,9 @@ export interface CivicIssue {
   evidenceKeys?: string[];
   evidenceUrls?: string[];
   assignee?: string;
-  assignedTo?: string; // Branch ID (e.g., PWD_KALAMASSERY)
+  assignedTo?: string; 
   verifiedAt?: number;
   
-  // Extended properties for Admin Dashboard
   elapsedHours?: number;
   aiSimilar?: number;
   urgency?: number;
