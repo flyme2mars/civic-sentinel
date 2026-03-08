@@ -3,12 +3,14 @@ import { dynamoDb, s3Client, bedrockClient, AWS_CONFIG } from '@/lib/aws/config'
 import { GetCommand, UpdateCommand } from '@aws-sdk/lib-dynamodb';
 import { GetObjectCommand } from '@aws-sdk/client-s3';
 import { ConverseCommand } from '@aws-sdk/client-bedrock-runtime';
+import { benchmark } from '@/lib/utils/benchmarking';
 
 /**
  * VISION AUDITOR API
  * This endpoint uses AI to compare the "Before" (imageKey) and "After" (fixedImageKey) photos.
  */
 export async function POST(request: Request) {
+  const startTime = benchmark.start();
   try {
     // SECURITY: Strictly check whether env.local has GOVT_API_TOKEN=='sentinel2026'
     const token = request.headers.get('x-govt-token');
@@ -26,10 +28,12 @@ export async function POST(request: Request) {
     }
 
     // 1. Get the Grievance details from DynamoDB
+    const ddbStartTime = benchmark.start();
     const getRes = await dynamoDb.send(new GetCommand({
       TableName: AWS_CONFIG.dynamodb.tableName,
       Key: { id }
     }));
+    benchmark.end("DynamoDB Fetch (Grievance)", ddbStartTime);
 
     const grievance = getRes.Item;
     if (!grievance) {
@@ -50,17 +54,19 @@ export async function POST(request: Request) {
     }
 
     // 2. Fetch all images from S3 as bytes
+    const s3StartTime = benchmark.start();
     const [beforeImages, afterImages] = await Promise.all([
       Promise.all(beforeKeys.map(async (key) => ({ key, bytes: await fetchS3Bytes(key) }))),
       Promise.all(afterKeys.map(async (key) => ({ key, bytes: await fetchS3Bytes(key) })))
     ]);
+    benchmark.end("S3 Multi-Fetch (Evidence)", s3StartTime, undefined, { count: beforeImages.length + afterImages.length });
 
     // Helper to determine format for Bedrock
     const getFormat = (key: string): "png" | "jpeg" | "webp" => {
-      const ext = key.split('.').pop()?.toLowerCase();
-      if (ext === 'png') return 'png';
-      if (ext === 'webp') return 'webp';
-      return 'jpeg'; // default to jpeg for jpg/jpeg
+      const lowKey = key.toLowerCase();
+      if (lowKey.endsWith('.png')) return 'png';
+      if (lowKey.endsWith('.webp')) return 'webp';
+      return 'jpeg'; // default for .jpg, .jpeg
     };
 
     // 3. Trigger Bedrock Claude 3.5 Sonnet to compare
@@ -110,6 +116,7 @@ export async function POST(request: Request) {
 
     userContent.push({ text: "Please analyze the resolution based on all provided images and the grievance context." });
 
+    const bedrockStartTime = benchmark.start();
     const command = new ConverseCommand({
       modelId: AWS_CONFIG.bedrock.modelId,
       messages: [
@@ -122,6 +129,11 @@ export async function POST(request: Request) {
     });
 
     const bedrockRes = await bedrockClient.send(command);
+    benchmark.end("Bedrock Vision Audit", bedrockStartTime, {
+      input: bedrockRes.usage?.inputTokens || 0,
+      output: bedrockRes.usage?.outputTokens || 0
+    });
+
     const finalContent = bedrockRes.output?.message?.content?.find(c => c.text)?.text;
     
     if (!finalContent) throw new Error("AI failed to generate a response");
@@ -171,6 +183,8 @@ export async function POST(request: Request) {
 
     await dynamoDb.send(updateCommand);
 
+    benchmark.end("End-to-End Vision Verification", startTime);
+
     return NextResponse.json({ 
       success: true, 
       id,
@@ -180,6 +194,7 @@ export async function POST(request: Request) {
   } catch (error: any) {
     console.error('[Vision Auditor API] Error:', error);
     // Generic error message for security
+    benchmark.end("Vision Verification (FAILED)", startTime);
     return NextResponse.json({ error: 'An error occurred during vision verification.' }, { status: 500 });
   }
 }

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { dynamoDb, AWS_CONFIG } from '@/lib/aws/config';
 import { PutCommand } from '@aws-sdk/lib-dynamodb';
 import { v4 as uuidv4 } from 'uuid';
+import { benchmark } from '@/lib/utils/benchmarking';
 
 export async function POST(request: Request) {
   try {
@@ -58,7 +59,9 @@ export async function POST(request: Request) {
       Item: item,
     });
 
+    const ddbStartTime = benchmark.start();
     await dynamoDb.send(command);
+    benchmark.end("DynamoDB Write (New Grievance)", ddbStartTime);
 
     console.log(`[DynamoDB] Grievance stored: ${id}`);
 
