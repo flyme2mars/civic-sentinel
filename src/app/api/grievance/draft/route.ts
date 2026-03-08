@@ -26,8 +26,10 @@ export async function POST(request: Request) {
       const bytes = await response.Body?.transformToByteArray();
       if (bytes) {
         imageBytes = bytes;
-        imageFormat = targetKey.toLowerCase().endsWith('png') ? 'png' : 
-                      targetKey.toLowerCase().endsWith('webp') ? 'webp' : 'jpeg';
+        const lowKey = targetKey.toLowerCase();
+        if (lowKey.endsWith('.png')) imageFormat = "png";
+        else if (lowKey.endsWith('.webp')) imageFormat = "webp";
+        else imageFormat = "jpeg"; // default for .jpg, .jpeg
       }
     }
 

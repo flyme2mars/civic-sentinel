@@ -1,11 +1,13 @@
 import { NextResponse } from 'next/server';
 import { SarvamAIClient } from "sarvamai";
-import { writeFile, unlink, mkdir, readFile, readdir } from 'fs/promises';
+import { writeFile, mkdir, readFile, readdir } from 'fs/promises';
 import { join } from 'path';
 import { tmpdir } from 'os';
 import { existsSync } from 'fs';
+import { benchmark } from '@/lib/utils/benchmarking';
 
 export async function POST(request: Request) {
+  const startTime = benchmark.start();
   const sessionId = Date.now();
   const baseDir = join(tmpdir(), `sarvam-${sessionId}`);
   const inputDir = join(baseDir, 'input');
@@ -74,16 +76,19 @@ export async function POST(request: Request) {
 
       if (transcript) {
         console.log(`[Sarvam] Successfully extracted text.`);
+        benchmark.end("Sarvam AI Transcription", startTime);
         return NextResponse.json({ transcript: transcript.trim() });
       }
     }
 
     // Fallback if file structure is unexpected
     console.error("[Sarvam] Output file missing or invalid structure. Files found:", files);
+    benchmark.end("Sarvam AI Transcription (FAILED)", startTime);
     throw new Error("Could not find transcript in downloaded outputs.");
 
   } catch (error: any) {
     console.error('[Sarvam API] Error:', error);
+    benchmark.end("Sarvam AI Transcription (ERROR)", startTime);
     return NextResponse.json({ error: error.message || 'Transcription failed' }, { status: 500 });
   } finally {
     // Cleanup the entire temp workspace

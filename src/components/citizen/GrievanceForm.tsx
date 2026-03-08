@@ -257,8 +257,8 @@ export default function GrievanceForm({ onSuccess, onAuthSuccess, session: exter
       id: 'waste',
       title: 'Campus Waste',
       subtitle: 'CUSAT Campus',
-      imagePath: '/demo/waste_cusat.jpg',
-      fileName: 'waste_cusat.jpg',
+      imagePath: '/demo/waste_cusat.png',
+      fileName: 'waste_cusat.png',
       description: 'A large amount of plastic and organic waste has been disposed of on the side of the internal road within the CUSAT campus. This is creating a foul smell and attracting stray animals.',
       location: { lat: 10.0459227, lng: 76.3260968 }
     },

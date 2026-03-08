@@ -1,6 +1,7 @@
 import { BedrockRuntimeClient, ConverseCommand, ConverseCommandInput } from "@aws-sdk/client-bedrock-runtime";
 import { ReverseGeocodeCommand } from "@aws-sdk/client-geo-places";
 import { bedrockClient, geoPlacesClient, AWS_CONFIG } from "./config";
+import { benchmark } from "../utils/benchmarking";
 
 const TOOLS = [
   {
@@ -128,6 +129,9 @@ export async function processGrievanceAgent(params: {
   location?: { lat: number, lng: number }
 }) {
   const { imageBytes, imageFormat, description, location } = params;
+  const startTime = benchmark.start();
+  let totalInputTokens = 0;
+  let totalOutputTokens = 0;
 
   let messages: any[] = [{
     role: "user",
@@ -147,6 +151,13 @@ export async function processGrievanceAgent(params: {
       });
 
       const response = await bedrockClient.send(command);
+      
+      // Benchmarking usage
+      if (response.usage) {
+        totalInputTokens += response.usage.inputTokens || 0;
+        totalOutputTokens += response.usage.outputTokens || 0;
+      }
+
       const outputMessage = response.output?.message;
       if (!outputMessage) throw new Error("No response");
       messages.push(outputMessage);
@@ -182,16 +193,28 @@ export async function processGrievanceAgent(params: {
         console.log("[DEBUG] Raw AI Final Text:", finalContent);
         const jsonMatch = finalContent.match(/\{[\s\S]*\}/);
         if (jsonMatch) {
-          return JSON.parse(jsonMatch[0]);
+          const result = JSON.parse(jsonMatch[0]);
+          benchmark.end("Bedrock Agent Drafting", startTime, {
+            input: totalInputTokens,
+            output: totalOutputTokens
+          });
+          return result;
         }
       }
       
       // If we are at the end of the loop and haven't found JSON, return what we have
       if (i === 4) {
+        benchmark.end("Bedrock Agent Drafting (FAILED)", startTime, {
+          input: totalInputTokens,
+          output: totalOutputTokens
+        });
         return { error: "Agent reached maximum steps without generating a formal draft.", raw: finalContent };
       }
     }
-  } catch (error) { throw error; }
+  } catch (error) { 
+    benchmark.end("Bedrock Agent Drafting (ERROR)", startTime);
+    throw error; 
+  }
 }
 
 async function tavilySearch(query: string) {
