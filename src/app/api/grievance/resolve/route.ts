@@ -2,14 +2,8 @@ import { NextResponse } from 'next/server';
 import { dynamoDb, AWS_CONFIG } from '@/lib/aws/config';
 import { UpdateCommand } from '@aws-sdk/lib-dynamodb';
 
-/**
- * RESOLVE API
- * This endpoint marks a grievance as resolved by the government official.
- * It expects the grievance ID and the S3 key of the "After" photo.
- */
 export async function POST(request: Request) {
   try {
-    // SECURITY: Strictly check whether env.local has GOVT_API_TOKEN=='sentinel2026'
     const token = request.headers.get('x-govt-token');
     const isEnvValid = process.env.GOVT_API_TOKEN === 'sentinel2026';
     const isTokenValid = token === 'sentinel2026';
@@ -25,7 +19,6 @@ export async function POST(request: Request) {
       console.log("[Resolve API] Received Payload:", body);
     }
 
-    // Determine the primary key and the full array of keys
     const primaryKey = resolvedImageKey || (Array.isArray(resolvedImageKeys) && resolvedImageKeys.length > 0 ? resolvedImageKeys[0] : null);
     const allKeys = Array.isArray(resolvedImageKeys) && resolvedImageKeys.length > 0 ? resolvedImageKeys : (resolvedImageKey ? [resolvedImageKey] : []);
 
@@ -38,7 +31,6 @@ export async function POST(request: Request) {
     const command = new UpdateCommand({
       TableName: AWS_CONFIG.dynamodb.tableName,
       Key: { id },
-      // Update status, add the fixed image keys, and append to history
       UpdateExpression: "SET #st = :status, fixedImageKey = :img, fixedImageKeys = :imgs, updatedAt = :time, history = list_append(if_not_exists(history, :empty_list), :historyEntry)",
       ExpressionAttributeNames: {
         "#st": "status"
@@ -75,7 +67,6 @@ export async function POST(request: Request) {
 
   } catch (error: any) {
     console.error('[Grievance Resolve API] Error:', error);
-    // Generic error message for security
     return NextResponse.json({ error: 'An internal server error occurred while resolving the grievance.' }, { status: 500 });
   }
 }

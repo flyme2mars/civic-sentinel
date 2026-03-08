@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Camera, Mic, Square, Trash2, Send, Loader2, MapPin, X, AlertCircle, FileText, CheckCircle2, ShieldCheck, Check, Search, Upload, Play, Film, ArrowRight } from 'lucide-react';
+import { Camera, Mic, Square, Trash2, Send, Loader2, MapPin, X, AlertCircle, FileText, CheckCircle2, ShieldCheck, Check, Search, Upload, Play, Film, ArrowRight, Pause } from 'lucide-react';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -224,27 +224,60 @@ export default function GrievanceForm({ onSuccess, onAuthSuccess, session: exter
     finally { setAuthLoading(false); }
   };
 
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [hasDemoAudio, setHasDemoAudio] = useState(false);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  useEffect(() => {
+    if (audioRef.current) {
+      const audio = audioRef.current;
+      const onEnded = () => setIsPlaying(false);
+      audio.addEventListener('ended', onEnded);
+      return () => audio.removeEventListener('ended', onEnded);
+    }
+  }, [audioRef.current]);
+
   const handleScenarioSelect = async (scenario: any) => {
-    // 1. Set Description
-    setDescription(scenario.description);
+    // 1. Reset states
+    setDescription("");
+    setAgentDraft(null);
+    setEvidence([]);
+    setHasDemoAudio(false);
+    setIsPlaying(false);
     
     // 2. Set GPS
     setLocation(scenario.location);
     
     // 3. Fetch the local image and convert to real File for S3 upload
     try {
-      const response = await fetch(scenario.imagePath);
-      const blob = await response.blob();
-      const file = new File([blob], scenario.fileName, { type: 'image/jpeg' });
+      const imgRes = await fetch(scenario.imagePath);
+      const imgBlob = await imgRes.blob();
+      const imgFile = new File([imgBlob], scenario.fileName, { type: 'image/jpeg' });
       
       const demoEvidence: Evidence = {
-        file: file,
+        file: imgFile,
         type: 'image',
-        preview: URL.createObjectURL(blob)
+        preview: URL.createObjectURL(imgBlob)
       };
       setEvidence([demoEvidence]);
+
+      // 4. Handle Audio Scenario
+      if (scenario.audioPath) {
+        setHasDemoAudio(true);
+        // Prepare audio element
+        if (!audioRef.current) audioRef.current = new Audio();
+        audioRef.current.src = scenario.audioPath;
+        
+        // Auto-transcribe the audio for the demo
+        const audioRes = await fetch(scenario.audioPath);
+        const audioBlob = await audioRes.blob();
+        handleTranscribe(audioBlob);
+      } else {
+        // Fallback to text description if no audio
+        setDescription(scenario.description);
+      }
     } catch (e) {
-      console.error("Failed to load demo image", e);
+      console.error("Failed to load demo assets", e);
       alert("Error loading demo evidence.");
     }
     
@@ -252,23 +285,34 @@ export default function GrievanceForm({ onSuccess, onAuthSuccess, session: exter
     window.scrollTo({ top: 400, behavior: 'smooth' });
   };
 
+  const toggleDemoAudio = () => {
+    if (!audioRef.current) return;
+    if (isPlaying) {
+      audioRef.current.pause();
+    } else {
+      audioRef.current.play();
+    }
+    setIsPlaying(!isPlaying);
+  };
+
   const DEMO_SCENARIOS = [
-    {
-      id: 'waste',
-      title: 'Campus Waste',
-      subtitle: 'CUSAT Campus',
-      imagePath: '/demo/waste_cusat.png',
-      fileName: 'waste_cusat.png',
-      description: 'A large amount of plastic and organic waste has been disposed of on the side of the internal road within the CUSAT campus. This is creating a foul smell and attracting stray animals.',
-      location: { lat: 10.0459227, lng: 76.3260968 }
-    },
     {
       id: 'pothole',
       title: 'Road Pothole',
-      subtitle: 'Sanathana Hostel',
+      subtitle: 'CUSAT Campus',
       imagePath: '/demo/pothole_cusat.jpg',
       fileName: 'pothole_cusat.jpg',
-      description: 'There is a deep pothole on the University road right in front of the Sanathana Hostel. It is dangerous for students on two-wheelers, especially at night as the street lighting is dim in this area.',
+      audioPath: '/demo/pothole_cusat.ogg',
+      description: '', // Will be filled by STT
+      location: { lat: 10.0459227, lng: 76.3260968 }
+    },
+    {
+      id: 'waste',
+      title: 'Campus Waste',
+      subtitle: 'Sanathana Hostel',
+      imagePath: '/demo/waste_cusat.png',
+      fileName: 'waste_cusat.png',
+      description: 'A large amount of plastic and organic waste has been disposed of on the side of the internal road near Sanathana Hostel within the CUSAT campus. This is creating a foul smell and attracting stray animals.',
       location: { lat: 10.0459227, lng: 76.3260968 }
     }
   ];
@@ -498,6 +542,20 @@ export default function GrievanceForm({ onSuccess, onAuthSuccess, session: exter
               <Textarea placeholder="Describe the civic issue in detail..." value={description} onChange={(e) => setDescription(e.target.value)} className="min-h-[160px] p-6 border-none focus-visible:ring-0 bg-transparent resize-none text-sm font-medium leading-relaxed" />
               <div className="absolute bottom-4 right-4 flex items-center gap-3">
                 {isTranscribing && <div className="flex items-center gap-2 bg-slate-900 text-white px-3 py-1.5 rounded-full animate-pulse"><Loader2 className="w-3 h-3 animate-spin" /><span className="text-[9px] font-bold uppercase tracking-widest">AI Listening</span></div>}
+                
+                {hasDemoAudio && !isRecording && (
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    size="sm" 
+                    className="h-12 px-4 rounded-xl border-slate-200 bg-slate-50 text-slate-900 font-bold gap-2 animate-in zoom-in-95 duration-300"
+                    onClick={toggleDemoAudio}
+                  >
+                    {isPlaying ? <Pause className="w-4 h-4 fill-current" /> : <Play className="w-4 h-4 fill-current" />}
+                    {isPlaying ? "Pause Recording" : "Play Recording"}
+                  </Button>
+                )}
+
                 <Button type="button" size="icon" variant={isRecording ? "destructive" : "secondary"} className="w-12 h-12 rounded-full shadow-sm" onClick={() => isRecording ? (mediaRecorderRef.current?.stop(), setIsRecording(false)) : startRecording()}>{isRecording ? <Square className="w-4 h-4 fill-current text-white" /> : <Mic className="w-5 h-5 text-slate-600" />}</Button>
               </div>
             </div>

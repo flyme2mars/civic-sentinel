@@ -30,7 +30,6 @@ export default function GovernmentDashboard() {
   const [notifOpen, setNotifOpen] = useState(false);
   const [grievances, setGrievances] = useState<GrievanceType[]>([]);
   
-  // SECURITY: Basic Token-based Authorization for Hackathon
   const [authToken, setAuthToken] = useState<string | null>(null);
   const [isAuthorized, setIsAuthorized] = useState(false);
 
@@ -118,7 +117,6 @@ export default function GovernmentDashboard() {
     
     fetchGrievances();
 
-    // Listen for custom update events from drawers
     const handleRefresh = () => fetchGrievances();
     window.addEventListener('grievanceUpdated', handleRefresh);
     return () => window.removeEventListener('grievanceUpdated', handleRefresh);
@@ -129,9 +127,8 @@ export default function GovernmentDashboard() {
   const border = "#e2e8f0"; // light slate-200
   const textPrimary = "#0f172a"; // slate-900
   const textSecondary = "#64748b"; // slate-500
-  const accent = "#0f172a"; // strong slate-900 (like citizen UI buttons)
+  const accent = "#0f172a"; // strong slate-900 
 
-  // PERFORMANCE: Memoize filtering and sorting logic
   const filtered = React.useMemo(() => {
     return grievances.filter(g => {
       const q = search.toLowerCase();
@@ -145,7 +142,7 @@ export default function GovernmentDashboard() {
       
       let matchStatus = true;
       if (filterStatus === "all") {
-        matchStatus = true; // Show EVERYTHING including closed and rejected
+        matchStatus = true; 
       } else if (filterStatus === "new") {
         matchStatus = g.status === "pending" || g.status === "critical";
       } else if (filterStatus === "assigned") {

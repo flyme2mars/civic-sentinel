@@ -8,7 +8,6 @@ export function Pill({ status }: { status: keyof typeof STATUS_MAP }) {
   const cfg = STATUS_MAP[status] || STATUS_MAP.pending;
   const c = cfg.light;
   
-  // Refactored to Tailwind where possible, but keeping the dynamic colors from STATUS_MAP
   return (
     <span 
       className="px-[10px] py-[3px] rounded-full text-[11px] font-bold font-mono tracking-wider whitespace-nowrap border"
@@ -83,9 +82,7 @@ export function SLARing({ reportedAt, slaHours, size = 52 }: { reportedAt: numbe
   return (
     <div className="relative flex-shrink-0" style={{ width: size, height: size }}>
       <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="block">
-        {/* Track */}
         <circle cx={cx} cy={cy} r={r} fill="none" stroke={trackColor} strokeWidth="4" />
-        {/* Progress */}
         <circle cx={cx} cy={cy} r={r} fill="none" stroke={color} strokeWidth="4"
           strokeDasharray={`${dash} ${circ}`} strokeLinecap="round"
           className="transition-all duration-1000 linear"

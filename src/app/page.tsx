@@ -41,7 +41,6 @@ const CustomLogo = ({ className = "w-8 h-8" }: { className?: string }) => (
   </svg>
 );
 
-// Neutral, high-density Mock components for Govt Dashboard
 const MockGovtSidebar = () => (
   <aside className="w-48 h-full border-r border-gray-100 flex flex-col bg-white select-none hidden md:flex">
     <div className="p-5 border-b border-gray-100 mb-2">
@@ -337,7 +336,6 @@ const ProtocolStepper = () => {
 
   return (
     <div className="space-y-12">
-      {/* Horizontal Nav - Neutralized Colors */}
       <div className="flex items-center justify-between gap-4 overflow-x-auto pb-4 no-scrollbar">
         {steps.map((s, i) => (
           <button
@@ -358,7 +356,6 @@ const ProtocolStepper = () => {
         ))}
       </div>
 
-      {/* Main Content Area - Linear Aesthetic */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center bg-[#080808] border border-white/5 rounded-[32px] p-8 md:p-16 relative">
         <button onClick={prevStep} className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full border border-white/5 flex items-center justify-center text-white/10 hover:text-white transition-all z-20">
           <ChevronRight className="w-4 h-4 rotate-180" />

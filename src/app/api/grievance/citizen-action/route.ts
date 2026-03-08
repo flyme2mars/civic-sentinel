@@ -19,7 +19,6 @@ export async function POST(request: Request) {
     const command = new UpdateCommand({
       TableName: AWS_CONFIG.dynamodb.tableName,
       Key: { id },
-      // Update status and append to history
       UpdateExpression: "SET #st = :status, updatedAt = :time, history = list_append(if_not_exists(history, :empty_list), :historyEntry)",
       ConditionExpression: "citizenId = :citizenId", // Ensure the citizen actually owns this
       ExpressionAttributeNames: {

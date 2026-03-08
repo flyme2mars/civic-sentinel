@@ -22,19 +22,16 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'No audio file provided' }, { status: 400 });
     }
 
-    // 1. Setup temporary workspace
     await mkdir(inputDir, { recursive: true });
     await mkdir(outputDir, { recursive: true });
     
     const buffer = Buffer.from(await file.arrayBuffer());
     await writeFile(tempFilePath, buffer);
 
-    // 2. Initialize Sarvam Client
     const client = new SarvamAIClient({
       apiSubscriptionKey: process.env.SARVAM_API_KEY || ''
     });
 
-    // 3. Create Batch Job
     console.log(`[Sarvam] Creating job for saaras:v3...`);
     const job = await client.speechToTextJob.createJob({
       model: "saaras:v3",
@@ -42,18 +39,15 @@ export async function POST(request: Request) {
       withDiarization: false
     });
 
-    // 4. Upload, Start, and Wait
     await job.uploadFiles([tempFilePath]);
     await job.start();
     
     console.log(`[Sarvam] Job ${job.jobId} started. Waiting...`);
     await job.waitUntilComplete();
 
-    // 5. Download Outputs (This is where the actual text lives)
     console.log(`[Sarvam] Job complete. Downloading outputs to ${outputDir}...`);
     await job.downloadOutputs(outputDir);
 
-    // 6. Find and read the output JSON
     const files = await readdir(outputDir);
     const jsonFile = files.find(f => f.endsWith('.json'));
 
@@ -64,10 +58,8 @@ export async function POST(request: Request) {
 
       console.log("[Sarvam] Raw Output Keys:", Object.keys(parsed));
 
-      // According to docs, text can be in 'transcript' or 'diarized_transcript'
       let transcript = parsed.transcript;
 
-      // If it's a diarized format or array of segments (common in saaras:v3)
       if (!transcript && parsed.results && Array.isArray(parsed.results)) {
         transcript = parsed.results.map((r: any) => r.transcript).join(" ");
       } else if (!transcript && parsed.diarized_transcript?.entries) {
@@ -81,7 +73,6 @@ export async function POST(request: Request) {
       }
     }
 
-    // Fallback if file structure is unexpected
     console.error("[Sarvam] Output file missing or invalid structure. Files found:", files);
     benchmark.end("Sarvam AI Transcription (FAILED)", startTime);
     throw new Error("Could not find transcript in downloaded outputs.");
@@ -91,7 +82,6 @@ export async function POST(request: Request) {
     benchmark.end("Sarvam AI Transcription (ERROR)", startTime);
     return NextResponse.json({ error: error.message || 'Transcription failed' }, { status: 500 });
   } finally {
-    // Cleanup the entire temp workspace
     try {
       const { rm } = await import('fs/promises');
       if (existsSync(baseDir)) {

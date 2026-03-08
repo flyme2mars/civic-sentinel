@@ -8,7 +8,6 @@ export async function POST(request: Request) {
     const body = await request.json();
     const { imageKey, imageKeys, description, location } = body;
     
-    // Use the first key from imageKeys if imageKey is missing
     const targetKey = imageKey || (imageKeys && imageKeys.length > 0 ? imageKeys[0] : null);
 
     console.log(`[Grievance API] Request received for key: ${targetKey}. Analyzing with Sentinel Agent...`);
@@ -16,7 +15,6 @@ export async function POST(request: Request) {
     let imageBytes: Uint8Array | undefined;
     let imageFormat: "png" | "jpeg" | "webp" = "jpeg";
 
-    // 1. Fetch image from S3 if key provided
     if (targetKey) {
       const getObjCommand = new GetObjectCommand({
         Bucket: AWS_CONFIG.s3.bucketName,
@@ -29,11 +27,10 @@ export async function POST(request: Request) {
         const lowKey = targetKey.toLowerCase();
         if (lowKey.endsWith('.png')) imageFormat = "png";
         else if (lowKey.endsWith('.webp')) imageFormat = "webp";
-        else imageFormat = "jpeg"; // default for .jpg, .jpeg
+        else imageFormat = "jpeg"; 
       }
     }
 
-    // 2. Run the Bedrock Agent
     const agentResult = await processGrievanceAgent({
       imageBytes,
       imageFormat,

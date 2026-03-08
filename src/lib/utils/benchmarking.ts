@@ -1,7 +1,4 @@
-/**
- * CivicSentinel Benchmarking Utility
- * Used to measure real-time latency and token usage for hackathon metrics.
- */
+
 
 export interface BenchmarkResult {
   operation: string;
@@ -27,16 +24,10 @@ class Benchmarker {
     return Benchmarker.instance;
   }
 
-  /**
-   * Starts a timer for an operation
-   */
   public start(): number {
     return performance.now();
   }
 
-  /**
-   * Ends a timer and logs the result
-   */
   public end(
     operation: string, 
     startTime: number, 
@@ -60,7 +51,6 @@ class Benchmarker {
 
     this.results.push(result);
     
-    // Log to console in a professional format for easy copying to PPT
     console.log(`\n[BENCHMARK] 📊 ${operation.toUpperCase()}`);
     console.log(`- Latency: ${result.durationMs}ms (${(result.durationMs / 1000).toFixed(2)}s)`);
     if (result.tokens) {

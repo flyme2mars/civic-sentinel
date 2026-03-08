@@ -1,6 +1,5 @@
 import { CivicIssue, Department } from "./types";
 
-// Static timestamp for consistent SSR/Hydration (March 3, 2026)
 const now = 1772496000000; 
 const hour = 3600000;
 
@@ -69,7 +68,7 @@ export const GRIEVANCES: CivicIssue[] = [
     citizen: "Meera Singh", 
     phone: "+91 76543 21098", 
     reportedAt: now - 72 * hour, 
-    deadline: now - 24 * hour, // Breached
+    deadline: now - 24 * hour, 
     slaHours: 48, 
     isEscalated: true,
     aiConfidence: 0.92, 

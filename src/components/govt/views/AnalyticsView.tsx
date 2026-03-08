@@ -12,13 +12,11 @@ export function AnalyticsView({ grievances }: { grievances: CivicIssue[] }) {
   const exportToCSV = () => {
     if (grievances.length === 0) return;
     
-    // Define headers
     const headers = ["ID", "Title", "Category", "Status", "Priority", "Ward", "Address", "ReportedAt", "SLACountdown"];
     
-    // Map data to rows
     const rows = grievances.map(g => [
       g.id,
-      `"${g.title.replace(/"/g, '""')}"`, // Escape quotes
+      `"${g.title.replace(/"/g, '""')}"`, 
       g.category,
       g.status,
       g.priority,
@@ -28,10 +26,8 @@ export function AnalyticsView({ grievances }: { grievances: CivicIssue[] }) {
       g.slaHours
     ]);
 
-    // Combine headers and rows
     const csvContent = [headers, ...rows].map(e => e.join(",")).join("\n");
     
-    // Create blob and download
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement("a");
     const url = URL.createObjectURL(blob);
@@ -48,7 +44,6 @@ export function AnalyticsView({ grievances }: { grievances: CivicIssue[] }) {
     const resolved = grievances.filter(g => g.status === 'resolved' || g.status === 'verified').length;
     const escalated = grievances.filter(g => g.status === 'escalated').length;
 
-    // Time Series: Grievances per day (last 7 days)
     // eslint-disable-next-line react-hooks/purity
     const now = Date.now();
     const dayMs = 86400000;
