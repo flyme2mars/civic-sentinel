@@ -260,15 +260,17 @@ export default function GovtDashboard() {
         </header>
 
         {/* Main Content Area */}
-        <main className="flex-1 overflow-hidden flex flex-col">
-          {activeTab === 'analytics' ? (
-            <AnalyticsView grievances={grievances} />
-          ) : (
-            <GrievancesView 
-              issues={filteredIssues} 
-              onSelect={setSelectedIssue} 
-            />
-          )}
+        <main className="flex-1 overflow-hidden flex flex-col relative">
+          <div id="tour-tabs" className="flex-1 flex flex-col overflow-hidden">
+            {activeTab === 'analytics' ? (
+              <AnalyticsView grievances={grievances} />
+            ) : (
+              <GrievancesView 
+                issues={filteredIssues} 
+                onSelect={setSelectedIssue} 
+              />
+            )}
+          </div>
         </main>
       </div>
 
