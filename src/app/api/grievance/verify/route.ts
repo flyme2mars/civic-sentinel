@@ -5,10 +5,14 @@ import { GetObjectCommand } from '@aws-sdk/client-s3';
 import { ConverseCommand } from '@aws-sdk/client-bedrock-runtime';
 import { benchmark } from '@/lib/utils/benchmarking';
 
-
+/**
+ * VISION AUDITOR API
+ * This endpoint uses AI to compare the "Before" (imageKey) and "After" (fixedImageKey) photos.
+ */
 export async function POST(request: Request) {
   const startTime = benchmark.start();
   try {
+    // SECURITY: Strictly check whether env.local has GOVT_API_TOKEN=='sentinel2026'
     const token = request.headers.get('x-govt-token');
     const isEnvValid = process.env.GOVT_API_TOKEN === 'sentinel2026';
     const isTokenValid = token === 'sentinel2026';
@@ -23,6 +27,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Grievance ID is required' }, { status: 400 });
     }
 
+    // 1. Get the Grievance details from DynamoDB
     const ddbStartTime = benchmark.start();
     const getRes = await dynamoDb.send(new GetCommand({
       TableName: AWS_CONFIG.dynamodb.tableName,
@@ -35,6 +40,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Grievance not found.' }, { status: 404 });
     }
 
+    // Determine all before and after keys
     const beforeKeys = Array.isArray(grievance.evidenceKeys) && grievance.evidenceKeys.length > 0 
       ? grievance.evidenceKeys 
       : (grievance.imageKey ? [grievance.imageKey] : []);
@@ -47,20 +53,15 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Required images (before/after) not found for verification.' }, { status: 400 });
     }
 
+    // 2. Fetch all images from S3 as bytes + detect real MIME type
     const s3StartTime = benchmark.start();
     const [beforeImages, afterImages] = await Promise.all([
-      Promise.all(beforeKeys.map(async (key) => ({ key, bytes: await fetchS3Bytes(key) }))),
-      Promise.all(afterKeys.map(async (key) => ({ key, bytes: await fetchS3Bytes(key) })))
+      Promise.all(beforeKeys.map(async (key) => await fetchS3Image(key))),
+      Promise.all(afterKeys.map(async (key) => await fetchS3Image(key)))
     ]);
     benchmark.end("S3 Multi-Fetch (Evidence)", s3StartTime, undefined, { count: beforeImages.length + afterImages.length });
 
-    const getFormat = (key: string): "png" | "jpeg" | "webp" => {
-      const lowKey = key.toLowerCase();
-      if (lowKey.endsWith('.png')) return 'png';
-      if (lowKey.endsWith('.webp')) return 'webp';
-      return 'jpeg'; 
-    };
-
+    // 3. Trigger Bedrock Claude 3.5 Sonnet to compare
     const systemPrompt = `
       You are an elite Civil Infrastructure Inspector. 
       Your task is to compare two sets of images of the same location. 
@@ -96,13 +97,13 @@ export async function POST(request: Request) {
     userContent.push({ text: "SET A: BEFORE IMAGES" });
     beforeImages.forEach((img, i) => {
       userContent.push({ text: `Before Image ${i + 1}:` });
-      userContent.push({ image: { format: getFormat(img.key), source: { bytes: img.bytes } } });
+      userContent.push({ image: { format: img.format, source: { bytes: img.bytes } } });
     });
 
     userContent.push({ text: "SET B: AFTER (RESOLUTION) IMAGES" });
     afterImages.forEach((img, i) => {
       userContent.push({ text: `After Image ${i + 1}:` });
-      userContent.push({ image: { format: getFormat(img.key), source: { bytes: img.bytes } } });
+      userContent.push({ image: { format: img.format, source: { bytes: img.bytes } } });
     });
 
     userContent.push({ text: "Please analyze the resolution based on all provided images and the grievance context." });
@@ -129,6 +130,7 @@ export async function POST(request: Request) {
     
     if (!finalContent) throw new Error("AI failed to generate a response");
     
+    // Parse AI Response
     let result;
     try {
       const cleanContent = finalContent.replace(/```json\s?|```/g, '').trim();
@@ -142,6 +144,7 @@ export async function POST(request: Request) {
        result = { verified: false, status: "REJECTED", reasoning: "AI Error during analysis output parsing." };
     }
 
+    // Status Coercion & Validation
     const validStatuses = ['VERIFIED', 'REJECTED'];
     if (!validStatuses.includes(result.status)) {
        result.status = result.verified ? 'VERIFIED' : 'REJECTED';
@@ -149,6 +152,7 @@ export async function POST(request: Request) {
 
     const timestamp = new Date().toISOString();
 
+    // 4. Update DynamoDB with AI findings
     const updateCommand = new UpdateCommand({
       TableName: AWS_CONFIG.dynamodb.tableName,
       Key: { id },
@@ -180,18 +184,46 @@ export async function POST(request: Request) {
 
   } catch (error: any) {
     console.error('[Vision Auditor API] Error:', error);
+    // Generic error message for security
     benchmark.end("Vision Verification (FAILED)", startTime);
     return NextResponse.json({ error: 'An error occurred during vision verification.' }, { status: 500 });
   }
 }
 
-async function fetchS3Bytes(key: string): Promise<Uint8Array> {
+/**
+ * Fetches image from S3 and identifies the actual MIME type using Magic Numbers
+ */
+async function fetchS3Image(key: string): Promise<{ bytes: Uint8Array, format: "png" | "jpeg" | "webp" }> {
   const command = new GetObjectCommand({
     Bucket: AWS_CONFIG.s3.bucketName,
     Key: key
   });
   const res = await s3Client.send(command);
   const bytes = await res.Body?.transformToByteArray();
+  
   if (!bytes) throw new Error(`Could not fetch bytes for S3 key: ${key}`);
-  return bytes;
+
+  // DEFENSIVE: Detect format via Magic Numbers (more reliable than ContentType or Extension)
+  // PNG: 89 50 4E 47
+  // JPEG: FF D8 FF
+  // WEBP: 52 49 46 46 (RIFF) + 57 45 42 50 (WEBP)
+  
+  let format: "png" | "jpeg" | "webp" = "jpeg"; // Default
+
+  if (bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4E && bytes[3] === 0x47) {
+    format = "png";
+  } else if (bytes[0] === 0xFF && bytes[1] === 0xD8 && bytes[2] === 0xFF) {
+    format = "jpeg";
+  } else if (bytes[0] === 0x52 && bytes[1] === 0x49 && bytes[2] === 0x46 && bytes[3] === 0x46) {
+    format = "webp";
+  } else {
+    // Fallback to extension if magic numbers don't match standard ones
+    const ext = key.split('.').pop()?.toLowerCase();
+    if (ext === 'png') format = 'png';
+    if (ext === 'webp') format = 'webp';
+  }
+
+  console.log(`[Vision Auditor] Key: ${key} | Detected Format: ${format}`);
+
+  return { bytes, format };
 }
