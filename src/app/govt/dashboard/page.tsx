@@ -6,8 +6,9 @@ import { GrievancesView } from '@/components/govt/views/GrievancesView';
 import { AnalyticsView } from '@/components/govt/views/AnalyticsView';
 import { DetailDrawer } from '@/components/govt/DetailDrawer';
 import { CivicIssue } from '@/lib/types';
-import { Search, ShieldAlert, Lock, User as UserIcon } from 'lucide-react';
+import { Search, ShieldAlert, Lock, User as UserIcon, Construction, Droplets, Zap, Activity, ArrowRight } from 'lucide-react';
 import { DEPARTMENTS } from '@/lib/departments';
+import { cn } from '@/lib/utils';
 
 export default function GovtDashboard() {
   const [activeTab, setActiveTab] = useState('inbox');
@@ -206,19 +207,39 @@ export default function GovtDashboard() {
               Authorize Access
             </button>
 
-            <button 
-              type="button"
-              onClick={() => {
-                localStorage.setItem('govt_branch_id', 'PWD_KALAMASSERY');
-                localStorage.setItem('govt_authorized', 'true');
-                setBranchId('PWD_KALAMASSERY');
-                setIsAuthorized(true);
-              }}
-              className="w-full py-3.5 bg-white border-2 border-slate-100 text-slate-900 rounded-xl font-black text-[10px] uppercase tracking-[0.1em] hover:bg-slate-50 transition-all flex items-center justify-center gap-2"
-            >
-              <ShieldAlert className="w-4 h-4" />
-              Judge / Demo Access
-            </button>
+            <div className="pt-8 space-y-6">
+              <div className="w-full h-px bg-slate-100 flex items-center justify-center">
+                <span className="bg-white px-4 text-[10px] font-black text-slate-900 uppercase tracking-[0.3em]">Evaluation Mode</span>
+              </div>
+              
+              <div className="bg-slate-50/50 p-4 rounded-[2rem] border border-slate-100 shadow-inner">
+                <div className="flex flex-wrap justify-center gap-2">
+                  {[
+                    { id: DEPARTMENTS[0].id, icon: Construction, label: "PWD" },
+                    { id: DEPARTMENTS[1].id, icon: Droplets, label: "Water" },
+                    { id: DEPARTMENTS[2].id, icon: Zap, label: "KSEB" },
+                    { id: DEPARTMENTS[3].id, icon: Activity, label: "Health" }
+                  ].map((item) => (
+                    <button 
+                      key={item.id}
+                      type="button"
+                      onClick={() => {
+                        localStorage.setItem('govt_branch_id', item.id);
+                        localStorage.setItem('govt_authorized', 'true');
+                        setBranchId(item.id);
+                        setIsAuthorized(true);
+                      }}
+                      className="flex flex-col items-center gap-2 p-3 bg-white border border-slate-200 rounded-2xl hover:bg-slate-900 hover:border-slate-900 group transition-all duration-300 w-[72px] shadow-sm relative active:scale-95"
+                      title={item.id}
+                    >
+                      <item.icon className="w-5 h-5 text-slate-400 group-hover:text-white transition-colors" />
+                      <span className="text-[8px] font-black uppercase text-slate-500 group-hover:text-white transition-colors tracking-tighter">{item.label}</span>
+                    </button>
+                  ))}
+                </div>
+                <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest text-center mt-4 opacity-60">Select Department Identity</p>
+              </div>
+            </div>
           </form>
 
           <p className="mt-8 text-[10px] text-gray-400 font-bold uppercase tracking-widest text-center opacity-50">

@@ -16,7 +16,8 @@ import {
   LayoutDashboard, 
   Inbox, 
   Building2, 
-  Shield 
+  Shield,
+  ArrowRight 
 } from "lucide-react";
 
 export default function GovernmentDashboard() {
@@ -214,16 +215,23 @@ export default function GovernmentDashboard() {
             VERIFY IDENTITY
           </button>
 
-          <button 
-            onClick={() => {
-              setAuthToken("sentinel2026");
-              setIsAuthorized(true);
-            }}
-            className="w-full py-3 bg-white border border-gray-200 text-gray-600 rounded-xl font-bold text-sm hover:bg-gray-50 transition-colors flex items-center justify-center gap-2"
-          >
-            <Shield className="w-4 h-4" />
-            JUDGE / DEMO ACCESS
-          </button>
+          <div className="pt-8 space-y-4">
+            <div className="w-full h-px bg-slate-100 flex items-center justify-center">
+              <span className="bg-white px-4 text-[9px] font-black text-slate-400 uppercase tracking-[0.3em]">Evaluation Mode</span>
+            </div>
+            
+            <button 
+              onClick={() => {
+                setAuthToken("sentinel2026");
+                setIsAuthorized(true);
+              }}
+              className="w-full py-4 bg-slate-50 border border-slate-200 text-slate-900 rounded-xl font-black text-[10px] uppercase tracking-[0.2em] flex items-center justify-center gap-3 shadow-sm hover:bg-slate-900 hover:text-white hover:border-slate-900 transition-all duration-300 group active:scale-95 relative"
+            >
+              <div className="absolute -top-1 -right-1 w-3 h-3 bg-slate-900 rounded-full animate-ping opacity-20 group-hover:hidden" />
+              <Shield className="w-4 h-4 text-slate-400 group-hover:text-white transition-colors" />
+              JUDGE / DEMO ACCESS
+            </button>
+          </div>
         </div>
       </div>
     );
