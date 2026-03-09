@@ -95,8 +95,9 @@ export default function GovtDashboard() {
               category: (dbItem.category || 'other').toLowerCase(),
               status: (dbItem.status === 'OPEN' || dbItem.status === 'ASSIGNED') ? 'pending' :
                       dbItem.status === 'IN_PROGRESS' ? 'in-progress' :
-                      (dbItem.status === 'FIXED' || dbItem.status === 'RESOLVED' || dbItem.status === 'CLOSED') ? 'resolved' :
+                      dbItem.status === 'FIXED' ? 'fixed' :
                       dbItem.status === 'VERIFIED' ? 'verified' :
+                      (dbItem.status === 'RESOLVED' || dbItem.status === 'CLOSED') ? 'resolved' :
                       (dbItem.status === 'REJECTED' || dbItem.status === 'ESCALATED') ? 'escalated' : 'pending',
               priority: (dbItem.severity || 'medium').toLowerCase() as any,
               ward: dbItem.location?.area || 'Unknown Ward',
@@ -135,7 +136,9 @@ export default function GovtDashboard() {
 
   const filteredIssues = useMemo(() => {
     return grievances.filter(issue => {
-      if (activeTab === 'inbox') return issue.status === 'pending' || issue.status === 'in-progress' || issue.status === 'escalated';
+      // FIXED issues stay in the Inbox until the official clicks 'Confirm & Submit to Admin'
+      if (activeTab === 'inbox') return issue.status === 'pending' || issue.status === 'in-progress' || issue.status === 'escalated' || issue.status === 'fixed';
+      // Only issues officially handed over to Admin (VERIFIED) or finished (RESOLVED/CLOSED) show in the resolved tab
       if (activeTab === 'resolved') return issue.status === 'resolved' || issue.status === 'verified';
       return true;
     })

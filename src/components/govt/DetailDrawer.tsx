@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { CivicIssue } from '@/lib/types';
 import { 
   X, 
@@ -73,10 +73,12 @@ export function DetailDrawer({
   const [isReturning, setIsReturning] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [resolutionEvidence, setResolutionEvidence] = useState<{ key: string, preview: string }[]>([]);
+  const auditResultRef = useRef<HTMLDivElement>(null);
 
   const [verificationResult, setVerificationResult] = useState<{
     success: boolean;
     verified?: boolean;
+    confidence?: number;
     reasoning?: string;
     error?: string;
   } | null>(null);
@@ -151,7 +153,7 @@ export function DetailDrawer({
     const keys = resolutionEvidence.map(e => e.key);
     
     if (keys.length === 0 || !targetId) {
-      setVerificationResult({ success: false, error: "Missing ID or Image Evidence." });
+      alert("Missing ID or Image Evidence.");
       return;
     }
     
@@ -174,6 +176,7 @@ export function DetailDrawer({
       const data = await res.json();
       
       if (data.success) {
+        // 2. Trigger the AI Vision Auditor
         const verifyRes = await fetch('/api/grievance/verify', {
           method: 'POST',
           headers: { 
@@ -184,12 +187,17 @@ export function DetailDrawer({
         });
         const verifyData = await verifyRes.json();
         setVerificationResult(verifyData);
+        
+        // Auto-scroll to results after short delay to let state update
+        setTimeout(() => {
+          auditResultRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 100);
       } else {
-        setVerificationResult({ success: false, error: data.error || "Failed to update resolution data." });
+        alert(data.error || "Failed to update resolution data.");
       }
     } catch (e: unknown) {
       console.error("Audit failed", e);
-      setVerificationResult({ success: false, error: (e as Error).message || "An unexpected error occurred." });
+      alert((e as Error).message || "An unexpected error occurred.");
     } finally {
       setIsVerifying(false);
     }
@@ -423,12 +431,12 @@ export function DetailDrawer({
 
                 {/* Show AI Summary in Resolved View */}
                 {(issue as any).aiVerificationResult && (
-                  <div className="p-4 rounded-xl bg-gray-50 border border-gray-100 space-y-2">
+                  <div className="p-4 rounded-xl bg-slate-50 border border-slate-100 space-y-2">
                     <div className="flex items-center gap-2">
-                      <ShieldCheck className="w-3.5 h-3.5 text-gray-400" />
-                      <span className="text-[10px] font-bold uppercase tracking-widest text-gray-500">AI Quality Assessment</span>
+                      <ShieldCheck className="w-3.5 h-3.5 text-slate-900" />
+                      <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500">AI Quality Assessment</span>
                     </div>
-                    <p className="text-xs text-gray-600 leading-relaxed italic">
+                    <p className="text-xs text-slate-600 leading-relaxed italic">
                       "{(issue as any).aiVerificationResult.resolutionSummary || (issue as any).aiVerificationResult.reasoning}"
                     </p>
                   </div>
@@ -438,14 +446,14 @@ export function DetailDrawer({
                   <button
                     onClick={handleVerifyOnly}
                     disabled={isVerifying}
-                    className="w-full py-2.5 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 text-xs font-bold text-gray-900 flex items-center justify-center gap-2 transition-all shadow-sm disabled:opacity-50"
+                    className="w-full py-2.5 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 text-xs font-bold text-gray-900 flex items-center justify-center gap-2 transition-all shadow-sm disabled:opacity-50 select-none"
                   >
                     {isVerifying ? (
                       <div className="w-3 h-3 border-2 border-gray-200 border-t-gray-900 rounded-full animate-spin" />
                     ) : (
-                      <Zap className="w-3 h-3 text-indigo-500" />
+                      <ShieldCheck className="w-3 h-3 text-slate-900" />
                     )}
-                    {isVerifying ? 'Verifying...' : 'Re-run AI Auditor'}
+                    {isVerifying ? 'Verifying...' : 'Verify Fix with AI Auditor'}
                   </button>
                 )}
               </div>
@@ -510,24 +518,53 @@ export function DetailDrawer({
 
           {/* AI Auditor Result Section */}
           {verificationResult && (
-            <div className={`p-4 rounded-xl border ${verificationResult.verified ? 'bg-emerald-50 border-emerald-100' : 'bg-amber-50 border-amber-100'} animate-in fade-in slide-in-from-bottom-2 duration-500`}>
-              <div className="flex items-center gap-2 mb-2">
-                {verificationResult.verified ? (
-                  <CheckCircle className="w-4 h-4 text-emerald-600" />
-                ) : (
-                  <AlertCircle className="w-4 h-4 text-amber-600" />
+            <div 
+              ref={auditResultRef}
+              className={cn(
+                "p-6 rounded-2xl border animate-in fade-in slide-in-from-bottom-4 duration-700 shadow-xl shadow-slate-200/50",
+                verificationResult.verified ? "bg-white border-slate-200" : "bg-white border-amber-200"
+              )}
+            >
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center gap-2.5">
+                  <div className={cn(
+                    "w-10 h-10 rounded-xl flex items-center justify-center shadow-inner",
+                    verificationResult.verified ? "bg-slate-900 text-white" : "bg-amber-100 text-amber-600"
+                  )}>
+                    {verificationResult.verified ? <ShieldCheck className="w-5 h-5" /> : <AlertCircle className="w-5 h-5" />}
+                  </div>
+                  <div>
+                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 block">AI Vision Protocol</span>
+                    <h4 className={cn(
+                      "text-sm font-black uppercase tracking-tight",
+                      verificationResult.verified ? "text-slate-900" : "text-amber-900"
+                    )}>
+                      Audit {verificationResult.verified ? 'Verified' : 'Flagged'}
+                    </h4>
+                  </div>
+                </div>
+                {verificationResult.confidence != null && (
+                  <div className="text-right">
+                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block">Confidence</span>
+                    <span className="text-sm font-mono font-black text-slate-900">{Math.round(verificationResult.confidence * 100)}%</span>
+                  </div>
                 )}
-                <span className={`text-sm font-bold ${verificationResult.verified ? 'text-emerald-900' : 'text-amber-900'}`}>
-                  AI Auditor {verificationResult.verified ? 'Verified' : 'Flagged'}
-                </span>
               </div>
-              <p className={`text-xs leading-relaxed ${verificationResult.verified ? 'text-emerald-700' : 'text-amber-700'}`}>
-                {verificationResult.reasoning || verificationResult.error || "Verification completed."}
-              </p>
-              {!verificationResult.verified && (
-                <p className="text-[10px] text-amber-600 mt-2 italic font-medium">
-                  Note: The AI found potential issues. You can still submit if you believe the work is complete, or re-upload better evidence.
+
+              <div className="relative p-4 bg-slate-50 rounded-xl border border-slate-100">
+                <div className="absolute -top-2 left-4 px-2 bg-slate-50 text-[8px] font-black uppercase tracking-widest text-slate-400">Technical Analysis</div>
+                <p className="text-xs leading-relaxed font-medium text-slate-600 italic">
+                  "{verificationResult.reasoning || verificationResult.error || "Analysis complete."}"
                 </p>
+              </div>
+
+              {!verificationResult.verified && (
+                <div className="mt-4 flex items-start gap-2 text-amber-700 bg-amber-50/50 p-3 rounded-lg border border-amber-100/50">
+                  <AlertCircle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+                  <p className="text-[10px] font-bold leading-relaxed uppercase tracking-tight">
+                    The AI found potential discrepancies. You may proceed with manual submission or provide clearer evidence.
+                  </p>
+                </div>
               )}
             </div>
           )}
@@ -542,7 +579,7 @@ export function DetailDrawer({
               <button 
                 onClick={handleRunAudit}
                 disabled={isVerifying || isReturning || resolutionEvidence.length === 0}
-                className="w-full bg-gray-900 hover:bg-black text-white px-6 py-3 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-gray-200"
+                className="w-full bg-gray-900 hover:bg-black text-white px-6 py-3 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-gray-200 select-none"
               >
                 {isVerifying ? (
                   <>
@@ -552,14 +589,13 @@ export function DetailDrawer({
                 ) : (
                   <>
                     Run AI Quality Audit
-                    <Zap className="w-4 h-4 text-amber-400" />
                   </>
                 )}
               </button>
               <button 
                 onClick={handleReturnToAdmin}
                 disabled={isVerifying || isReturning}
-                className="w-full bg-white border border-gray-200 text-gray-700 hover:bg-red-50 hover:text-red-600 hover:border-red-200 px-6 py-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-all disabled:opacity-50 shadow-sm"
+                className="w-full bg-white border border-gray-200 text-gray-700 hover:bg-red-50 hover:text-red-600 hover:border-red-200 px-6 py-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-all disabled:opacity-50 shadow-sm select-none"
               >
                 {isReturning ? <Loader2 className="w-4 h-4 animate-spin" /> : <X className="w-4 h-4" />}
                 Not My Department (Return to Admin)
@@ -570,14 +606,14 @@ export function DetailDrawer({
               <button 
                 onClick={handleFinalSubmit}
                 disabled={isSubmitting}
-                className="w-full bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-4 rounded-xl text-sm font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-all shadow-lg shadow-emerald-600/20"
+                className="w-full bg-slate-900 hover:bg-black text-white px-6 py-4 rounded-xl text-sm font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-all shadow-lg shadow-slate-200 select-none active:scale-[0.98]"
               >
                 {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle className="w-4 h-4" />}
                 Confirm & Submit to Admin
               </button>
               <button 
                 onClick={() => setVerificationResult(null)}
-                className="w-full bg-white border border-gray-200 text-gray-500 py-2 rounded-lg text-[10px] font-bold uppercase tracking-widest hover:bg-gray-50 transition-all"
+                className="w-full bg-white border border-gray-200 text-gray-500 py-2 rounded-lg text-[10px] font-bold uppercase tracking-widest hover:bg-gray-50 transition-all select-none"
               >
                 Cancel / Edit Images
               </button>

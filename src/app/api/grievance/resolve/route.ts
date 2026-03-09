@@ -28,24 +28,23 @@ export async function POST(request: Request) {
 
     const timestamp = new Date().toISOString();
 
+    // UPDATED LOGIC: We only update the image keys and history. 
+    // We DO NOT change the status to FIXED here anymore.
+    // The status will only be changed to VERIFIED when the official clicks 'Confirm & Submit to Admin'.
     const command = new UpdateCommand({
       TableName: AWS_CONFIG.dynamodb.tableName,
       Key: { id },
-      UpdateExpression: "SET #st = :status, fixedImageKey = :img, fixedImageKeys = :imgs, updatedAt = :time, history = list_append(if_not_exists(history, :empty_list), :historyEntry)",
-      ExpressionAttributeNames: {
-        "#st": "status"
-      },
+      UpdateExpression: "SET fixedImageKey = :img, fixedImageKeys = :imgs, updatedAt = :time, history = list_append(if_not_exists(history, :empty_list), :historyEntry)",
       ExpressionAttributeValues: {
-        ":status": "FIXED",
         ":img": primaryKey,
         ":imgs": allKeys,
         ":time": timestamp,
         ":empty_list": [],
         ":historyEntry": [
           {
-            action: 'FIXED',
+            action: 'RESOLUTION_DRAFTED',
             timestamp: timestamp,
-            note: note || 'Issue resolved by government official. Pending Vision Auditor verification.'
+            note: note || 'Resolution evidence uploaded for AI audit.'
           }
         ]
       },
@@ -55,18 +54,17 @@ export async function POST(request: Request) {
     await dynamoDb.send(command);
 
     if (process.env.NODE_ENV === 'development') {
-      console.log(`[DynamoDB] Grievance ${id} updated with resolution evidence.`);
+      console.log(`[DynamoDB] Grievance ${id} updated with resolution evidence keys.`);
     }
 
     return NextResponse.json({ 
       success: true, 
       id,
-      updatedStatus: 'FIXED',
       message: 'Resolution evidence saved successfully.'
     });
 
   } catch (error: any) {
     console.error('[Grievance Resolve API] Error:', error);
-    return NextResponse.json({ error: 'An internal server error occurred while resolving the grievance.' }, { status: 500 });
+    return NextResponse.json({ error: 'An internal server error occurred while updating resolution evidence.' }, { status: 500 });
   }
 }
