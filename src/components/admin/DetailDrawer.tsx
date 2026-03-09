@@ -312,6 +312,22 @@ export function DetailDrawer({ g, onClose }: { g: GrievanceType; onClose: () => 
                   </div>
                 </div>
 
+                {/* AI Resolution Summary (Shown after verification) */}
+                {(g as any).aiVerificationResult && (
+                  <div className="pt-6 border-t border-gray-100 space-y-4">
+                    <div className="flex items-center gap-2">
+                      <ShieldCheck className="w-4 h-4 text-slate-900" />
+                      <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-900">AI Auditor Assessment</h3>
+                    </div>
+                    <div className="p-5 rounded-2xl bg-slate-50 border border-slate-100 shadow-inner relative overflow-hidden group transition-all hover:bg-slate-100/50">
+                      <div className="absolute top-0 left-0 w-1 h-full bg-slate-900 opacity-20" />
+                      <p className="text-sm leading-relaxed text-slate-700 font-medium italic">
+                        "{(g as any).aiVerificationResult.resolutionSummary || (g as any).aiVerificationResult.reasoning}"
+                      </p>
+                    </div>
+                  </div>
+                )}
+
                 {/* AI Resolution Quality Audit Result */}
                 {g.score != null && (
                   <div className="pt-6 border-t border-gray-100 space-y-4">
